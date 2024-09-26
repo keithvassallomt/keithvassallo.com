@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Keith Vassallo</title>
+        <link rel="stylesheet" href="index.css">
+        <link rel="me" href="https://mastodon.social/@keithv">
+        <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+        <link rel="manifest" href="site.webmanifest">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    </head>
+    <body>
+        <div id="container">
+            <div id="col_left">
+                <header>Keith Vassallo</header>
+                <div id="bio">
+                    <p>Hi! I'm Keith. I'm an Educator in coding<br> &amp; technical subjects.
+                    I'm skilled in<br> programming (Java, Python, PHP, C#,<br> JavaScript...).
+                    I'm also handy with Linux, <br>being certified by the Linux Professional<br> Institute, 
+                    and also cloud technology,<br> certified as an AWS Architect and<br> Developer.</p>
+                    <p><a href="#" onclick="openForm()">
+                        Let's chat</a> 💬 | <a href="https://keithvassallo.com/kv_cv_web.pdf" target="_blank">View My CV</a> 👔</p>
+                </div>
+                <div id="social_bar">
+                    <a rel="me" href="https://mastodon.social/@keithv" target="_blank"><img src="assets/md_icon.png" alt="Mastodon Profile" title="Mastodon"></a>
+                    <a href="https://www.facebook.com/keithv" target="_blank"><img src="assets/fb_icon.png" alt="Facebook Profile" title="Facebook"></a>
+                    <a href="https://www.instagram.com/vassallo.keith/" target="_blank"><img src="assets/insta_icon.png" alt="Instagram Profile" title="Instagram"></a>
+                    <a href="https://mt.linkedin.com/in/keithvassallo" target="_blank"><img src="assets/linkedin_icon.png" alt="LinkedIn Profile" title="LinkedIn"></a>
+                </div>
+            </div>
+            <div id="col_right">
+                <div id="profile_image">
+                    <div id="badge_coder">
+
+                    </div>
+                    <div id="badge_geek">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-popup" id="contact-form">
+            <form class="form-container" id="contactForm">
+                <button type="button" id="x" onclick="closeForm()">
+                    X
+                </button>
+
+                <h1>Let's Chat 💬</h1>
+
+                <label for="name"><b>Name</b></label>
+                <input type="text" placeholder="Your Name" name="name" id="name" required>
+
+                <label for="email"><b>Email</b></label>
+                <input type="email" placeholder="Your Email" name="email" id="email" required>
+
+                <label for="message"><b>Message</b></label>
+                <textarea name="message" id="message" placeholder="Your Message" rows="5" required></textarea>
+
+                <div id="contact-result">
+                    ✅ Your message has been sent.
+                </div>
+
+                <button type="submit" class="btn" id="btn-send">Send</button>
+                <button type="button" class="btn cancel" onclick="closeForm()" id="btn-cancel">Close</button>
+            </form>
+        </div>
+        <script src="index.js"></script>
+    </body>
+</html>

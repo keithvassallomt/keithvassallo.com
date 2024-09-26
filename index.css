@@ -1,0 +1,279 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+html {
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: #1B3330;
+    color: white;
+}
+
+a:link {
+    color: #8CD49C;
+}
+
+a:visited {
+    color: #8CD49C;
+}
+
+#container {
+    display: flex;
+}
+
+#badge_geek {
+    z-index: 999;
+    display: block;
+    background: url('assets/badge_geek.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+#badge_coder {
+    z-index: 500;
+    display: block;
+    background: url('assets/badge_coder.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+#social_bar img {
+    max-height: 30px;
+}
+
+#social_bar img:hover {
+    filter: brightness(0) saturate(100%) invert(91%) sepia(7%) saturate(2142%) hue-rotate(72deg) brightness(92%) contrast(80%);
+}
+
+header {
+    font-weight: 600;
+    display:block;
+    line-height: 1em;
+}
+
+#col_right {
+    background-repeat: no-repeat;
+    background-image: url('assets/keith_pic.png'), url('assets/yellow_shape.png');
+}
+
+#bio {
+    display: block;
+    font-size: 14pt;
+}
+
+#social_bar {
+    display: flex;
+    gap: 20px;
+}
+
+.form-popup {
+    box-sizing: border-box;
+    display: none;
+    position: fixed;
+    bottom: 0;
+    border: 3px solid #f1f1f1;
+    z-index: 9;
+}
+
+.form-container {
+    box-sizing: border-box;
+    max-width: 400px;
+    padding: 10px;
+    background-color:#8CD49C;
+    color: #1B3330;
+}
+
+.form-container input[type=text], .form-container input[type=email], .form-container textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 15px;
+    margin: 5px 0 22px 0;
+    border: none;
+    background: #f1f1f1;
+    font-family: 'Poppins', sans-serif;
+}
+  
+.form-container input[type=text]:focus, .form-container input[type=email]:focus, .form-container textarea:focus {
+    background-color: #ddd;
+    outline: none;
+}
+
+.form-container .btn {
+    background-color: #1B3330;
+    color: white;
+    padding: 16px 20px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom:10px;
+    opacity: 0.8;
+    font-family: 'Poppins', sans-serif;
+}
+
+.form-container .cancel {
+    background-color: red;
+    display: none;
+}
+
+.form-container .btn:hover, .open-button:hover {
+    opacity: 1;
+}
+
+.form-container h1 {
+    margin-top: 0px;
+    margin-bottom: 5px;
+}
+
+.form-container #x {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    left: -25px;
+    top: -25px;
+    border: 2px solid #1B3330;
+    color: #1B3330;
+    position: relative;
+}
+
+.form-container #x:hover {
+    background-color: #feef88;
+    cursor: pointer;
+}
+
+.form-container #contact-result {
+    display: none;
+    color: #ffffff;
+    background-color: #1B3330;
+    padding: 16px 20px;
+    border: none;
+    margin-bottom:10px;
+    opacity: 0.8;
+    font-family: 'Poppins', sans-serif;
+}
+  
+
+@media only screen and (min-width: 1000px) {
+    header {
+        font-size: 60pt;
+        margin-bottom: 40px;
+    }
+
+    #container {
+        align-items: flex-start;
+        width: 960px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+    }
+
+    #col_left {
+        margin-right: 20px;
+        margin-top:40px;
+    }
+    
+    #col_right {
+        background-size:90%, 90%;
+        background-position: 35px 15px, bottom right;
+        min-width: 50%;
+        min-height: 600px;
+    }
+    
+    #badge_geek {
+        width: 206px;
+        height: 96px;
+        margin-top: 50%;
+        margin-left: -8%;
+    }
+    
+    #badge_coder {
+        width: 206px;
+        height: 96px;
+        margin-top: 30%;
+        margin-left: 80%;
+    }
+
+    #social_bar {
+        align-items: flex-start;
+    }
+
+    .form-popup {
+        right: 15px;
+    }
+
+    .form-container h1 {
+        margin-top: -30px;
+    }
+}
+
+@media only screen and (max-width: 415px) {
+    .form-popup {
+        right: 0;
+    }
+
+    .form-container #x {
+        display: none;
+    }
+
+    .form-container h1 {
+        margin-top: 0px;
+    }
+
+    .form-container .cancel {
+        background-color: red;
+        display: block;
+    }
+}
+
+
+@media only screen and (max-width: 999px) {
+    header {
+        font-size: 26pt;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    #container {
+        flex-direction: column-reverse;
+        align-items: center;
+    }
+
+    #col_left {
+        margin-right: 0;
+        margin-top: 0;
+        text-align: center;
+    }
+
+    #col_right {
+        background-size: 300px 400px, 300px 400px;
+        background-position: calc(50% - 20px) calc(50% - 5px), 50% 50%;
+        min-height: 450px;
+        height: 450px;
+        width: 390px;
+        min-width: 390px;
+    }
+
+    #badge_geek {
+        width: 103px;
+        height: 48px;
+        margin-top: 50%;
+        margin-left: 0;
+    }
+    
+    #badge_coder {
+        width: 103px;
+        height: 48px;
+        margin-top: 30%;
+        margin-left: 72%;
+    }
+
+    #social_bar {
+        justify-content: center;
+    }
+
+    .form-popup {
+        right: 15px;
+    }
+}
+
