@@ -21,20 +21,40 @@ a:visited {
     display: flex;
 }
 
-#badge_geek {
-    z-index: 999;
-    display: block;
-    background: url('assets/badge_geek.png');
-    background-repeat: no-repeat;
-    background-size: contain;
+#badge_container > div {
+    display: inline-flex;
+    position: relative;
+    background-color: #8CD49C;
+    border-radius: 30px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    font-weight: 600;
+    text-align: center;
+    color: #1B3330;
+    white-space: nowrap;
+    vertical-align: middle;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+    transition-timing-function: ease;
 }
 
 #badge_coder {
-    z-index: 500;
-    display: block;
-    background: url('assets/badge_coder.png');
-    background-repeat: no-repeat;
-    background-size: contain;
+    margin-top: 30%;
+    margin-left: 80%;
+}
+
+#badge_geek {
+    margin-top: 25%;
+    margin-left: -8%;
+}
+
+#badge_innovator {
+    margin-top: 25%;
+    margin-left: 80%;
+}
+
+#badge_container > div:hover {
+    background-color: #56ca6f;
 }
 
 #social_bar img {
@@ -179,19 +199,11 @@ header {
         min-width: 50%;
         min-height: 600px;
     }
-    
-    #badge_geek {
-        width: 206px;
-        height: 96px;
-        margin-top: 50%;
-        margin-left: -8%;
-    }
-    
-    #badge_coder {
-        width: 206px;
-        height: 96px;
-        margin-top: 30%;
-        margin-left: 80%;
+
+    #badge_container > div {
+        font-size: 25px;
+        height: 50px;
+        padding: 0 25px;
     }
 
     #social_bar {
@@ -254,18 +266,10 @@ header {
         min-width: 390px;
     }
 
-    #badge_geek {
-        width: 103px;
-        height: 48px;
-        margin-top: 50%;
-        margin-left: 0;
-    }
-    
-    #badge_coder {
-        width: 103px;
-        height: 48px;
-        margin-top: 30%;
-        margin-left: 72%;
+    #badge_container > div {
+        padding: 0 10px;
+        font-size: 15px;
+        height: 30px;
     }
 
     #social_bar {
