@@ -44,21 +44,18 @@ a:visited {
 }
 
 #badge_geek {
-    margin-top: 25%;
+    margin-top: 50%;
     margin-left: -8%;
-}
-
-#badge_innovator {
-    margin-top: 25%;
-    margin-left: 80%;
 }
 
 #badge_container > div:hover {
     background-color: #56ca6f;
+    cursor: default;
 }
 
 #social_bar img {
     max-height: 30px;
+    transition: 0.2s filter linear;
 }
 
 #social_bar img:hover {
