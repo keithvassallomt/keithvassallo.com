@@ -25,6 +25,14 @@ const url = 'https://kgw4ur1d08.execute-api.us-east-1.amazonaws.com/dev/email/se
 const toast = document.getElementById('contact-result')
 const submit = document.getElementById('btn-send')
 
+// Store the Turnstile token
+let turnstileToken = null
+
+// Callback when Turnstile is successfully completed
+function onTurnstileSuccess(token) {
+  turnstileToken = token
+}
+
 function post(url, body, callback) {
   var req = new XMLHttpRequest();
   req.open("POST", url, true);
@@ -58,6 +66,16 @@ function error (err) {
 }
 form.addEventListener('submit', function (e) {
   e.preventDefault()
+
+  // Check if Turnstile token is available
+  if (!turnstileToken) {
+    toast.innerHTML = '⚠️ Please complete the security check'
+    toast.style.color = 'white'
+    toast.style.backgroundColor = 'orange'
+    showContactStatus()
+    return
+  }
+
   showContactStatus()
   toast.innerHTML = '⏲️ Sending...'
   toast.style.color = 'black'
@@ -65,7 +83,8 @@ form.addEventListener('submit', function (e) {
   const payload = {
     name: form.name.value,
     email: form.email.value,
-    content: form.message.value
+    content: form.message.value,
+    turnstileToken: turnstileToken
   }
   post(url, payload, function (err, res) {
     if (err) { return error(err) }

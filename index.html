@@ -10,6 +10,8 @@
         <link rel="manifest" href="site.webmanifest">
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+        <!-- Cloudflare Turnstile -->
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     </head>
     <body>
         <div id="container">
@@ -63,6 +65,9 @@
 
                 <label for="message"><b>Message</b></label>
                 <textarea name="message" id="message" placeholder="Your Message" rows="5" required></textarea>
+
+                <!-- Cloudflare Turnstile Widget -->
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAAB51R8yKqVeecTDp" data-callback="onTurnstileSuccess"></div>
 
                 <div id="contact-result">
                     ✅ Your message has been sent.
