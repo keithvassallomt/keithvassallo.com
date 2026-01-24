@@ -1,0 +1,476 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Home">
+  <main class="split-page">
+    <!-- Left Panel - Dark -->
+    <div class="panel panel-left">
+      <div class="panel-content">
+        <header class="header">
+          <span class="logo">KV</span>
+        </header>
+
+        <div class="intro">
+          <p class="hello">Hello, world! I'm</p>
+          <h1 class="name">Keith<br/><span class="surname">Vassallo</span></h1>
+          <div class="typing-container">
+            <span class="typing-text" id="typing-text"></span>
+            <span class="cursor">|</span>
+          </div>
+        </div>
+
+        <p class="description">
+          I build things, break things, and teach others to do the same.
+          Passionate about code, education, and the occasional gag.
+        </p>
+
+        <div class="tags">
+          <span class="tag">Educator</span>
+          <span class="tag">Developer</span>
+          <span class="tag">Geek</span>
+        </div>
+
+        <nav class="nav-buttons">
+          <a href="/cv" class="nav-btn">
+            <span class="nav-icon">01</span>
+            <span class="nav-text">cv()</span>
+            <span class="nav-arrow">&rarr;</span>
+          </a>
+          <a href="/projects" class="nav-btn">
+            <span class="nav-icon">02</span>
+            <span class="nav-text">projects()</span>
+            <span class="nav-arrow">&rarr;</span>
+          </a>
+          <button type="button" class="nav-btn" id="contact-btn">
+            <span class="nav-icon">03</span>
+            <span class="nav-text">contact()</span>
+            <span class="nav-arrow">&rarr;</span>
+          </button>
+        </nav>
+
+        <div class="social-links">
+          <a href="https://github.com/keithvassallomt" target="_blank" title="GitHub">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          </a>
+          <a href="https://mt.linkedin.com/in/keithvassallo" target="_blank" title="LinkedIn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+          </a>
+          <a href="https://www.threads.net/@keithvassallo86" target="_blank" title="Threads">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.96-.065-1.182.408-2.256 1.332-3.023.88-.73 2.082-1.146 3.381-1.177.963-.02 1.99.112 2.929.395l.1-.037c-.015-.96-.135-1.751-.371-2.362-.283-.735-.713-1.227-1.322-1.514-.68-.32-1.607-.48-2.76-.48h-.043c-1.453.013-2.617.395-3.46 1.135l-1.31-1.613c1.208-.98 2.79-1.493 4.71-1.524h.053c1.442 0 2.647.225 3.582.669.99.47 1.72 1.177 2.168 2.101.404.835.627 1.856.686 3.125 1.073.448 1.965 1.106 2.598 1.928.855 1.11 1.253 2.473 1.153 3.945-.111 1.644-.768 3.074-1.902 4.134C18.267 23.29 15.741 23.97 12.186 24z"/></svg>
+          </a>
+          <a href="https://www.instagram.com/vassallo.keith/" target="_blank" title="Instagram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel - Accent -->
+    <div class="panel panel-right">
+      <div class="image-container">
+        <img src="/assets/images/keith_pic.png" alt="Keith Vassallo" class="profile-image" />
+        <div class="floating-badge badge-top">
+          <span class="badge-icon">{ }</span>
+          <span>Coder</span>
+        </div>
+        <div class="floating-badge badge-bottom">
+          <span class="badge-icon">&lt;/&gt;</span>
+          <span>Geek</span>
+        </div>
+      </div>
+      <div class="accent-text">
+        <span class="big-number">20+</span>
+        <span class="label">Years of<br/>Experience</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- Contact Modal -->
+  <dialog id="contact-modal" class="modal">
+    <div class="modal-content">
+      <button type="button" class="modal-close" id="modal-close">&times;</button>
+      <h2>Get in Touch</h2>
+      <form id="contact-form" class="contact-form">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" required placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="your@email.com" />
+        </div>
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" required rows="4" placeholder="What's on your mind?"></textarea>
+        </div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAAB51R8yKqVeecTDp" data-callback="onTurnstileSuccess"></div>
+        <div id="form-status" class="form-status"></div>
+        <button type="submit" class="btn btn-primary btn-full">Send Message</button>
+      </form>
+    </div>
+  </dialog>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script>
+    // Typing animation
+    const phrases = ["Head of Technology @ ICE Campus", "Educator", "Developer", "Geek", "Teacher", "Builder"];
+    let phraseIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    const typingText = document.getElementById('typing-text');
+
+    function type() {
+      const currentPhrase = phrases[phraseIndex];
+      if (isDeleting) {
+        charIndex--;
+        if (typingText) typingText.textContent = currentPhrase.substring(0, charIndex);
+        if (charIndex === 0) {
+          isDeleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          setTimeout(type, 500);
+        } else {
+          setTimeout(type, 50);
+        }
+      } else {
+        charIndex++;
+        if (typingText) typingText.textContent = currentPhrase.substring(0, charIndex);
+        if (charIndex === currentPhrase.length) {
+          isDeleting = true;
+          setTimeout(type, 2000);
+        } else {
+          setTimeout(type, 100);
+        }
+      }
+    }
+    type();
+
+    // Modal
+    const contactBtn = document.getElementById('contact-btn');
+    const modal = document.getElementById('contact-modal') as HTMLDialogElement;
+    const modalClose = document.getElementById('modal-close');
+    contactBtn?.addEventListener('click', () => modal?.showModal());
+    modalClose?.addEventListener('click', () => modal?.close());
+    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+    let turnstileToken: string | null = null;
+    (window as any).onTurnstileSuccess = (token: string) => { turnstileToken = token; };
+    const form = document.getElementById('contact-form') as HTMLFormElement;
+    const formStatus = document.getElementById('form-status');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!turnstileToken) { if (formStatus) { formStatus.textContent = 'Please verify.'; formStatus.className = 'form-status error'; } return; }
+      const formData = new FormData(form);
+      try {
+        const response = await fetch('https://kgw4ur1d08.execute-api.us-east-1.amazonaws.com/dev/email/send', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: formData.get('name'), email: formData.get('email'), message: formData.get('message'), 'cf-turnstile-response': turnstileToken }),
+        });
+        if (response.ok) { if (formStatus) { formStatus.textContent = 'Message sent!'; formStatus.className = 'form-status success'; } form.reset(); turnstileToken = null; }
+        else { throw new Error('Failed'); }
+      } catch { if (formStatus) { formStatus.textContent = 'Failed. Try again.'; formStatus.className = 'form-status error'; } }
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .split-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100vh;
+  }
+
+  .panel {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Left Panel */
+  .panel-left {
+    background: var(--bg-primary);
+    padding: var(--space-2xl);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .panel-content {
+    max-width: 500px;
+    margin-left: auto;
+  }
+
+  .header {
+    position: absolute;
+    top: var(--space-xl);
+    left: var(--space-xl);
+  }
+
+  .logo {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-green);
+    letter-spacing: -0.05em;
+  }
+
+  .intro {
+    margin-bottom: var(--space-lg);
+  }
+
+  .hello {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--accent-green);
+    margin-bottom: var(--space-sm);
+  }
+
+  .name {
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: var(--space-md);
+  }
+
+  .surname {
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .typing-container {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    min-height: 1.5rem;
+  }
+
+  .cursor {
+    color: var(--accent-green);
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  .description {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-lg);
+  }
+
+  .tags {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: var(--space-xs) var(--space-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 100px;
+    color: var(--text-secondary);
+  }
+
+  .nav-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+  }
+
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    background: transparent;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .nav-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent-green);
+    transform: translateX(4px);
+  }
+
+  .nav-icon {
+    color: var(--accent-green);
+    font-size: 0.75rem;
+  }
+
+  .nav-text {
+    flex: 1;
+    text-align: left;
+  }
+
+  .nav-arrow {
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+  }
+
+  .nav-btn:hover .nav-arrow {
+    transform: translateX(4px);
+    color: var(--accent-green);
+  }
+
+  .social-links {
+    display: flex;
+    gap: var(--space-lg);
+  }
+
+  .social-links a {
+    color: var(--text-muted);
+    transition: color var(--transition-fast);
+  }
+
+  .social-links a:hover {
+    color: var(--accent-cyan);
+  }
+
+  /* Right Panel */
+  .panel-right {
+    background: linear-gradient(135deg, #1a3a35 0%, #0d1f1c 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2xl);
+    position: relative;
+  }
+
+  .image-container {
+    position: relative;
+    max-width: 350px;
+  }
+
+  .profile-image {
+    width: 100%;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .floating-badge {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: white;
+    box-shadow: var(--shadow-md);
+  }
+
+  .badge-icon {
+    color: var(--accent-green);
+  }
+
+  .badge-top {
+    top: 10%;
+    right: -20px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .badge-bottom {
+    bottom: 15%;
+    left: -20px;
+    animation: float 3s ease-in-out infinite 1.5s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .accent-text {
+    position: absolute;
+    bottom: var(--space-2xl);
+    right: var(--space-2xl);
+    text-align: right;
+  }
+
+  .big-number {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--accent-green);
+    line-height: 1;
+  }
+
+  .label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Modal */
+  .modal { background: transparent; border: none; padding: 0; max-width: 90vw; width: 450px; }
+  .modal::backdrop { background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
+  .modal-content { background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: var(--space-xl); position: relative; }
+  .modal-close { position: absolute; top: var(--space-md); right: var(--space-md); background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; }
+  .modal h2 { margin-bottom: var(--space-lg); }
+  .contact-form { display: flex; flex-direction: column; gap: var(--space-md); }
+  .form-group { display: flex; flex-direction: column; gap: var(--space-xs); }
+  .form-group label { font-family: var(--font-mono); font-size: 0.875rem; color: var(--text-secondary); }
+  .form-group input, .form-group textarea { background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--text-primary); font-family: inherit; font-size: 1rem; }
+  .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--accent-cyan); }
+  .btn-full { width: 100%; justify-content: center; }
+  .form-status { font-family: var(--font-mono); font-size: 0.875rem; padding: var(--space-sm); text-align: center; }
+  .form-status.success { color: var(--accent-green); }
+  .form-status.error { color: var(--accent-red); }
+  .form-status:empty { display: none; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .split-page {
+      grid-template-columns: 1fr;
+    }
+    .panel-left {
+      order: 2;
+      padding: var(--space-xl);
+    }
+    .panel-content {
+      margin: 0 auto;
+      text-align: center;
+    }
+    .panel-right {
+      order: 1;
+      min-height: 50vh;
+    }
+    .header {
+      position: relative;
+      top: 0;
+      left: 0;
+      margin-bottom: var(--space-lg);
+    }
+    .name { font-size: 3rem; }
+    .typing-container { text-align: center; }
+    .tags { justify-content: center; }
+    .nav-buttons { max-width: 400px; margin: 0 auto var(--space-xl); }
+    .social-links { justify-content: center; }
+    .image-container { max-width: 250px; }
+    .accent-text { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .name { font-size: 2.5rem; }
+  }
+</style>
