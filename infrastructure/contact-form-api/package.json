@@ -1,0 +1,17 @@
+{
+  "name": "contact-form-api",
+  "version": "1.0.0",
+  "description": "Contact form API for keithvassallo.com",
+  "main": "handler.js",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove": "serverless remove"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.0.0"
+  },
+  "devDependencies": {
+    "serverless": "^4.0.0"
+  }
+}

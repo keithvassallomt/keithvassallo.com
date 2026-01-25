@@ -54,10 +54,10 @@ import BottomNav from '../components/BottomNav.astro';
         return;
       }
       const formData = new FormData(form);
-      const data = { name: formData.get('name'), email: formData.get('email'), message: formData.get('message'), token: turnstileToken };
+      const data = { name: formData.get('name'), email: formData.get('email'), content: formData.get('message'), turnstileToken };
       try {
         if (status) { status.textContent = 'Sending...'; status.className = 'form-status'; }
-        const res = await fetch('https://fq5opu4pe7.execute-api.eu-south-1.amazonaws.com/prod/submit', {
+        const res = await fetch('https://kgw4ur1d08.execute-api.us-east-1.amazonaws.com/dev/email/send', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
         });
         if (res.ok) {

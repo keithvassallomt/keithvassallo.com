@@ -1,0 +1,34 @@
+service: contact-form-api
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    EMAIL: ${env:EMAIL, 'keith@vassallo.cloud'}
+    DOMAIN: ${env:DOMAIN, 'https://keithvassallo.com'}
+    TURNSTILE_SECRET_KEY: ${env:TURNSTILE_SECRET_KEY}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: '*'
+
+functions:
+  send:
+    handler: handler.send
+    events:
+      - http:
+          path: email/send
+          method: post
+          cors:
+            origin: https://keithvassallo.com
+            headers:
+              - Content-Type
+              - X-Requested-With
+            allowCredentials: true
