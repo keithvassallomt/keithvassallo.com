@@ -20,7 +20,7 @@ const projects = projectsData.projects;
     <main class="content-area" transition:name="content" transition:animate="slide">
       <div class="page-header">
         <h1>Projects</h1>
-        <p class="page-subtitle">Things I've built and contributed to</p>
+        <p class="page-subtitle">Things I've designed & built</p>
       </div>
 
       <div class="floating-container" id="floating-container">
@@ -35,6 +35,7 @@ const projects = projectsData.projects;
               shortDescription={project.shortDescription}
               description={project.description}
               logo={project.logo}
+              bgImage={project.bgImage}
               media={project.media}
               technologies={project.technologies}
               link={project.link}
@@ -76,37 +77,62 @@ const projects = projectsData.projects;
       initCarousel(card);
     });
 
-    // Global 3D tilt effect - all cards face the cursor
+    // Card hover effect - hovered card pops up, others look at it
     const maxTilt = 15; // Maximum tilt in degrees
 
-    function updateCardTilts(mouseX: number, mouseY: number) {
+    function makeCardsLookAt(targetCard: Element) {
+      const targetRect = (targetCard as HTMLElement).getBoundingClientRect();
+      const targetCenterX = targetRect.left + targetRect.width / 2;
+      const targetCenterY = targetRect.top + targetRect.height / 2;
+
       cards.forEach(card => {
         if (card.classList.contains('expanded')) return;
-
         const cardEl = card as HTMLElement;
-        const rect = cardEl.getBoundingClientRect();
-        const cardCenterX = rect.left + rect.width / 2;
-        const cardCenterY = rect.top + rect.height / 2;
 
-        // Calculate direction from card center to mouse
-        const deltaX = mouseX - cardCenterX;
-        const deltaY = mouseY - cardCenterY;
+        if (card === targetCard) {
+          // Hovered card pops up
+          cardEl.style.transform = 'perspective(1000px) translateY(-20px) scale(1.08)';
+        } else {
+          // Other cards look at the hovered card
+          const rect = cardEl.getBoundingClientRect();
+          const cardCenterX = rect.left + rect.width / 2;
+          const cardCenterY = rect.top + rect.height / 2;
 
-        // Normalize based on viewport size for consistent effect
-        const normalizedX = deltaX / window.innerWidth;
-        const normalizedY = deltaY / window.innerHeight;
+          const deltaX = targetCenterX - cardCenterX;
+          const deltaY = targetCenterY - cardCenterY;
 
-        // Calculate tilt (card tilts toward cursor)
-        const rotateY = normalizedX * maxTilt * 2;
-        const rotateX = -normalizedY * maxTilt * 2;
+          // Normalize based on distance for consistent effect
+          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          const maxDistance = Math.max(window.innerWidth, window.innerHeight);
+          const normalizedX = deltaX / maxDistance;
+          const normalizedY = deltaY / maxDistance;
 
-        cardEl.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+          const rotateY = normalizedX * maxTilt * 3;
+          const rotateX = -normalizedY * maxTilt * 3;
+
+          cardEl.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        }
       });
     }
 
-    // Track mouse movement anywhere on the page
-    document.addEventListener('mousemove', (e) => {
-      updateCardTilts(e.clientX, e.clientY);
+    function resetAllCards() {
+      cards.forEach(card => {
+        if (card.classList.contains('expanded')) return;
+        (card as HTMLElement).style.transform = '';
+      });
+    }
+
+    // Add hover listeners to each card
+    cards.forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        if (card.classList.contains('expanded')) return;
+        makeCardsLookAt(card);
+      });
+
+      card.addEventListener('mouseleave', () => {
+        if (card.classList.contains('expanded')) return;
+        resetAllCards();
+      });
     });
 
     function expandCard(card: Element) {
@@ -185,6 +211,11 @@ const projects = projectsData.projects;
         dots.forEach((dot, i) => {
           dot.classList.toggle('active', i === currentIndex);
         });
+
+        // Auto-play video on active slide
+        const activeSlide = slides[currentIndex];
+        const activeVideo = activeSlide?.querySelector('video');
+        if (activeVideo) activeVideo.play();
       }
 
       prevBtn?.addEventListener('click', (e) => {

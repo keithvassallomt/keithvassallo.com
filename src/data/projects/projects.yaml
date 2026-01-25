@@ -5,6 +5,7 @@ projects:
     shortDescription: Sync Apple Notes, Reminders, Photos & Passwords elsewhere
     description: A small window into Apple's walled garden. Keep your Apple Notes, Reminders, Passwords and Photos in sync with other services like Nextcloud and Bitwarden.
     logo: /assets/projects/icloudbridge/iCloudBridge_1024_dark.png
+    bgImage: /assets/projects/icloudbridge/bg_image.png
     media:
       - type: video
         src: /assets/projects/icloudbridge/notes-C2EcuAKE.mp4
@@ -29,100 +30,141 @@ projects:
       - AppleScript
     link: https://icloudbridge.app
     repo: https://github.com/keithvassallomt/icloudbridge
-    featured: true
-
-  - id: placeholder-1
-    title: Project Alpha
-    shortDescription: Full-stack web application for data management
-    description: A placeholder project to demonstrate the masonry layout. Replace with actual project data.
-    logo: null
-    media: []
-    technologies:
-      - React
-      - Node.js
-      - PostgreSQL
-    link: null
-    repo: null
     featured: false
 
-  - id: placeholder-2
-    title: Project Beta
-    shortDescription: Container orchestration and deployment platform
-    description: Another placeholder showcasing varied tile sizes in the mosaic grid. This one has a longer description to test text overflow handling.
-    logo: null
-    media: []
+  - id: spelling_mt
+    title: spelling.mt
+    shortDescription: Online Maltese spell checker
+    description: An online home and spell checker for the late Ramon Casha's open-source Maltese spell checker.
+    logo: /assets/projects/spelling_mt/spelling_logo.png
+    bgImage: /assets/projects/spelling_mt/bg_image.png
+    media:
+      - type: image
+        src: /assets/projects/spelling_mt/homepage_english.png
+        label: English-language homepage
+      - type: image
+        src: /assets/projects/spelling_mt/homepage_maltese.png
+        label: Maltese-language homepage
+      - type: image
+        src: /assets/projects/spelling_mt/docs_suggest.png
+        label: Online spell-checker
     technologies:
-      - Go
-      - Docker
-      - Kubernetes
-    link: null
-    repo: null
-    featured: true
-
-  - id: placeholder-3
-    title: Project Gamma
-    shortDescription: High-performance computing in the browser
-    description: Short description placeholder.
-    logo: null
-    media: []
-    technologies:
-      - Rust
-      - WebAssembly
-    link: null
-    repo: null
+      - JavaScript
+      - HTML
+      - CSS
+    link: https://spelling.mt
+    repo: https://github.com/keithvassallomt/spelling.mt
     featured: false
 
-  - id: placeholder-4
-    title: Project Delta
-    shortDescription: Multi-cloud infrastructure automation
-    description: A cloud infrastructure automation tool that simplifies deployment workflows across multiple providers.
-    logo: null
-    media: []
+  - id: statustray
+    title: Status Tray
+    shortDescription: Better tray icons for GNOME with customisation options
+    description: Automatic system tray for applications using the StatusNotifierItem/DBusMenu protocol. Displays tray icons for apps like Discord, Slack, Dropbox, Nextcloud, Steam, and more. Supports symbolic (monochrome) and original icon modes, per-app icon customization, drag-and-drop reordering, and individual icon effect tuning.
+    logo: /assets/projects/statustray/statustray_logo.png
+    bgImage: /assets/projects/statustray/bg_image.png
+    media: 
+      - type: image
+        src: /assets/projects/statustray/screenshot-prefs.png
+        label: Preferences window
+      - type: image
+        src: /assets/projects/statustray/screenshot-icon-picker.png
+        label: Choose custom icons
+      - type: image
+        src: /assets/projects/statustray/screenshot-icon-modes.png
+        label: Support for icon re-colouring
+      - type: image
+        src: /assets/projects/statustray/screenshot-effects.png
+        label: Per-icon effect adjustments
+      - type: image
+        src: /assets/projects/statustray/screenshot-menu.png
+        label: Icon menu in action
     technologies:
-      - Terraform
-      - AWS
-      - Python
-    link: null
-    repo: null
-    featured: false
-
-  - id: placeholder-5
-    title: Project Epsilon
-    shortDescription: Real-time ML pipeline for anomaly detection
-    description: Machine learning pipeline for real-time data processing and anomaly detection.
-    logo: null
-    media: []
-    technologies:
-      - Python
-      - TensorFlow
-      - Apache Kafka
-    link: null
-    repo: null
-    featured: true
-
-  - id: placeholder-6
-    title: Project Zeta
-    shortDescription: Offline-first progressive web app
-    description: Mobile-first progressive web application with offline capabilities.
-    logo: null
-    media: []
-    technologies:
-      - Vue.js
-      - Service Workers
-      - IndexedDB
-    link: null
-    repo: null
-    featured: false
-
-  - id: placeholder-7
-    title: Project Eta
-    shortDescription: Developer environment management CLI
-    description: CLI tool for managing development environments.
-    logo: null
-    media: []
-    technologies:
-      - Go
+      - JavaScript
       - Shell
+      - CSS
+    link: https://statustray.com
+    repo: https://github.com/keithvassallomt/status-tray
+    featured: false
+
+  - id: webfruitos
+    title: WebFruitOS
+    shortDescription: Website template mimicking a certain fruit-themed operating system
+    description: This is a template for a responsive web application with an interface reminiscent of a famously fruit-based operating system. Featuring responsive design and light/dark modes.
+    logo: /assets/projects/wfos/wfos_logo.png
+    bgImage: /assets/projects/wfos/bg_image.png
+    media: 
+      - type: video
+        src: /assets/projects/wfos/webfruitos.mp4
+        label: WebFruitOS Demo
+      - type: image
+        src: /assets/projects/wfos/wfos_multiwindow.png
+        label: Multi-window support
+      - type: image
+        src: /assets/projects/wfos/wfos_windowman.png
+        label: Window management
+      - type: image
+        src: /assets/projects/wfos/wfos_responsive.png
+        label: Responsive design
+    technologies:
+      - JavaScript
+      - HTML
+      - CSS
     link: null
-    repo: null
+    repo: https://github.com/keithvassallomt/WebFruitOS/tree/main
+    featured: false
+
+  - id: wordleech
+    title: WordLeech
+    shortDescription: Tool to add words from documents to the Maltese spell checker
+    description: A desktop application that allows users to extract words from various document formats and add them to the Maltese spell checker dictionary.
+    logo: /assets/projects/wordleech/wordleech_logo.png
+    bgImage: /assets/projects/wordleech/bg_image.png
+    media: 
+      - type: video
+        src: /assets/projects/wordleech/wordleech.mp4
+        label: WordLeech Demo
+      - type: image
+        src: /assets/projects/wordleech/wordleech3_en.png
+        label: Main interface (English)
+      - type: image
+        src: /assets/projects/wordleech/wordleech3_mt.png
+        label: Main interface (Maltese)
+      - type: image
+        src: /assets/projects/wordleech/wordleech6_en.png
+        label: Ingesting document words
+      - type: image
+        src: /assets/projects/wordleech/wordleech7_en.png
+        label: Adding words to dictionary
+    technologies:
+      - Python
+      - PyQt
+      - TeX
+    link: https://spelling.mt/contrib.html#addwords
+    repo: https://github.com/keithvassallomt/wordleech
+    featured: false
+
+  - id: mtdict
+    title: Maltese Spelling Dictionary
+    shortDescription: Open-source Spell checking dictionary for the Maltese language
+    description: An open-source spell checking dictionary for the Maltese language, usable online, in operating systems (Linux, Windows, macOS), and office suites (LibreOffice, Microsoft 365).
+    logo: /assets/projects/mtdict/dict_logo.png
+    bgImage: /assets/projects/mtdict/bg_image.png
+    media: 
+      - type: image
+        src: /assets/projects/mtdict/online.png
+        label: Online spell-checker
+      - type: image
+        src: /assets/projects/mtdict/libreglory.png
+        label: LibreOffice extension
+      - type: image
+        src: /assets/projects/mtdict/word6.png
+        label: Microsoft 365 integration
+      - type: image
+        src: /assets/projects/mtdict/te2.png
+        label: macOS integration
+    technologies:
+      - Common Workflow Language
+      - C#
+    link: https://spelling.mt/docs.html
+    repo: https://github.com/keithvassallomt/maltese_spelling_dict
     featured: false
