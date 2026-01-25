@@ -1,0 +1,449 @@
+---
+interface Skill {
+  name: string;
+  startYear: number;
+  endYear: number | 'present';
+  color: string;
+}
+
+interface Props {
+  title: string;
+  skills: Skill[];
+}
+
+const { title, skills } = Astro.props;
+
+const TIMELINE_START = 2000;
+const TIMELINE_END = 2030;
+const TOTAL_YEARS = TIMELINE_END - TIMELINE_START;
+const CURRENT_YEAR = new Date().getFullYear();
+
+// Generate year markers (every 5 years)
+const yearMarkers = [];
+for (let year = TIMELINE_START; year <= TIMELINE_END; year += 5) {
+  yearMarkers.push(year);
+}
+
+function getSkillStyle(skill: Skill) {
+  const start = skill.startYear;
+  const end = skill.endYear === 'present' ? CURRENT_YEAR : skill.endYear;
+  const leftPercent = ((start - TIMELINE_START) / TOTAL_YEARS) * 100;
+  const widthPercent = ((end - start) / TOTAL_YEARS) * 100;
+  return {
+    left: `${leftPercent}%`,
+    width: `${widthPercent}%`,
+    midpoint: leftPercent + (widthPercent / 2),
+  };
+}
+
+function getDateLabel(skill: Skill) {
+  const endLabel = skill.endYear === 'present' ? 'Present' : skill.endYear;
+  return `${skill.startYear} - ${endLabel}`;
+}
+
+// Calculate styles for all skills
+const skillsWithStyles = skills.map((skill, originalIndex) => ({
+  ...skill,
+  style: getSkillStyle(skill),
+  originalIndex,
+}));
+
+// Sort by midpoint for row assignment
+const sortedByMidpoint = [...skillsWithStyles].sort((a, b) => a.style.midpoint - b.style.midpoint);
+
+// Simple cycling assignment: 0, 1, 2, 0, 1, 2...
+const rowAssignments: Record<number, number> = {};
+sortedByMidpoint.forEach((skill, sortedIndex) => {
+  rowAssignments[skill.originalIndex] = sortedIndex % 3;
+});
+
+// Apply row assignments back to original order
+const skillsWithLayout = skillsWithStyles.map((skill) => ({
+  ...skill,
+  labelRow: rowAssignments[skill.originalIndex],
+}));
+---
+
+<div class="tl-alt">
+  <h3 class="tl-alt-title">{title}</h3>
+
+  <div class="tl-alt-wrapper">
+    <!-- Tooltip -->
+    <div class="tl-alt-tooltip" aria-hidden="true">
+      <span class="tl-alt-tooltip-name"></span>
+      <span class="tl-alt-tooltip-dates"></span>
+    </div>
+
+    <!-- Labels above -->
+    <div class="tl-alt-labels">
+      {skillsWithLayout.map((skill) => {
+        const bottomValues = [0, 22, 44];
+        const bottom = bottomValues[skill.labelRow] || 0;
+        // Stem extends from label down to bar's vertical center
+        // Bars area: 4px padding, each row 17px (14px height + 3px margin), bar center at 7px into row
+        const stemHeight = bottom + 11 + (skill.originalIndex * 17);
+        return (
+          <div
+            class="tl-alt-label"
+            style={`left: ${skill.style.midpoint}%; bottom: ${bottom}px;`}
+            data-skill-index={skill.originalIndex}
+            data-skill-name={skill.name}
+            data-skill-dates={getDateLabel(skill)}
+          >
+            <span class="tl-alt-label-name">{skill.name}</span>
+            <span class="tl-alt-label-stem" style={`height: ${stemHeight}px; border-left: 1px dashed ${skill.color};`}></span>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- Bars area -->
+    <div class="tl-alt-bars">
+      {yearMarkers.map((year) => (
+        <div class="tl-alt-gridline" style={`left: ${((year - TIMELINE_START) / TOTAL_YEARS) * 100}%;`}></div>
+      ))}
+      {skillsWithLayout.map((skill) => (
+        <div class="tl-alt-row">
+          <div
+            class="tl-alt-bar"
+            style={`left: ${skill.style.left}; width: ${skill.style.width}; background: ${skill.color};`}
+            data-skill-index={skill.originalIndex}
+            data-skill-name={skill.name}
+            data-skill-dates={getDateLabel(skill)}
+          ></div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Year axis -->
+    <div class="tl-alt-axis">
+      {yearMarkers.map((year) => (
+        <span class="tl-alt-year" style={`left: ${((year - TIMELINE_START) / TOTAL_YEARS) * 100}%;`}>{year}</span>
+      ))}
+    </div>
+  </div>
+</div>
+
+<style>
+  .tl-alt {
+    margin: var(--space-xl) 0;
+  }
+
+  .tl-alt-title {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-md);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tl-alt-wrapper {
+    position: relative;
+  }
+
+  /* Tooltip */
+  .tl-alt-tooltip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -100%) translateY(-8px);
+    transition: opacity 0.15s ease;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .tl-alt-tooltip.visible {
+    opacity: 1;
+  }
+
+  .tl-alt-tooltip-name {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .tl-alt-tooltip-dates {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  /* Labels */
+  .tl-alt-labels {
+    position: relative;
+    height: 70px;
+    z-index: 10;
+  }
+
+  .tl-alt-label {
+    position: absolute;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+
+  .tl-alt-label-name {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+    transition: color 0.15s ease;
+  }
+
+  .tl-alt-label.highlight .tl-alt-label-name {
+    color: var(--accent-green);
+  }
+
+  .tl-alt-label-stem {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 0;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+  }
+
+  .tl-alt-label.highlight .tl-alt-label-stem {
+    opacity: 1;
+  }
+
+  /* Dim non-highlighted labels when any is highlighted */
+  .tl-alt-labels.has-highlight .tl-alt-label:not(.highlight) {
+    opacity: 0.3;
+  }
+
+  /* Bars area */
+  .tl-alt-bars {
+    position: relative;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    padding: 4px 0;
+  }
+
+  .tl-alt-gridline {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-default);
+    opacity: 0.3;
+  }
+
+  .tl-alt-row {
+    position: relative;
+    height: 14px;
+    margin-bottom: 3px;
+  }
+
+  .tl-alt-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .tl-alt-bar {
+    position: absolute;
+    top: 1px;
+    height: 12px;
+    border-radius: 3px;
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, filter 0.15s ease;
+    cursor: pointer;
+  }
+
+  .tl-alt-bar.animate {
+    opacity: 0.9;
+    transform: scaleX(1);
+  }
+
+  .tl-alt-bar.highlight {
+    opacity: 1;
+    filter: brightness(1.3);
+  }
+
+  /* Dim non-highlighted bars when any is highlighted */
+  .tl-alt-bars.has-highlight .tl-alt-bar:not(.highlight) {
+    opacity: 0.3;
+  }
+
+  /* Year axis */
+  .tl-alt-axis {
+    position: relative;
+    height: 24px;
+    border-top: 1px solid var(--border-default);
+  }
+
+  .tl-alt-year {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 600px) {
+    .tl-alt-labels { height: 55px; }
+    .tl-alt-label-name { font-size: 0.6rem; }
+    .tl-alt-year:nth-child(odd) { display: none; }
+  }
+</style>
+
+<script is:inline>
+  (function() {
+    function initAltTimelines() {
+      const containers = document.querySelectorAll('.tl-alt');
+      if (!containers.length) return;
+
+      // Intersection observer for bar animations
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const bars = entry.target.querySelectorAll('.tl-alt-bar');
+            bars.forEach((bar, i) => {
+              setTimeout(() => bar.classList.add('animate'), i * 80);
+            });
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      containers.forEach(container => {
+        container.querySelectorAll('.tl-alt-bar').forEach(b => b.classList.remove('animate'));
+        observer.observe(container);
+
+        // Hover interaction setup
+        const wrapper = container.querySelector('.tl-alt-wrapper');
+        const tooltip = container.querySelector('.tl-alt-tooltip');
+        const tooltipName = tooltip.querySelector('.tl-alt-tooltip-name');
+        const tooltipDates = tooltip.querySelector('.tl-alt-tooltip-dates');
+        const labelsContainer = container.querySelector('.tl-alt-labels');
+        const barsContainer = container.querySelector('.tl-alt-bars');
+        const labels = container.querySelectorAll('.tl-alt-label');
+        const bars = container.querySelectorAll('.tl-alt-bar');
+
+        function highlightSkill(index, name, dates, x, y) {
+          // Add highlight class to matching elements
+          labels.forEach(label => {
+            if (label.dataset.skillIndex === index) {
+              label.classList.add('highlight');
+            }
+          });
+          bars.forEach(bar => {
+            if (bar.dataset.skillIndex === index) {
+              bar.classList.add('highlight');
+            }
+          });
+          labelsContainer.classList.add('has-highlight');
+          barsContainer.classList.add('has-highlight');
+
+          // Show tooltip
+          tooltipName.textContent = name;
+          tooltipDates.textContent = dates;
+          tooltip.style.left = x + 'px';
+          tooltip.style.top = y + 'px';
+          tooltip.classList.add('visible');
+        }
+
+        function clearHighlight() {
+          labels.forEach(label => label.classList.remove('highlight'));
+          bars.forEach(bar => bar.classList.remove('highlight'));
+          labelsContainer.classList.remove('has-highlight');
+          barsContainer.classList.remove('has-highlight');
+          tooltip.classList.remove('visible');
+        }
+
+        function handleHover(e) {
+          const target = e.target.closest('[data-skill-index]');
+          if (target) {
+            const index = target.dataset.skillIndex;
+            const name = target.dataset.skillName;
+            const dates = target.dataset.skillDates;
+            const rect = wrapper.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            highlightSkill(index, name, dates, x, y);
+          }
+        }
+
+        function handleMove(e) {
+          if (tooltip.classList.contains('visible')) {
+            const rect = wrapper.getBoundingClientRect();
+            tooltip.style.left = (e.clientX - rect.left) + 'px';
+            tooltip.style.top = (e.clientY - rect.top) + 'px';
+          }
+        }
+
+        // Mouse events
+        wrapper.addEventListener('mouseover', handleHover);
+        wrapper.addEventListener('mousemove', handleMove);
+        wrapper.addEventListener('mouseout', (e) => {
+          if (!e.relatedTarget || !wrapper.contains(e.relatedTarget)) {
+            clearHighlight();
+          } else {
+            const target = e.relatedTarget.closest('[data-skill-index]');
+            if (!target) {
+              clearHighlight();
+            }
+          }
+        });
+
+        // Touch events
+        wrapper.addEventListener('touchstart', (e) => {
+          const target = e.target.closest('[data-skill-index]');
+          if (target) {
+            e.preventDefault();
+            const index = target.dataset.skillIndex;
+            const name = target.dataset.skillName;
+            const dates = target.dataset.skillDates;
+            const touch = e.touches[0];
+            const rect = wrapper.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            // Clear previous and highlight new
+            clearHighlight();
+            highlightSkill(index, name, dates, x, y);
+          } else {
+            // Tapped outside a skill element - clear highlight
+            clearHighlight();
+          }
+        }, { passive: false });
+
+        // Clear on touch outside the wrapper
+        document.addEventListener('touchstart', (e) => {
+          if (!wrapper.contains(e.target)) {
+            clearHighlight();
+          }
+        });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAltTimelines);
+    } else {
+      initAltTimelines();
+    }
+    document.addEventListener('astro:page-load', initAltTimelines);
+  })();
+</script>

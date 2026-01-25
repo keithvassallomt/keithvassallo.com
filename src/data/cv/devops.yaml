@@ -1,0 +1,35 @@
+# DevOps timeline
+# Colors are muted versions of each technology's brand color
+
+title: DevOps
+
+skills:
+  - name: Linux
+    startYear: 2001
+    endYear: "present"
+    color: "#c9a050"  # Muted Linux yellow/gold
+
+  - name: Docker
+    startYear: 2016
+    endYear: "present"
+    color: "#4a8ab8"  # Muted Docker blue
+
+  - name: AWS
+    startYear: 2018
+    endYear: "present"
+    color: "#c98050"  # Muted AWS orange
+
+  - name: Azure
+    startYear: 2019
+    endYear: "present"
+    color: "#4a7ab8"  # Muted Azure blue
+
+  - name: GitHub Actions
+    startYear: 2022
+    endYear: "present"
+    color: "#6a7a8a"  # Muted GitHub gray-blue
+
+  - name: Serverless
+    startYear: 2024
+    endYear: "present"
+    color: "#c95050"  # Muted Serverless red

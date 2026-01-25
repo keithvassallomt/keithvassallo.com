@@ -208,47 +208,6 @@ pre {
   border-color: var(--text-secondary);
 }
 
-/* ---------- Skill Bar Component ---------- */
-.skill-bar {
-  margin-bottom: var(--space-md);
-}
-
-.skill-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-xs);
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-}
-
-.skill-name {
-  color: var(--text-primary);
-}
-
-.skill-level {
-  color: var(--text-muted);
-}
-
-.skill-track {
-  height: 8px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.skill-progress {
-  height: 100%;
-  background: var(--accent-green);
-  border-radius: var(--radius-sm);
-  width: 0;
-  transition: width 1s ease-out;
-}
-
-.skill-bar.animate .skill-progress {
-  width: var(--level, 0%);
-}
-
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
   :root {
@@ -320,5 +279,43 @@ pre {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- View Transitions ---------- */
+::view-transition-old(sidebar),
+::view-transition-new(sidebar) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(logo),
+::view-transition-new(logo) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(content),
+::view-transition-new(content) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar collapse animation */
+@keyframes sidebar-collapse {
+  from {
+    width: 50%;
+  }
+  to {
+    width: 80px;
+  }
+}
+
+@keyframes sidebar-expand {
+  from {
+    width: 80px;
+  }
+  to {
+    width: 50%;
   }
 }

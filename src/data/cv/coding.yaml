@@ -1,0 +1,60 @@
+# Coding languages timeline
+# Colors are muted versions of each language's brand color
+
+title: Coding
+
+skills:
+  - name: BASIC
+    startYear: 2000
+    endYear: 2002
+    color: "#7a9ec2"  # Muted blue
+
+  - name: Pascal
+    startYear: 2001
+    endYear: 2003
+    color: "#c49a6c"  # Muted orange/tan
+
+  - name: Java
+    startYear: 2003
+    endYear: 2018
+    color: "#b07858"  # Muted Java orange
+
+  - name: C
+    startYear: 2004
+    endYear: 2008
+    color: "#6b7fa3"  # Muted blue-gray
+
+  - name: C++
+    startYear: 2004
+    endYear: 2009
+    color: "#5c7a9e"  # Muted blue
+
+  - name: C#
+    startYear: 2004
+    endYear: 2008
+    color: "#7a6b99"  # Muted purple
+
+  - name: JavaScript
+    startYear: 2007
+    endYear: "present"
+    color: "#c9b458"  # Muted yellow
+
+  - name: PHP
+    startYear: 2009
+    endYear: "present"
+    color: "#8b7eba"  # Muted purple
+
+  - name: Python
+    startYear: 2019
+    endYear: "present"
+    color: "#5a8f7a"  # Muted teal/green
+
+  - name: Swift
+    startYear: 2024
+    endYear: "present"
+    color: "#c97850"  # Muted Swift orange
+
+  - name: Rust
+    startYear: 2025
+    endYear: "present"
+    color: "#b07050"  # Muted rust orange

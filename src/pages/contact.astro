@@ -1,0 +1,214 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NavRail from '../components/NavRail.astro';
+import BottomNav from '../components/BottomNav.astro';
+---
+
+<BaseLayout title="Contact">
+  <div class="app-layout">
+    <NavRail currentPage="contact" />
+
+    <main class="content-area" transition:name="content" transition:animate="slide">
+      <div class="contact-container">
+        <div class="contact-header">
+          <h1>Get in Touch</h1>
+          <p class="contact-subtitle">Have a question or want to work together?</p>
+        </div>
+
+        <form id="contact-form" class="contact-form">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" placeholder="Your name" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="your@email.com" required />
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="What's on your mind?" rows="5" required></textarea>
+          </div>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAABDYLbgOz9G1I5Li" data-callback="onTurnstileSuccess"></div>
+          <div id="form-status" class="form-status"></div>
+          <button type="submit" class="btn btn-primary btn-full">Send Message</button>
+        </form>
+      </div>
+    </main>
+
+    <BottomNav currentPage="contact" />
+  </div>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script>
+    // Turnstile handling
+    let turnstileToken: string | null = null;
+    (window as any).onTurnstileSuccess = (token: string) => { turnstileToken = token; };
+
+    // Form submission
+    const form = document.getElementById('contact-form') as HTMLFormElement;
+    const status = document.getElementById('form-status');
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!turnstileToken) {
+        if (status) { status.textContent = 'Please complete the captcha.'; status.className = 'form-status error'; }
+        return;
+      }
+      const formData = new FormData(form);
+      const data = { name: formData.get('name'), email: formData.get('email'), message: formData.get('message'), token: turnstileToken };
+      try {
+        if (status) { status.textContent = 'Sending...'; status.className = 'form-status'; }
+        const res = await fetch('https://fq5opu4pe7.execute-api.eu-south-1.amazonaws.com/prod/submit', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+        });
+        if (res.ok) {
+          if (status) { status.textContent = 'Message sent! I\'ll get back to you soon.'; status.className = 'form-status success'; }
+          form.reset();
+        } else {
+          throw new Error('Failed to send');
+        }
+      } catch {
+        if (status) { status.textContent = 'Failed to send. Please try again.'; status.className = 'form-status error'; }
+      }
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .content-area {
+    flex: 1;
+    margin-left: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a3a35 0%, #0d1f1c 100%);
+    padding: var(--space-2xl);
+  }
+
+  .contact-container {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .contact-header {
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .contact-header h1 {
+    font-family: var(--font-mono);
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .contact-subtitle {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  .contact-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .form-group label {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  .contact-form input,
+  .contact-form textarea {
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    transition: border-color var(--transition-fast);
+  }
+
+  .contact-form input:focus,
+  .contact-form textarea:focus {
+    outline: none;
+    border-color: var(--accent-green);
+  }
+
+  .contact-form input::placeholder,
+  .contact-form textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  .btn {
+    padding: var(--space-md) var(--space-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .btn-primary {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-cyan);
+  }
+
+  .btn-full {
+    width: 100%;
+  }
+
+  .form-status {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .form-status.success {
+    color: var(--accent-green);
+  }
+
+  .form-status.error {
+    color: var(--accent-red);
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 900px) {
+    .content-area {
+      margin-left: 0;
+      padding: var(--space-lg);
+      padding-bottom: calc(60px + var(--space-lg) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .contact-header h1 {
+      font-size: 2rem;
+    }
+
+    .contact-form {
+      padding: var(--space-lg);
+    }
+  }
+</style>

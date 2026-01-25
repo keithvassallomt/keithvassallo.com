@@ -1,0 +1,50 @@
+# Web Development timeline
+# Colors are muted versions of each technology's brand color
+
+title: Web Development
+
+skills:
+  - name: HTML
+    startYear: 2003
+    endYear: "present"
+    color: "#c96a50"  # Muted HTML orange
+
+  - name: CSS
+    startYear: 2003
+    endYear: "present"
+    color: "#5a7fb8"  # Muted CSS blue
+
+  - name: jQuery
+    startYear: 2007
+    endYear: 2016
+    color: "#5a7a9e"  # Muted jQuery blue
+
+  - name: React
+    startYear: 2015
+    endYear: "present"
+    color: "#5a9eba"  # Muted React cyan
+
+  - name: TypeScript
+    startYear: 2016
+    endYear: "present"
+    color: "#4a7ab0"  # Muted TypeScript blue
+
+  - name: Django
+    startYear: 2019
+    endYear: 2021
+    color: "#4a7a5a"  # Muted Django green
+
+  - name: Astro
+    startYear: 2022
+    endYear: "present"
+    color: "#c97080"  # Muted Astro pink/red
+
+  - name: Tailwind
+    startYear: 2022
+    endYear: "present"
+    color: "#4a9a9a"  # Muted Tailwind teal
+
+  - name: Svelte
+    startYear: 2024
+    endYear: "present"
+    color: "#c96040"  # Muted Svelte orange

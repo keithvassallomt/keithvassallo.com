@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NavRail from '../../components/NavRail.astro';
+import BottomNav from '../../components/BottomNav.astro';
+---
+
+<BaseLayout title="Projects">
+  <div class="app-layout">
+    <NavRail currentPage="projects" />
+
+    <main class="content-area" transition:name="content" transition:animate="slide">
+      <div class="page-header">
+        <h1>Projects</h1>
+        <p class="page-subtitle">Things I've built and contributed to</p>
+      </div>
+
+      <section class="projects-section">
+        <h2>Coming Soon</h2>
+        <p>The projects gallery is under construction. Check back soon for project showcases, microsites, and demos.</p>
+      </section>
+    </main>
+
+    <BottomNav currentPage="projects" />
+  </div>
+</BaseLayout>
+
+<style>
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .content-area {
+    flex: 1;
+    margin-left: 80px;
+    padding: var(--space-2xl);
+    background: var(--bg-primary);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .page-header h1 {
+    font-family: var(--font-mono);
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .page-subtitle {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  .projects-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+  }
+
+  .projects-section h2 {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    color: var(--accent-green);
+    margin-bottom: var(--space-md);
+  }
+
+  .projects-section p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 900px) {
+    .content-area {
+      margin-left: 0;
+      padding: var(--space-lg);
+      padding-bottom: calc(60px + var(--space-lg) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+    }
+  }
+</style>

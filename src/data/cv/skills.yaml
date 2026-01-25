@@ -1,0 +1,53 @@
+# Skills organized by category with proficiency levels (0-100)
+categories:
+  - name: Programming Languages
+    skills:
+      - name: Python
+        level: 90
+      - name: Java
+        level: 85
+      - name: PHP
+        level: 85
+      - name: JavaScript
+        level: 80
+      - name: C#
+        level: 70
+      - name: C++
+        level: 65
+
+  - name: Cloud & DevOps
+    skills:
+      - name: AWS
+        level: 90
+      - name: Azure
+        level: 75
+      - name: Linux Administration
+        level: 85
+      - name: Git
+        level: 90
+      - name: Docker
+        level: 75
+
+  - name: Web Development
+    skills:
+      - name: Node.js
+        level: 80
+      - name: HTML/CSS
+        level: 90
+      - name: SQL/Databases
+        level: 85
+      - name: React
+        level: 70
+      - name: Full Stack
+        level: 85
+
+  - name: Other
+    skills:
+      - name: Android Development
+        level: 70
+      - name: Machine Learning
+        level: 65
+      - name: VR Development
+        level: 60
+      - name: Microsoft Project
+        level: 80

@@ -1,0 +1,410 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NavRail from '../components/NavRail.astro';
+import BottomNav from '../components/BottomNav.astro';
+import SkillTimelineAlt from '../components/SkillTimelineAlt.astro';
+import ExperienceTimeline from '../components/ExperienceTimeline.astro';
+import EducationCard from '../components/EducationCard.astro';
+import CertificationBadge from '../components/CertificationBadge.astro';
+import PublicationCard from '../components/PublicationCard.astro';
+import yaml from 'js-yaml';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Load YAML content
+const contentDir = path.join(process.cwd(), 'src/data/cv');
+const coding = yaml.load(fs.readFileSync(path.join(contentDir, 'coding.yaml'), 'utf8')) as any;
+const webdev = yaml.load(fs.readFileSync(path.join(contentDir, 'webdev.yaml'), 'utf8')) as any;
+const devops = yaml.load(fs.readFileSync(path.join(contentDir, 'devops.yaml'), 'utf8')) as any;
+const teaching = yaml.load(fs.readFileSync(path.join(contentDir, 'teaching.yaml'), 'utf8')) as any;
+const experience = yaml.load(fs.readFileSync(path.join(contentDir, 'experience.yaml'), 'utf8')) as any;
+const education = yaml.load(fs.readFileSync(path.join(contentDir, 'education.yaml'), 'utf8')) as any;
+const certifications = yaml.load(fs.readFileSync(path.join(contentDir, 'certifications.yaml'), 'utf8')) as any;
+const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publications.yaml'), 'utf8')) as any;
+---
+
+<BaseLayout title="CV">
+  <div class="app-layout">
+    <NavRail currentPage="cv" />
+
+    <main class="content-area" transition:name="content" transition:animate="slide">
+      <div class="page-header">
+        <h1>Curriculum Vitae</h1>
+        <p class="page-subtitle">Experience, skills, and education</p>
+      </div>
+
+      <!-- Skills Section -->
+      <section class="cv-section skills-section" id="skills">
+        <h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Skills
+        </h2>
+        <SkillTimelineAlt title={coding.title} skills={coding.skills} />
+        <SkillTimelineAlt title={webdev.title} skills={webdev.skills} />
+        <SkillTimelineAlt title={devops.title} skills={devops.skills} />
+        <SkillTimelineAlt title={teaching.title} skills={teaching.skills} />
+      </section>
+
+      <!-- Experience Section -->
+      <section class="cv-section experience-section" id="experience">
+        <h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          Experience
+        </h2>
+        <ExperienceTimeline positions={experience.positions} />
+
+        {experience.otherExperience && (
+          <div class="other-experience">
+            <h3>Other Experience</h3>
+            <ul>
+              {experience.otherExperience.map((item: string) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      <!-- Education Section -->
+      <section class="cv-section education-section" id="education">
+        <h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+          Education
+        </h2>
+        <div class="education-list">
+          {education.qualifications.map((qual: any) => (
+            <EducationCard
+              degree={qual.degree}
+              institution={qual.institution}
+              year={qual.year}
+              grade={qual.grade}
+              dissertation={qual.dissertation}
+            />
+          ))}
+        </div>
+      </section>
+
+      <!-- Certifications Section -->
+      <section class="cv-section certifications-section" id="certifications">
+        <h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="6"/>
+            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+          </svg>
+          Certifications
+        </h2>
+        <div class="certifications-grid">
+          {certifications.certifications.map((cert: any) => (
+            <CertificationBadge
+              name={cert.name}
+              level={cert.level}
+              abbrev={cert.abbrev}
+              detail={cert.detail}
+              issuer={cert.issuer}
+              icon={cert.icon}
+            />
+          ))}
+        </div>
+
+        {certifications.achievements && (
+          <div class="achievements">
+            <h3>Achievements</h3>
+            <ul>
+              {certifications.achievements.map((achievement: string) => (
+                <li>{achievement}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      <!-- Publications Section -->
+      <section class="cv-section publications-section" id="publications">
+        <h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          Publications
+        </h2>
+        <div class="publications-list">
+          {publications.publications.map((pub: any) => (
+            <PublicationCard
+              title={pub.title}
+              authors={pub.authors}
+              year={pub.year}
+              journal={pub.journal}
+              conference={pub.conference}
+              volume={pub.volume}
+              pages={pub.pages}
+              url={pub.url}
+            />
+          ))}
+        </div>
+      </section>
+
+      <!-- Download Section -->
+      <section class="cv-section download-section">
+        <a href="/assets/kv_cv_web.pdf" target="_blank" class="download-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download PDF Version
+        </a>
+      </section>
+    </main>
+
+    <BottomNav currentPage="cv" />
+  </div>
+</BaseLayout>
+
+<script>
+  function initCVAnimations() {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          // Animate timeline items
+          const timelineItems = entry.target.querySelectorAll('.timeline-item');
+          timelineItems.forEach(item => item.classList.add('animate'));
+
+          // Add section animation
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    // Reset and observe all sections
+    document.querySelectorAll('.cv-section').forEach(section => {
+      section.classList.remove('visible');
+      section.querySelectorAll('.timeline-item').forEach(item => {
+        item.classList.remove('animate');
+      });
+      observer.observe(section);
+    });
+  }
+
+  // Run on initial load and after View Transitions
+  initCVAnimations();
+  document.addEventListener('astro:page-load', initCVAnimations);
+</script>
+
+<style>
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .content-area {
+    flex: 1;
+    margin-left: 80px;
+    padding: var(--space-2xl);
+    background: var(--bg-primary);
+    max-width: 1200px;
+  }
+
+  .page-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .page-header h1 {
+    font-family: var(--font-mono);
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .page-subtitle {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  .cv-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .cv-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .cv-section h2 {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    color: var(--accent-green);
+    margin-bottom: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .cv-section h2 svg {
+    opacity: 0.7;
+  }
+
+  /* Skills Grid */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-xl);
+  }
+
+  /* Other Experience */
+  .other-experience {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-default);
+  }
+
+  .other-experience h3 {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  .other-experience ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-sm);
+  }
+
+  .other-experience li {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding-left: var(--space-md);
+    position: relative;
+  }
+
+  .other-experience li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: var(--accent-green);
+    font-family: var(--font-mono);
+  }
+
+  /* Certifications Grid */
+  .certifications-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-md);
+  }
+
+  /* Achievements */
+  .achievements {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-default);
+  }
+
+  .achievements h3 {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  .achievements ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .achievements li {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: var(--space-xs) 0;
+    padding-left: var(--space-lg);
+    position: relative;
+  }
+
+  .achievements li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+  }
+
+  /* Download Section */
+  .download-section {
+    text-align: center;
+    padding: var(--space-xl);
+  }
+
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--accent-green);
+    background: transparent;
+    border: 2px solid var(--accent-green);
+    padding: var(--space-md) var(--space-xl);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .download-btn:hover {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 900px) {
+    .content-area {
+      margin-left: 0;
+      padding: var(--space-lg);
+      padding-bottom: calc(60px + var(--space-lg) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+    }
+
+    .cv-section {
+      padding: var(--space-lg);
+    }
+
+    .skills-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .certifications-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

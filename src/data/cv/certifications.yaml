@@ -1,0 +1,57 @@
+# Professional certifications
+certifications:
+  - name: AWS Certified Solutions Architect
+    level: Associate
+    issuer: Amazon Web Services
+    icon: aws
+
+  - name: AWS Certified Developer
+    level: Associate
+    issuer: Amazon Web Services
+    icon: aws
+
+  - name: Amazon Authorised Instructor
+    abbrev: AAI
+    issuer: Amazon Web Services
+    icon: aws
+
+  - name: Linux Professional Institute Certification
+    level: Level 1 (LPIC-1 v4)
+    issuer: Linux Professional Institute
+    icon: linux
+
+  - name: SUSE Certified Linux Administrator
+    abbrev: SUSE CLA
+    detail: SUSE Linux Enterprise Server 11
+    issuer: SUSE
+    icon: linux
+
+  - name: Oracle Certified Associate
+    detail: Java SE Programmer
+    issuer: Oracle
+    icon: java
+
+  - name: Zend Certified Engineer
+    detail: PHP
+    issuer: Zend
+    icon: php
+
+  - name: Cisco Instructor
+    issuer: Cisco
+    icon: cisco
+
+  - name: Microsoft Certified Technology Specialist
+    abbrev: MCTS
+    detail: Microsoft Project 2010
+    issuer: Microsoft
+    icon: microsoft
+
+  - name: Certified ISO 9001 Internal Auditor
+    issuer: ISO
+    icon: certificate
+
+achievements:
+  - International Diploma in Computer Studies (IDCS) Roll of Honour Award
+  - International Advanced Diploma in Computer Studies (IADCS) Europe and Rest of World High Achiever Award
+  - Elected Student Representative during BCIS (Hons.) course
+  - Elected Student Representative during M.Sc. (Hons.) ICT with CIS course

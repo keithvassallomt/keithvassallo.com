@@ -1,0 +1,73 @@
+# Work experience in reverse chronological order
+positions:
+  - title: Head of Technology
+    company: ICE Campus
+    location: Malta
+    startDate: "2013"
+    endDate: Present
+    current: true
+    highlights:
+      - Developed syllabi for courses at the institute
+      - Managed the level-rating process of courses
+      - Developed internal system handling payments, class bookings, CRM and statistics
+      - Assisted in managing relationships with international training partners
+
+  - title: Educator
+    company: ICE Campus (Institute of Computer Education Ltd.)
+    location: Malta
+    startDate: "2011"
+    endDate: Present
+    current: true
+    highlights:
+      - Lectured and developed syllabi for Java, PHP, Python, JSP, Android development
+      - Taught GIT, Microsoft Project, Microsoft Visio, Database Development
+      - Delivered Full Stack Development (Node), Linux Administration courses
+      - Taught AWS and Azure cloud technology both in-person and online
+
+  - title: Lecturer
+    company: St. Aloysius' College 6th Form
+    location: Malta
+    startDate: "2008"
+    endDate: "2013"
+    highlights:
+      - Lectured in Computer A-Level, Computer I-Level and Information Technology I-Level
+      - Supported students in their Java & HTML programming assignments
+
+  - title: Testing & Support Engineer
+    company: 3CX
+    location: Malta
+    startDate: "2008"
+    endDate: "2008"
+    highlights:
+      - Tested the 3CX PhoneSystem IP-PBX
+      - Created templates for VoIP providers
+      - Tested VoIP phones and equipment
+      - Provided chat, phone, and ticket support to customers
+
+  - title: Software Developer
+    company: Malta Information Technology Agency (MITA)
+    location: Malta
+    startDate: "2007"
+    endDate: "2007"
+    type: Internship
+    highlights:
+      - Developed, tested and provided support for the Maltese Government's transport system
+      - Handled vehicle registration, insurance and compliance matters
+      - Worked with PowerBuilder, C# and VB.NET
+
+  - title: Lecturer
+    company: STC Training
+    location: Malta
+    startDate: "2005"
+    endDate: "2007"
+    highlights:
+      - Provided tuition for the International Diploma in Computer Studies (IDCS)
+      - Taught Programming Methods, Developing a Website, Systems Development and E-Commerce modules
+
+otherExperience:
+  - Lectured Business Technology and Integrated Business Management at EIE
+  - Unit writer for MCAST Higher National & National Diploma subjects
+  - Lectured Information Technology at G.F. Abela Junior College
+  - Former member of MATSEC and MCAST syllabus panels in ICT subjects
+  - Freelance web development & software development work
+  - Operated a successful YouTube technology channel

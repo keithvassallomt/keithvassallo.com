@@ -1,0 +1,69 @@
+# Education history
+qualifications:
+  - degree: M.Sc. Information and Communication Technology with Computer Information Systems
+    institution: University of Malta
+    grade: Merit
+    modules:
+      - Advanced Databases - Data Models and Database Languages
+      - Client-Server Computing using Interoperable Techniques
+      - Developing and Managing I.S. Operations
+      - e-Business Systems
+      - e-Learning
+      - I.S. Graphics - Applied 3D Modeling in I.S.
+      - I.S. Risk, Quality, Audit and Control
+      - I.S. Strategic Analysis and Enterprise Computing
+      - Patterns and Practices in Web Systems
+      - Research Methods
+    dissertation: Studied the pedagogical effectiveness of a course delivered using traditional, e-learning and VR-learning techniques. Developed prototype learning content for all three methods, including a 3D interactive VR environment.
+
+  - degree: M.Sc. Computer Science and Artificial Intelligence (Preparatory Course)
+    institution: University of Malta
+    grade: Distinction
+    modules:
+      - Artificial Intelligence
+      - Machine Learning
+      - Expert Systems & Fuzzy Logic
+      - C#
+      - Applied Web Engineering
+      - Software Engineering II
+
+  - degree: BCIS (Hons.) - Bachelor's in Computer Information Systems
+    institution: London Metropolitan University
+    year: "2008"
+    grade: Upper Second Class with Honours
+    modules:
+      - Software Engineering Methods
+      - Software Engineering Management
+      - Advanced Database Management Systems
+      - Management Support Systems
+      - Computer Systems Management
+      - Object-Oriented Analysis and Design
+    dissertation: Created a software application to help migrate user data (documents, settings, application profiles etc.) from Windows to Linux. Coded in Java.
+
+  - degree: IADCS - International Advanced Diploma in Computer Studies
+    institution: NCC Education
+    year: "2006"
+    grade: Distinction
+    modules:
+      - Business Systems Analysis
+      - Business Systems Design
+      - Enterprise Networking
+      - Database Design and Development
+      - Advanced Java
+      - C++
+      - Internet Systems Administration
+      - Internet Systems Security
+
+  - degree: IDCS - International Diploma in Computer Studies
+    institution: NCC Education
+    year: "2004"
+    grade: Distinction
+    modules:
+      - Business Communication
+      - Business Organisation
+      - Systems Development
+      - Structured Programming
+      - Web Development
+      - Visual Basic
+      - E-Commerce
+      - Computer Technology

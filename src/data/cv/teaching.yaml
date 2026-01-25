@@ -1,0 +1,35 @@
+# Teaching timeline
+# Colors are varied for distinction
+
+title: Teaching
+
+skills:
+  - name: In-person
+    startYear: 2003
+    endYear: "present"
+    color: "#6a9a7a"  # Muted green
+
+  - name: Materials
+    startYear: 2005
+    endYear: "present"
+    color: "#7a8ab0"  # Muted blue
+
+  - name: Curriculum
+    startYear: 2011
+    endYear: "present"
+    color: "#9a7a8a"  # Muted mauve
+
+  - name: Keynotes
+    startYear: 2014
+    endYear: "present"
+    color: "#b08a5a"  # Muted gold
+
+  - name: On-demand
+    startYear: 2018
+    endYear: "present"
+    color: "#8a6a9a"  # Muted purple
+
+  - name: Online
+    startYear: 2020
+    endYear: "present"
+    color: "#5a8a9a"  # Muted teal

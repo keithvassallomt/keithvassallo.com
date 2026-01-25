@@ -1,0 +1,174 @@
+---
+interface Position {
+  title: string;
+  company: string;
+  location?: string;
+  startDate: string;
+  endDate: string;
+  current?: boolean;
+  type?: string;
+  highlights: string[];
+}
+
+interface Props {
+  positions: Position[];
+}
+
+const { positions } = Astro.props;
+---
+
+<div class="timeline">
+  {positions.map((position, index) => (
+    <div class="timeline-item" style={`--index: ${index}`}>
+      <div class="timeline-marker">
+        <div class="marker-dot"></div>
+        {index < positions.length - 1 && <div class="marker-line"></div>}
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-header">
+          <h3 class="position-title">{position.title}</h3>
+          <span class="position-dates">
+            {position.startDate} - {position.endDate}
+            {position.current && <span class="current-badge">Current</span>}
+          </span>
+        </div>
+        <div class="position-company">
+          {position.company}
+          {position.type && <span class="position-type">({position.type})</span>}
+        </div>
+        <ul class="position-highlights">
+          {position.highlights.map((highlight) => (
+            <li>{highlight}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  ))}
+</div>
+
+<style>
+  .timeline {
+    position: relative;
+    padding-left: var(--space-md);
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: var(--space-lg);
+    padding-bottom: var(--space-xl);
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    transition-delay: calc(var(--index) * 100ms);
+  }
+
+  .timeline-item.animate {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .timeline-marker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .marker-dot {
+    width: 14px;
+    height: 14px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    border: 3px solid var(--bg-primary);
+    box-shadow: 0 0 0 2px var(--accent-green);
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .marker-line {
+    width: 2px;
+    flex: 1;
+    background: var(--border-default);
+    margin-top: var(--space-xs);
+  }
+
+  .timeline-content {
+    flex: 1;
+    padding-bottom: var(--space-sm);
+  }
+
+  .timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xs);
+  }
+
+  .position-title {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .position-dates {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .current-badge {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .position-company {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    color: var(--accent-cyan);
+    margin-bottom: var(--space-sm);
+  }
+
+  .position-type {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .position-highlights {
+    margin: 0;
+    padding-left: var(--space-lg);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .position-highlights li {
+    margin-bottom: var(--space-xs);
+  }
+
+  .position-highlights li::marker {
+    color: var(--accent-green);
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 600px) {
+    .timeline-header {
+      flex-direction: column;
+    }
+
+    .position-title {
+      font-size: 1rem;
+    }
+  }
+</style>

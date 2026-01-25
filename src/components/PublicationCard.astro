@@ -1,0 +1,125 @@
+---
+interface Props {
+  title: string;
+  authors: string;
+  year: number;
+  journal?: string;
+  conference?: string;
+  volume?: string;
+  pages?: string;
+  url?: string;
+}
+
+const { title, authors, year, journal, conference, volume, pages, url } = Astro.props;
+---
+
+<a href={url} target="_blank" rel="noopener noreferrer" class="publication-card">
+  <div class="publication-year">{year}</div>
+  <div class="publication-content">
+    <h3 class="publication-title">{title}</h3>
+    <div class="publication-authors">{authors}</div>
+    <div class="publication-venue">
+      {journal && (
+        <span class="journal">
+          {journal}
+          {volume && <span class="volume">, {volume}</span>}
+          {pages && <span class="pages">, pp. {pages}</span>}
+        </span>
+      )}
+      {conference && <span class="conference">{conference}</span>}
+    </div>
+  </div>
+  <div class="publication-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/>
+      <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+  </div>
+</a>
+
+<style>
+  .publication-card {
+    display: flex;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .publication-card:hover {
+    border-color: var(--accent-green);
+    transform: translateX(4px);
+  }
+
+  .publication-year {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-green);
+    background: rgba(140, 212, 156, 0.1);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    height: fit-content;
+    flex-shrink: 0;
+  }
+
+  .publication-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .publication-title {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-xs) 0;
+    line-height: 1.4;
+  }
+
+  .publication-authors {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-xs);
+  }
+
+  .publication-venue {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+  }
+
+  .volume, .pages {
+    color: var(--text-muted);
+  }
+
+  .publication-link {
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    transition: color var(--transition-fast);
+  }
+
+  .publication-card:hover .publication-link {
+    color: var(--accent-green);
+  }
+
+  @media (max-width: 600px) {
+    .publication-card {
+      flex-direction: column;
+    }
+
+    .publication-year {
+      width: fit-content;
+    }
+
+    .publication-link {
+      display: none;
+    }
+  }
+</style>

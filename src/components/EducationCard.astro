@@ -1,0 +1,103 @@
+---
+interface Props {
+  degree: string;
+  institution: string;
+  year?: string;
+  grade: string;
+  dissertation?: string;
+}
+
+const { degree, institution, year, grade, dissertation } = Astro.props;
+---
+
+<div class="education-card">
+  <div class="education-header">
+    <h3 class="degree-name">{degree}</h3>
+    <span class="grade-badge">{grade}</span>
+  </div>
+  <div class="institution">
+    {institution}
+    {year && <span class="year">({year})</span>}
+  </div>
+  {dissertation && (
+    <div class="dissertation">
+      <span class="dissertation-label">Dissertation:</span>
+      <span class="dissertation-text">{dissertation}</span>
+    </div>
+  )}
+</div>
+
+<style>
+  .education-card {
+    padding: var(--space-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+    transition: border-color var(--transition-fast);
+  }
+
+  .education-card:hover {
+    border-color: var(--accent-green);
+  }
+
+  .education-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-xs);
+  }
+
+  .degree-name {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    flex: 1;
+  }
+
+  .grade-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-green);
+    background: rgba(140, 212, 156, 0.1);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .institution {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--accent-cyan);
+    margin-bottom: var(--space-sm);
+  }
+
+  .year {
+    color: var(--text-muted);
+  }
+
+  .dissertation {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--border-default);
+  }
+
+  .dissertation-label {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .dissertation-text {
+    display: block;
+    margin-top: var(--space-xs);
+  }
+</style>

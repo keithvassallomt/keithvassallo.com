@@ -1,0 +1,31 @@
+# Academic publications
+publications:
+  - title: Contemporary Technologies and methods for cross-platform application development
+    authors: Vassallo, K. et al
+    year: 2019
+    journal: Journal of Computational and Theoretical Nanoscience
+    volume: "16 (9)"
+    pages: "3854-3857"
+    doi: "10.1166/jctn.2019.8261"
+    url: https://doi.org/10.1166/jctn.2019.8261
+
+  - title: A Framework for measuring VR-based instruction effectiveness
+    authors: Vassallo, K. et al
+    year: 2017
+    conference: "11th International Technology, Education and Development Conference, INTED2017"
+    location: Valencia
+    pages: "2069-2079"
+    doi: "10.21125/inted.2017.0615"
+    url: https://doi.org/10.21125/inted.2017.0615
+
+  - title: "Cross-Platform Development Frameworks: Overview of contemporary technologies and methods for cross-platform application development"
+    authors: Vassallo, K. & Garg, L.
+    year: 2016
+    conference: ICCCM
+    url: https://www.um.edu.mt/library/oar/handle/123456789/25282
+
+  - title: "Mobile language learning: providing tools that allow the asynchronous, casual and sometimes gamified learning of languages on mobile devices"
+    authors: Vassallo, K., Garg, L., Layfield, C.
+    year: 2016
+    conference: ICCCM
+    url: https://www.um.edu.mt/library/oar/handle/123456789/25283

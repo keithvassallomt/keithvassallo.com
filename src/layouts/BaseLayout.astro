@@ -1,4 +1,6 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
+
 interface Props {
   title: string;
   description?: string;
@@ -28,6 +30,7 @@ const { title, description = 'Keith Vassallo - Educator, Developer & Geek' } = A
     />
 
     <title>{title} | Keith Vassallo</title>
+    <ViewTransitions />
   </head>
   <body>
     <slot />

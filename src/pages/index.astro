@@ -1,14 +1,18 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const currentYear = new Date().getFullYear();
 ---
 
 <BaseLayout title="Home">
   <main class="split-page">
     <!-- Left Panel - Dark -->
-    <div class="panel panel-left">
+    <div class="panel panel-left" transition:name="sidebar" transition:animate="slide">
       <div class="panel-content">
         <header class="header">
-          <span class="logo">KV</span>
+          <span class="logo" transition:name="logo">
+            <img src="/assets/icons/kv.png" alt="KV" class="logo-img" />
+          </span>
         </header>
 
         <div class="intro">
@@ -22,14 +26,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <p class="description">
           I build things, break things, and teach others to do the same.
-          Passionate about code, education, and the occasional gag.
+          Passionate about code, teaching, and open-source. Always with a laugh.
         </p>
 
-        <div class="tags">
-          <span class="tag">Educator</span>
-          <span class="tag">Developer</span>
-          <span class="tag">Geek</span>
-        </div>
+        <a href="https://icecampus.com" target="_blank" class="job-badge">
+          <img src="/assets/icons/icecampus.svg" alt="ICE Campus" class="job-logo" />
+          <span class="job-title">Head of Technology @ ICE Campus</span>
+        </a>
 
         <nav class="nav-buttons">
           <a href="/cv" class="nav-btn">
@@ -42,11 +45,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <span class="nav-text">projects()</span>
             <span class="nav-arrow">&rarr;</span>
           </a>
-          <button type="button" class="nav-btn" id="contact-btn">
+          <a href="/contact" class="nav-btn">
             <span class="nav-icon">03</span>
             <span class="nav-text">contact()</span>
             <span class="nav-arrow">&rarr;</span>
-          </button>
+          </a>
         </nav>
 
         <div class="social-links">
@@ -59,10 +62,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <a href="https://www.threads.net/@keithvassallo86" target="_blank" title="Threads">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.96-.065-1.182.408-2.256 1.332-3.023.88-.73 2.082-1.146 3.381-1.177.963-.02 1.99.112 2.929.395l.1-.037c-.015-.96-.135-1.751-.371-2.362-.283-.735-.713-1.227-1.322-1.514-.68-.32-1.607-.48-2.76-.48h-.043c-1.453.013-2.617.395-3.46 1.135l-1.31-1.613c1.208-.98 2.79-1.493 4.71-1.524h.053c1.442 0 2.647.225 3.582.669.99.47 1.72 1.177 2.168 2.101.404.835.627 1.856.686 3.125 1.073.448 1.965 1.106 2.598 1.928.855 1.11 1.253 2.473 1.153 3.945-.111 1.644-.768 3.074-1.902 4.134C18.267 23.29 15.741 23.97 12.186 24z"/></svg>
           </a>
+          <a href="https://mastodon.social/@keithvassallo86@threads.net" target="_blank" title="Fediverse">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.62 3.68.55 2.237 2.777 4.098 4.96 4.857 2.336.792 4.849.923 7.256.38.265-.061.527-.132.786-.213.585-.184 1.27-.39 1.774-.753a.057.057 0 0 0 .023-.043v-1.809a.052.052 0 0 0-.02-.041.053.053 0 0 0-.046-.01 20.282 20.282 0 0 1-4.709.545c-2.73 0-3.463-1.284-3.674-1.818a5.593 5.593 0 0 1-.319-1.433.053.053 0 0 1 .066-.054c1.517.363 3.072.546 4.632.546.376 0 .75 0 1.125-.01 1.57-.044 3.224-.124 4.768-.422.038-.008.077-.015.11-.024 2.435-.464 4.753-1.92 4.989-5.604.008-.145.03-1.52.03-1.67.002-.512.167-3.63-.024-5.545zm-3.748 9.195h-2.561V8.29c0-1.309-.55-1.976-1.67-1.976-1.23 0-1.846.79-1.846 2.35v3.403h-2.546V8.663c0-1.56-.617-2.35-1.848-2.35-1.112 0-1.668.668-1.668 1.977v6.218H4.822V8.102c0-1.31.337-2.35 1.011-3.12.696-.77 1.608-1.164 2.74-1.164 1.311 0 2.302.5 2.962 1.498l.638 1.06.638-1.06c.66-.999 1.65-1.498 2.96-1.498 1.13 0 2.043.395 2.74 1.164.675.77 1.012 1.81 1.012 3.12z"/></svg>
+          </a>
           <a href="https://www.instagram.com/vassallo.keith/" target="_blank" title="Instagram">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
           </a>
         </div>
+
+        <p class="copyright">&copy; 2003 - {currentYear} Keith Vassallo.</p>
       </div>
     </div>
 
@@ -70,50 +78,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="panel panel-right">
       <div class="image-container">
         <img src="/assets/images/keith_pic.png" alt="Keith Vassallo" class="profile-image" />
-        <div class="floating-badge badge-top">
-          <span class="badge-icon">{ }</span>
-          <span>Coder</span>
-        </div>
-        <div class="floating-badge badge-bottom">
-          <span class="badge-icon">&lt;/&gt;</span>
-          <span>Geek</span>
-        </div>
       </div>
       <div class="accent-text">
         <span class="big-number">20+</span>
         <span class="label">Years of<br/>Experience</span>
       </div>
+      <!-- Mobile scroll indicator -->
+      <div class="scroll-indicator" id="scroll-indicator">
+        <span class="scroll-text">Scroll</span>
+        <div class="scroll-arrow">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12l7 7 7-7"/>
+          </svg>
+        </div>
+      </div>
     </div>
   </main>
 
-  <!-- Contact Modal -->
-  <dialog id="contact-modal" class="modal">
-    <div class="modal-content">
-      <button type="button" class="modal-close" id="modal-close">&times;</button>
-      <h2>Get in Touch</h2>
-      <form id="contact-form" class="contact-form">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <input type="text" id="name" name="name" required placeholder="Your name" />
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" required placeholder="your@email.com" />
-        </div>
-        <div class="form-group">
-          <label for="message">Message</label>
-          <textarea id="message" name="message" required rows="4" placeholder="What's on your mind?"></textarea>
-        </div>
-        <div class="cf-turnstile" data-sitekey="0x4AAAAAAB51R8yKqVeecTDp" data-callback="onTurnstileSuccess"></div>
-        <div id="form-status" class="form-status"></div>
-        <button type="submit" class="btn btn-primary btn-full">Send Message</button>
-      </form>
-    </div>
-  </dialog>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script>
     // Typing animation
-    const phrases = ["Head of Technology @ ICE Campus", "Educator", "Developer", "Geek", "Teacher", "Builder"];
+    const phrases = ["Geek", "Educator", "Developer", "Speaker", "Maker"];
     let phraseIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
@@ -144,30 +128,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
     type();
 
-    // Modal
-    const contactBtn = document.getElementById('contact-btn');
-    const modal = document.getElementById('contact-modal') as HTMLDialogElement;
-    const modalClose = document.getElementById('modal-close');
-    contactBtn?.addEventListener('click', () => modal?.showModal());
-    modalClose?.addEventListener('click', () => modal?.close());
-    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
-    let turnstileToken: string | null = null;
-    (window as any).onTurnstileSuccess = (token: string) => { turnstileToken = token; };
-    const form = document.getElementById('contact-form') as HTMLFormElement;
-    const formStatus = document.getElementById('form-status');
-    form?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!turnstileToken) { if (formStatus) { formStatus.textContent = 'Please verify.'; formStatus.className = 'form-status error'; } return; }
-      const formData = new FormData(form);
-      try {
-        const response = await fetch('https://kgw4ur1d08.execute-api.us-east-1.amazonaws.com/dev/email/send', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: formData.get('name'), email: formData.get('email'), message: formData.get('message'), 'cf-turnstile-response': turnstileToken }),
-        });
-        if (response.ok) { if (formStatus) { formStatus.textContent = 'Message sent!'; formStatus.className = 'form-status success'; } form.reset(); turnstileToken = null; }
-        else { throw new Error('Failed'); }
-      } catch { if (formStatus) { formStatus.textContent = 'Failed. Try again.'; formStatus.className = 'form-status error'; } }
-    });
+    // Scroll indicator - hide on scroll
+    const scrollIndicator = document.getElementById('scroll-indicator');
+    let hasScrolled = false;
+    window.addEventListener('scroll', () => {
+      if (!hasScrolled && window.scrollY > 50) {
+        hasScrolled = true;
+        scrollIndicator?.classList.add('hidden');
+      }
+    }, { passive: true });
   </script>
 </BaseLayout>
 
@@ -204,11 +173,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   .logo {
-    font-family: var(--font-mono);
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--accent-green);
-    letter-spacing: -0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--accent-green);
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  .logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
   }
 
   .intro {
@@ -259,21 +237,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin-bottom: var(--space-lg);
   }
 
-  .tags {
-    display: flex;
+  .job-badge {
+    display: inline-flex;
+    align-items: center;
     gap: var(--space-sm);
-    margin-bottom: var(--space-xl);
-    flex-wrap: wrap;
-  }
-
-  .tag {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
     padding: var(--space-xs) var(--space-md);
     background: var(--bg-secondary);
     border: 1px solid var(--border-default);
     border-radius: 100px;
     color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: var(--space-xl);
+    transition: all var(--transition-fast);
+  }
+
+  .job-badge:hover {
+    border-color: var(--accent-cyan);
+    color: var(--text-primary);
+  }
+
+  .job-logo {
+    height: 18px;
+    width: auto;
+    filter: invert(1) brightness(2);
+  }
+
+  .job-title {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
   }
 
   .nav-buttons {
@@ -339,6 +330,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: var(--accent-cyan);
   }
 
+  .copyright {
+    margin-top: var(--space-lg);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
   /* Right Panel */
   .panel-right {
     background: linear-gradient(135deg, #1a3a35 0%, #0d1f1c 100%);
@@ -361,41 +359,40 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   }
 
-  .floating-badge {
+  /* Scroll indicator - hidden by default on desktop */
+  .scroll-indicator {
+    display: none;
     position: absolute;
-    display: flex;
+    bottom: var(--space-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: column;
     align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-md);
+    gap: var(--space-xs);
+    color: rgba(255, 255, 255, 0.7);
+    transition: opacity 0.3s ease;
+  }
+
+  .scroll-indicator.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .scroll-text {
     font-family: var(--font-mono);
-    font-size: 0.875rem;
-    color: white;
-    box-shadow: var(--shadow-md);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
   }
 
-  .badge-icon {
-    color: var(--accent-green);
+  .scroll-arrow {
+    animation: bounce 2s ease-in-out infinite;
   }
 
-  .badge-top {
-    top: 10%;
-    right: -20px;
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .badge-bottom {
-    bottom: 15%;
-    left: -20px;
-    animation: float 3s ease-in-out infinite 1.5s;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(8px); }
+    60% { transform: translateY(4px); }
   }
 
   .accent-text {
@@ -446,6 +443,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .panel-left {
       order: 2;
       padding: var(--space-xl);
+      padding-top: var(--space-md);
     }
     .panel-content {
       margin: 0 auto;
@@ -453,7 +451,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
     .panel-right {
       order: 1;
-      min-height: 50vh;
+      min-height: calc(100vh - 220px);
+      min-height: calc(100svh - 220px);
     }
     .header {
       position: relative;
@@ -463,14 +462,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
     .name { font-size: 3rem; }
     .typing-container { text-align: center; }
-    .tags { justify-content: center; }
     .nav-buttons { max-width: 400px; margin: 0 auto var(--space-xl); }
     .social-links { justify-content: center; }
     .image-container { max-width: 250px; }
     .accent-text { display: none; }
+    .scroll-indicator { display: flex; }
   }
 
   @media (max-width: 480px) {
     .name { font-size: 2.5rem; }
+    .panel-right {
+      min-height: calc(100vh - 200px);
+      min-height: calc(100svh - 200px);
+    }
   }
 </style>

@@ -1,0 +1,121 @@
+---
+interface Props {
+  currentPage?: 'cv' | 'projects' | 'contact';
+}
+
+const { currentPage } = Astro.props;
+---
+
+<nav class="nav-rail" transition:name="sidebar" transition:animate="none">
+  <a href="/" class="nav-rail-logo" title="Home" transition:name="logo">
+    <img src="/assets/icons/kv.png" alt="KV" class="logo-img" />
+  </a>
+
+  <div class="nav-rail-items">
+    <a href="/cv" class:list={["nav-rail-item", { active: currentPage === 'cv' }]} title="CV">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+    </a>
+
+    <a href="/projects" class:list={["nav-rail-item", { active: currentPage === 'projects' }]} title="Projects">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </svg>
+    </a>
+
+    <a href="/contact" class:list={["nav-rail-item", { active: currentPage === 'contact' }]} title="Contact">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+    </a>
+  </div>
+</nav>
+
+<style>
+  .nav-rail {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 80px;
+    height: 100vh;
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-default);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-lg) 0;
+    z-index: 100;
+  }
+
+  .nav-rail-logo {
+    color: var(--accent-green);
+    text-decoration: none;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--accent-green);
+    border-radius: 50%;
+    margin-bottom: var(--space-2xl);
+    transition: all var(--transition-fast);
+    overflow: hidden;
+  }
+
+  .logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  .nav-rail-logo:hover {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+  }
+
+  .nav-rail-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .nav-rail-item {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+  }
+
+  .nav-rail-item:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border-color: var(--border-default);
+  }
+
+  .nav-rail-item.active {
+    color: var(--accent-green);
+    background: var(--bg-secondary);
+    border-color: var(--accent-green);
+  }
+
+  /* Hide on mobile - bottom nav takes over */
+  @media (max-width: 900px) {
+    .nav-rail {
+      display: none;
+    }
+  }
+</style>
