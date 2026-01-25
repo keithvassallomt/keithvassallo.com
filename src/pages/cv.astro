@@ -2,11 +2,12 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import NavRail from '../components/NavRail.astro';
 import BottomNav from '../components/BottomNav.astro';
-import SkillTimelineAlt from '../components/SkillTimelineAlt.astro';
+import SkillTabs from '../components/SkillTabs.astro';
 import ExperienceTimeline from '../components/ExperienceTimeline.astro';
 import EducationCard from '../components/EducationCard.astro';
 import CertificationBadge from '../components/CertificationBadge.astro';
 import PublicationCard from '../components/PublicationCard.astro';
+import { Icon } from 'astro-icon/components';
 import yaml from 'js-yaml';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -33,6 +34,44 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
         <p class="page-subtitle">Experience, skills, and education</p>
       </div>
 
+      <!-- Personal Details Section -->
+      <section class="cv-section personal-section" id="personal">
+        <h2>
+          <Icon name="lucide:user" />
+          Keith Vassallo
+        </h2>
+        <div class="personal-grid">
+          <div class="personal-item">
+            <Icon name="lucide:flag" />
+            <div class="personal-content">
+              <span class="personal-label">Nationality</span>
+              <span class="personal-value">Maltese</span>
+            </div>
+          </div>
+          <div class="personal-item">
+            <Icon name="lucide:map-pin" />
+            <div class="personal-content">
+              <span class="personal-label">Location</span>
+              <span class="personal-value">Carlisle, UK</span>
+            </div>
+          </div>
+          <div class="personal-item">
+            <Icon name="lucide:mail" />
+            <div class="personal-content">
+              <span class="personal-label">Email</span>
+              <a href="mailto:keith@vassallo.cloud" class="personal-value personal-link">keith@vassallo.cloud</a>
+            </div>
+          </div>
+          <div class="personal-item">
+            <Icon name="lucide:calendar" />
+            <div class="personal-content">
+              <span class="personal-label">Date of Birth</span>
+              <span class="personal-value">15/09/1986 (<span id="age"></span>)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Skills Section -->
       <section class="cv-section skills-section" id="skills">
         <h2>
@@ -41,10 +80,7 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
           </svg>
           Skills
         </h2>
-        <SkillTimelineAlt title={coding.title} skills={coding.skills} />
-        <SkillTimelineAlt title={webdev.title} skills={webdev.skills} />
-        <SkillTimelineAlt title={devops.title} skills={devops.skills} />
-        <SkillTimelineAlt title={teaching.title} skills={teaching.skills} />
+        <SkillTabs categories={[coding, webdev, devops, teaching]} />
       </section>
 
       <!-- Experience Section -->
@@ -151,17 +187,6 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
         </div>
       </section>
 
-      <!-- Download Section -->
-      <section class="cv-section download-section">
-        <a href="/assets/kv_cv_web.pdf" target="_blank" class="download-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Download PDF Version
-        </a>
-      </section>
     </main>
 
     <BottomNav currentPage="cv" />
@@ -198,9 +223,28 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
     });
   }
 
+  // Calculate and display age
+  function calculateAge() {
+    const birthDate = new Date(1986, 8, 15); // Month is 0-indexed (8 = September)
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    const ageElement = document.getElementById('age');
+    if (ageElement) {
+      ageElement.textContent = age;
+    }
+  }
+
   // Run on initial load and after View Transitions
   initCVAnimations();
-  document.addEventListener('astro:page-load', initCVAnimations);
+  calculateAge();
+  document.addEventListener('astro:page-load', () => {
+    initCVAnimations();
+    calculateAge();
+  });
 </script>
 
 <style>
@@ -261,8 +305,70 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
     gap: var(--space-sm);
   }
 
-  .cv-section h2 svg {
+  .cv-section h2 svg,
+  .cv-section h2 [data-icon] {
     opacity: 0.7;
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Personal Details */
+  .personal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .personal-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    transition: border-color var(--transition-fast);
+  }
+
+  .personal-item:hover {
+    border-color: var(--accent-green);
+  }
+
+  .personal-item [data-icon] {
+    width: 20px;
+    height: 20px;
+    color: var(--accent-green);
+    flex-shrink: 0;
+  }
+
+  .personal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .personal-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .personal-value {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+  }
+
+  .personal-link {
+    color: var(--accent-cyan);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .personal-link:hover {
+    color: var(--accent-green);
   }
 
   /* Skills Grid */
@@ -355,32 +461,6 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
     height: 8px;
     background: var(--accent-green);
     border-radius: 50%;
-  }
-
-  /* Download Section */
-  .download-section {
-    text-align: center;
-    padding: var(--space-xl);
-  }
-
-  .download-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-family: var(--font-mono);
-    font-size: 1rem;
-    color: var(--accent-green);
-    background: transparent;
-    border: 2px solid var(--accent-green);
-    padding: var(--space-md) var(--space-xl);
-    border-radius: var(--radius-md);
-    text-decoration: none;
-    transition: all var(--transition-fast);
-  }
-
-  .download-btn:hover {
-    background: var(--accent-green);
-    color: var(--bg-primary);
   }
 
   /* Mobile responsive */

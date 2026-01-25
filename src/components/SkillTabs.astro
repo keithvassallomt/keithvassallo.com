@@ -1,0 +1,243 @@
+---
+interface Skill {
+  name: string;
+  startYear: number;
+  endYear: number | 'present';
+  color: string;
+}
+
+interface SkillCategory {
+  title: string;
+  skills: Skill[];
+}
+
+interface Props {
+  categories: SkillCategory[];
+}
+
+const { categories } = Astro.props;
+
+import SkillTimelineAlt from './SkillTimelineAlt.astro';
+---
+
+<div class="skill-tabs">
+  <div class="skill-tabs-header">
+    {categories.map((category, index) => (
+      <button
+        class:list={["skill-tab-btn", { active: index === 0 }]}
+        data-tab-index={index}
+      >
+        {category.title}
+      </button>
+    ))}
+    <div class="tab-indicator"></div>
+  </div>
+
+  <div class="skill-tabs-content">
+    {categories.map((category, index) => (
+      <div
+        class:list={["skill-tab-panel", { active: index === 0 }]}
+        data-panel-index={index}
+      >
+        <SkillTimelineAlt title={category.title} skills={category.skills} />
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .skill-tabs {
+    margin: var(--space-md) 0;
+  }
+
+  .skill-tabs-header {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-lg);
+    position: relative;
+    border-bottom: 1px solid var(--border-default);
+    padding-bottom: var(--space-xs);
+  }
+
+  .skill-tab-btn {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: var(--space-sm) var(--space-md);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    position: relative;
+    z-index: 1;
+  }
+
+  .skill-tab-btn:hover {
+    color: var(--text-primary);
+  }
+
+  .skill-tab-btn.active {
+    color: var(--accent-green);
+  }
+
+  .tab-indicator {
+    position: absolute;
+    bottom: -1px;
+    height: 2px;
+    background: var(--accent-green);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .skill-tabs-content {
+    position: relative;
+    min-height: 200px;
+  }
+
+  .skill-tab-panel {
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .skill-tab-panel.active {
+    opacity: 1;
+    visibility: visible;
+    position: relative;
+  }
+
+  /* Hide the title inside SkillTimelineAlt when in tabs - we show it in the tab */
+  .skill-tab-panel :global(.tl-alt-title) {
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    .skill-tabs-header {
+      flex-wrap: wrap;
+    }
+
+    .skill-tab-btn {
+      font-size: 0.75rem;
+      padding: var(--space-xs) var(--space-sm);
+    }
+  }
+</style>
+
+<script is:inline>
+  (function() {
+    function initSkillTabs() {
+      const tabContainers = document.querySelectorAll('.skill-tabs');
+
+      tabContainers.forEach(container => {
+        const buttons = container.querySelectorAll('.skill-tab-btn');
+        const panels = container.querySelectorAll('.skill-tab-panel');
+        const indicator = container.querySelector('.tab-indicator');
+        const content = container.querySelector('.skill-tabs-content');
+
+        let currentIndex = 0;
+        let autoRotateTimer = null;
+        const AUTO_ROTATE_DELAY = 10000; // 10 seconds
+
+        function updateIndicator(button) {
+          if (!indicator || !button) return;
+          indicator.style.left = button.offsetLeft + 'px';
+          indicator.style.width = button.offsetWidth + 'px';
+        }
+
+        function switchToTab(index, animate = true) {
+          // Update buttons
+          buttons.forEach((btn, i) => {
+            btn.classList.toggle('active', i === index);
+          });
+
+          // Update panels
+          panels.forEach((panel, i) => {
+            const isActive = i === index;
+            panel.classList.toggle('active', isActive);
+
+            // Re-trigger bar animations when panel becomes active
+            if (isActive && animate) {
+              const bars = panel.querySelectorAll('.tl-alt-bar');
+              bars.forEach(bar => bar.classList.remove('animate'));
+              // Small delay to allow CSS transition
+              setTimeout(() => {
+                bars.forEach((bar, barIndex) => {
+                  setTimeout(() => bar.classList.add('animate'), barIndex * 80);
+                });
+              }, 50);
+            }
+          });
+
+          // Update indicator
+          updateIndicator(buttons[index]);
+
+          currentIndex = index;
+        }
+
+        function startAutoRotate() {
+          stopAutoRotate();
+          autoRotateTimer = setInterval(() => {
+            const nextIndex = (currentIndex + 1) % buttons.length;
+            switchToTab(nextIndex);
+          }, AUTO_ROTATE_DELAY);
+        }
+
+        function stopAutoRotate() {
+          if (autoRotateTimer) {
+            clearInterval(autoRotateTimer);
+            autoRotateTimer = null;
+          }
+        }
+
+        function resetAutoRotate() {
+          startAutoRotate();
+        }
+
+        // Button click handlers
+        buttons.forEach((button, index) => {
+          button.addEventListener('click', () => {
+            switchToTab(index);
+            resetAutoRotate();
+          });
+        });
+
+        // Pause auto-rotate on hover
+        container.addEventListener('mouseenter', () => {
+          stopAutoRotate();
+        });
+
+        container.addEventListener('mouseleave', () => {
+          startAutoRotate();
+        });
+
+        // Reset timer on touch/click within content
+        content.addEventListener('touchstart', () => {
+          resetAutoRotate();
+        }, { passive: true });
+
+        content.addEventListener('click', () => {
+          resetAutoRotate();
+        });
+
+        // Initialize
+        updateIndicator(buttons[0]);
+
+        // Start auto-rotate after initial animation completes
+        setTimeout(() => {
+          startAutoRotate();
+        }, 2000);
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSkillTabs);
+    } else {
+      initSkillTabs();
+    }
+    document.addEventListener('astro:page-load', initSkillTabs);
+  })();
+</script>

@@ -7,10 +7,12 @@ positions:
     endDate: Present
     current: true
     highlights:
-      - Developed syllabi for courses at the institute
-      - Managed the level-rating process of courses
+      - Develop curricula and syllabi for courses at the institute
+      - Manage the level-rating & accreditation process of courses
+      - Develop integrations and systems to enhance the learning experience
       - Developed internal system handling payments, class bookings, CRM and statistics
-      - Assisted in managing relationships with international training partners
+      - Assist in managing relationships with training partners & educators
+      - Deliver keynotes and presentations at events and conferences
 
   - title: Educator
     company: ICE Campus (Institute of Computer Education Ltd.)
@@ -19,10 +21,11 @@ positions:
     endDate: Present
     current: true
     highlights:
-      - Lectured and developed syllabi for Java, PHP, Python, JSP, Android development
-      - Taught GIT, Microsoft Project, Microsoft Visio, Database Development
-      - Delivered Full Stack Development (Node), Linux Administration courses
-      - Taught AWS and Azure cloud technology both in-person and online
+      - Teach AI for Personal Productivity and Development
+      - Teach Coding - Python, Java, JavaScript, PHP, HTML, CSS, React, TypeScript
+      - Teach Cloud Computing - Architecting on AWS and AWS Cloud Practitioner
+      - Teach DevOps - Git, GitHub, CI/CD, Docker, Kubernets, GitHub Actions, Database Development
+      - Create course materials, labs and assessments for in-person, online and hybrid deliveries
 
   - title: Lecturer
     company: St. Aloysius' College 6th Form

@@ -24,7 +24,7 @@ certifications:
     abbrev: SUSE CLA
     detail: SUSE Linux Enterprise Server 11
     issuer: SUSE
-    icon: linux
+    icon: suse
 
   - name: Oracle Certified Associate
     detail: Java SE Programmer
