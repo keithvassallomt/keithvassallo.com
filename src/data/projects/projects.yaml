@@ -1,0 +1,128 @@
+# Projects data
+projects:
+  - id: icloudbridge
+    title: iCloudBridge
+    shortDescription: Sync Apple Notes, Reminders, Photos & Passwords elsewhere
+    description: A small window into Apple's walled garden. Keep your Apple Notes, Reminders, Passwords and Photos in sync with other services like Nextcloud and Bitwarden.
+    logo: /assets/projects/icloudbridge/iCloudBridge_1024_dark.png
+    media:
+      - type: video
+        src: /assets/projects/icloudbridge/notes-C2EcuAKE.mp4
+        label: Notes Sync
+      - type: video
+        src: /assets/projects/icloudbridge/reminders-CAA3zEkU.mp4
+        label: Reminders Sync
+      - type: video
+        src: /assets/projects/icloudbridge/passwords-BdrjLOAq.mp4
+        label: Passwords Sync
+      - type: video
+        src: /assets/projects/icloudbridge/photos-CigsAZ0a.mp4
+        label: Photos Sync
+      - type: video
+        src: /assets/projects/icloudbridge/logs-BXF8_2E9.mp4
+        label: Activity Logs
+    technologies:
+      - Python
+      - TypeScript
+      - Ruby
+      - Swift
+      - AppleScript
+    link: https://icloudbridge.app
+    repo: https://github.com/keithvassallomt/icloudbridge
+    featured: true
+
+  - id: placeholder-1
+    title: Project Alpha
+    shortDescription: Full-stack web application for data management
+    description: A placeholder project to demonstrate the masonry layout. Replace with actual project data.
+    logo: null
+    media: []
+    technologies:
+      - React
+      - Node.js
+      - PostgreSQL
+    link: null
+    repo: null
+    featured: false
+
+  - id: placeholder-2
+    title: Project Beta
+    shortDescription: Container orchestration and deployment platform
+    description: Another placeholder showcasing varied tile sizes in the mosaic grid. This one has a longer description to test text overflow handling.
+    logo: null
+    media: []
+    technologies:
+      - Go
+      - Docker
+      - Kubernetes
+    link: null
+    repo: null
+    featured: true
+
+  - id: placeholder-3
+    title: Project Gamma
+    shortDescription: High-performance computing in the browser
+    description: Short description placeholder.
+    logo: null
+    media: []
+    technologies:
+      - Rust
+      - WebAssembly
+    link: null
+    repo: null
+    featured: false
+
+  - id: placeholder-4
+    title: Project Delta
+    shortDescription: Multi-cloud infrastructure automation
+    description: A cloud infrastructure automation tool that simplifies deployment workflows across multiple providers.
+    logo: null
+    media: []
+    technologies:
+      - Terraform
+      - AWS
+      - Python
+    link: null
+    repo: null
+    featured: false
+
+  - id: placeholder-5
+    title: Project Epsilon
+    shortDescription: Real-time ML pipeline for anomaly detection
+    description: Machine learning pipeline for real-time data processing and anomaly detection.
+    logo: null
+    media: []
+    technologies:
+      - Python
+      - TensorFlow
+      - Apache Kafka
+    link: null
+    repo: null
+    featured: true
+
+  - id: placeholder-6
+    title: Project Zeta
+    shortDescription: Offline-first progressive web app
+    description: Mobile-first progressive web application with offline capabilities.
+    logo: null
+    media: []
+    technologies:
+      - Vue.js
+      - Service Workers
+      - IndexedDB
+    link: null
+    repo: null
+    featured: false
+
+  - id: placeholder-7
+    title: Project Eta
+    shortDescription: Developer environment management CLI
+    description: CLI tool for managing development environments.
+    logo: null
+    media: []
+    technologies:
+      - Go
+      - Shell
+    link: null
+    repo: null
+    featured: false

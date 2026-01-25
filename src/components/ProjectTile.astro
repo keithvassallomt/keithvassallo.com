@@ -1,0 +1,547 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface MediaItem {
+  type: 'video' | 'image';
+  src: string;
+  label?: string;
+}
+
+interface Props {
+  id: string;
+  title: string;
+  shortDescription: string;
+  description: string;
+  logo: string | null;
+  media: MediaItem[];
+  technologies: string[];
+  link?: string | null;
+  repo?: string | null;
+  index: number;
+}
+
+const { id, title, shortDescription, description, logo, media, technologies, link, repo, index } = Astro.props;
+
+// Generate accent color based on project id
+const colors = ['#8CD49C', '#56d4dd', '#ffa657', '#f97583', '#b392f0', '#79c0ff'];
+const colorIndex = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+const accentColor = colors[colorIndex];
+---
+
+<article
+  class="floating-card"
+  data-project-id={id}
+  style={`--accent: ${accentColor};`}
+>
+  <!-- Card Face (collapsed) -->
+  <div class="card-face">
+    <div class="card-background">
+      {logo ? (
+        <img src={logo} alt="" class="bg-image" loading="lazy" />
+      ) : (
+        <div class="bg-gradient"></div>
+      )}
+    </div>
+    <div class="card-content">
+      {logo ? (
+        <img src={logo} alt={title} class="card-logo" loading="lazy" />
+      ) : (
+        <div class="card-placeholder">
+          <Icon name="lucide:folder-code" />
+        </div>
+      )}
+      <h3 class="card-title">{title}</h3>
+      <p class="card-short-desc">{shortDescription}</p>
+    </div>
+  </div>
+
+  <!-- Expanded Panel -->
+  <div class="card-expanded">
+    <div class="expanded-header">
+      <div class="expanded-title-row">
+        {logo ? (
+          <img src={logo} alt="" class="expanded-logo" />
+        ) : (
+          <div class="expanded-placeholder">
+            <Icon name="lucide:folder-code" />
+          </div>
+        )}
+        <h3 class="expanded-title">{title}</h3>
+      </div>
+      <button class="close-btn" aria-label={`Close ${title}`}>
+        <Icon name="lucide:x" />
+      </button>
+    </div>
+
+    <p class="expanded-description">{description}</p>
+
+    {media.length > 0 && (
+      <div class="media-carousel" data-carousel>
+        <div class="carousel-viewport">
+          <div class="carousel-track">
+            {media.map((item, i) => (
+              <div class="carousel-slide" data-index={i}>
+                {item.type === 'video' ? (
+                  <video src={item.src} controls preload="metadata">
+                    <track kind="captions" />
+                  </video>
+                ) : (
+                  <img src={item.src} alt={item.label || ''} loading="lazy" />
+                )}
+                {item.label && <span class="slide-label">{item.label}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+        {media.length > 1 && (
+          <div class="carousel-controls">
+            <button class="carousel-btn prev" aria-label="Previous">
+              <Icon name="lucide:chevron-left" />
+            </button>
+            <div class="carousel-dots">
+              {media.map((_, i) => (
+                <button
+                  class={`carousel-dot ${i === 0 ? 'active' : ''}`}
+                  data-index={i}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ))}
+            </div>
+            <button class="carousel-btn next" aria-label="Next">
+              <Icon name="lucide:chevron-right" />
+            </button>
+          </div>
+        )}
+      </div>
+    )}
+
+    <div class="tech-badges">
+      {technologies.map(tech => (
+        <span class="tech-badge">{tech}</span>
+      ))}
+    </div>
+
+    <div class="project-links">
+      {link && (
+        <a href={link} target="_blank" rel="noopener noreferrer" class="project-link primary">
+          <Icon name="lucide:external-link" />
+          Visit Site
+        </a>
+      )}
+      {repo && (
+        <a href={repo} target="_blank" rel="noopener noreferrer" class="project-link">
+          <Icon name="lucide:github" />
+          Repository
+        </a>
+      )}
+    </div>
+  </div>
+</article>
+
+<style is:global>
+  .floating-card {
+    position: relative;
+    width: 280px;
+    transition: transform 0.2s ease-out, box-shadow 0.3s ease;
+    cursor: pointer;
+    transform-style: preserve-3d;
+  }
+
+  .floating-card:hover {
+    z-index: 50;
+  }
+
+  .floating-card.expanded {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(90vw, 800px) !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 1000 !important;
+    cursor: default;
+  }
+
+  /* Card Face */
+  .card-face {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.1),
+      0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .floating-card:hover .card-face {
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.3),
+      0 0 0 2px var(--accent);
+    border-color: var(--accent);
+  }
+
+  .floating-card.expanded .card-face {
+    display: none !important;
+  }
+
+  .card-background {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .bg-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(25px) saturate(1.2);
+    transform: scale(1.3);
+    opacity: 0.35;
+  }
+
+  .bg-gradient {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 25%, var(--bg-card)),
+      var(--bg-card) 70%
+    );
+  }
+
+  .card-content {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    text-align: center;
+    gap: var(--space-sm);
+  }
+
+  .card-logo {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  }
+
+  .card-placeholder {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    color: var(--accent);
+  }
+
+  .card-placeholder [data-icon] {
+    width: 36px;
+    height: 36px;
+  }
+
+  .card-title {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .card-short-desc {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: var(--space-xs) 0 0 0;
+    line-height: 1.4;
+    max-width: 90%;
+  }
+
+  /* Expanded Panel */
+  .card-expanded {
+    display: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+  }
+
+  .floating-card.expanded .card-expanded {
+    display: block !important;
+  }
+
+  .expanded-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+  }
+
+  .expanded-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .expanded-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+  }
+
+  .expanded-placeholder {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+  }
+
+  .expanded-placeholder [data-icon] {
+    width: 24px;
+    height: 24px;
+  }
+
+  .expanded-title {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .close-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .close-btn [data-icon] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .close-btn:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
+    border-color: var(--accent);
+  }
+
+  .expanded-description {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--space-lg);
+  }
+
+  /* Carousel */
+  .media-carousel {
+    margin-bottom: var(--space-lg);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .carousel-viewport {
+    overflow: hidden;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .carousel-slide {
+    flex: 0 0 100%;
+    position: relative;
+  }
+
+  .carousel-slide video,
+  .carousel-slide img {
+    width: 100%;
+    display: block;
+    max-height: 400px;
+    object-fit: contain;
+    background: #000;
+  }
+
+  .slide-label {
+    position: absolute;
+    bottom: var(--space-sm);
+    left: var(--space-sm);
+    background: rgba(0, 0, 0, 0.75);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+  }
+
+  .carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    padding: var(--space-sm);
+    border-top: 1px solid var(--border-default);
+  }
+
+  .carousel-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .carousel-btn [data-icon] {
+    width: 18px;
+    height: 18px;
+  }
+
+  .carousel-btn:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
+    border-color: var(--accent);
+  }
+
+  .carousel-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-default);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s ease;
+  }
+
+  .carousel-dot.active,
+  .carousel-dot:hover {
+    background: var(--accent);
+  }
+
+  /* Tech Badges */
+  .tech-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-lg);
+  }
+
+  .tech-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+  }
+
+  /* Links */
+  .project-links {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .project-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+  }
+
+  .project-link [data-icon] {
+    width: 16px;
+    height: 16px;
+  }
+
+  .project-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .project-link.primary {
+    background: var(--accent);
+    color: var(--bg-primary);
+    border-color: var(--accent);
+  }
+
+  .project-link.primary:hover {
+    background: color-mix(in srgb, var(--accent) 85%, white);
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .floating-card {
+      width: 240px;
+    }
+
+    .floating-card.expanded {
+      width: 95vw;
+      max-height: 85vh;
+    }
+
+    .card-logo,
+    .card-placeholder {
+      width: 56px;
+      height: 56px;
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+    }
+
+    .expanded-title {
+      font-size: 1.25rem;
+    }
+
+    .carousel-slide video,
+    .carousel-slide img {
+      max-height: 250px;
+    }
+  }
+</style>
