@@ -86,7 +86,7 @@ const accentColor = colors[colorIndex];
             {media.map((item, i) => (
               <div class="carousel-slide" data-index={i}>
                 {item.type === 'video' ? (
-                  <video src={item.src} autoplay muted loop playsinline preload="metadata">
+                  <video src={item.src} autoplay muted loop playsinline preload="auto">
                     <track kind="captions" />
                   </video>
                 ) : (

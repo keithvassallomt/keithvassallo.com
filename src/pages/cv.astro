@@ -59,7 +59,7 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
             <Icon name="lucide:mail" />
             <div class="personal-content">
               <span class="personal-label">Email</span>
-              <a href="mailto:keith@vassallo.cloud" class="personal-value personal-link">keith@vassallo.cloud</a>
+              <a href="#" class="personal-value personal-link" id="email-link"><span style="unicode-bidi: bidi-override; direction: rtl;">duolc.ollassav@htiek</span></a>
             </div>
           </div>
           <div class="personal-item">
@@ -195,6 +195,14 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
 
 <script>
   function initCVAnimations() {
+    // Email obfuscation
+    const emailLink = document.getElementById('email-link');
+    if (emailLink) {
+      const user = 'keith';
+      const domain = 'vassallo.cloud';
+      emailLink.href = `mailto:${user}@${domain}`;
+    }
+
     const observerOptions = {
       threshold: 0.1,
       rootMargin: '0px 0px -50px 0px'
