@@ -1,7 +1,23 @@
 # keithvassallo.com
 
-Code for [keithvassallo.com](https://keithvassallo.com)
+My personal website built with [Astro](https://astro.build).
 
-This page is also use as a demo for Web Taster classes at [ICE Malta](https://icemalta.com)
+## Development
 
-Feel free to use for your own profile page!
+```bash
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Deployment
+
+Deployed via AWS CodePipeline to S3/CloudFront. Pushes to `main` trigger automatic builds.
