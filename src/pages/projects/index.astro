@@ -143,6 +143,12 @@ const projects = projectsData.projects;
         }
       });
 
+      // On mobile, scroll to top before expanding (fixes position:fixed issue with perspective parent)
+      const isMobile = window.innerWidth <= 600;
+      if (isMobile) {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+
       card.classList.add('expanded');
       backdrop.classList.add('visible');
       document.body.style.overflow = 'hidden';
