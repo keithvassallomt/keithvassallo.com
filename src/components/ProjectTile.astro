@@ -84,11 +84,16 @@ const accentColor = colors[colorIndex];
         <div class="carousel-viewport">
           <div class="carousel-track">
             {media.map((item, i) => (
-              <div class="carousel-slide" data-index={i}>
+              <div class={`carousel-slide ${item.type === 'video' ? 'video-slide is-loading' : ''}`} data-index={i}>
                 {item.type === 'video' ? (
-                  <video src={item.src} autoplay muted loop playsinline preload="auto">
-                    <track kind="captions" />
-                  </video>
+                  <>
+                    <video src={item.src} muted loop playsinline preload="metadata">
+                      <track kind="captions" />
+                    </video>
+                    <div class="video-loader" aria-hidden="true">
+                      <span class="spinner"></span>
+                    </div>
+                  </>
                 ) : (
                   <img src={item.src} alt={item.label || ''} loading="lazy" />
                 )}
@@ -161,6 +166,7 @@ const accentColor = colors[colorIndex];
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     width: min(90vw, 800px) !important;
+    max-height: 90dvh;
     max-height: 90vh;
     overflow-y: auto;
     z-index: 1000 !important;
@@ -393,7 +399,7 @@ const accentColor = colors[colorIndex];
   .carousel-slide {
     flex: 0 0 100%;
     position: relative;
-    height: 400px;
+    height: clamp(220px, 42vh, 400px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -410,6 +416,45 @@ const accentColor = colors[colorIndex];
     max-height: 100%;
     display: block;
     object-fit: contain;
+  }
+
+  .video-slide .video-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+      135deg,
+      rgba(13, 17, 23, 0.72),
+      rgba(28, 33, 40, 0.6)
+    );
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .video-slide.is-ready .video-loader,
+  .video-slide.is-error .video-loader {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .video-slide .spinner {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid rgba(230, 237, 243, 0.25);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .slide-label {
@@ -580,6 +625,39 @@ const accentColor = colors[colorIndex];
 
     .carousel-slide {
       height: 250px;
+    }
+  }
+
+  @media (max-height: 900px) {
+    .floating-card.expanded {
+      width: min(94vw, 920px) !important;
+    }
+
+    .card-expanded {
+      padding: var(--space-lg);
+    }
+
+    .expanded-header {
+      margin-bottom: var(--space-md);
+    }
+
+    .expanded-title {
+      font-size: 1.25rem;
+    }
+
+    .expanded-description {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: var(--space-md);
+    }
+
+    .media-carousel,
+    .tech-badges {
+      margin-bottom: var(--space-md);
+    }
+
+    .carousel-slide {
+      height: clamp(170px, 32vh, 320px);
     }
   }
 </style>

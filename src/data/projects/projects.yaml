@@ -32,6 +32,46 @@ projects:
     repo: https://github.com/keithvassallomt/icloudbridge
     featured: false
 
+  - id: clustercut
+    title: ClusterCut
+    shortDescription: Copy and paste across multiple devices without the cloud
+    description: ClusterCut keeps your clipboard in sync across Windows, macOS, and Linux without your data ever leaving your local network. No clouds, no accounts, just seamless productivity.
+    logo: /assets/projects/clustercut/clustercut.png
+    bgImage: /assets/projects/clustercut/bg_image.png
+    media:
+      - type: video
+        src: /assets/projects/clustercut/clustercut_promo.mp4
+        label: Overview
+      - type: image
+        src: /assets/projects/clustercut/scr_main.png
+        label: Main screen
+      - type: image
+        src: /assets/projects/clustercut/scr_main_dark.png
+        label: Main screen (dark mode)
+      - type: image
+        src: /assets/projects/clustercut/scr_history.png
+        label: Clipboard history
+      - type: image
+        src: /assets/projects/clustercut/scr_files.png
+        label: File transfer
+      - type: image
+        src: /assets/projects/clustercut/scr_remote.png
+        label: Remote connections (VPN/Web)
+      - type: image
+        src: /assets/projects/clustercut/scr_settings1.png
+        label: Settings - device name and provisioning mode
+      - type: image
+        src: /assets/projects/clustercut/scr_settings2.png
+        label: Settings - auto/manual mode and file transfer
+    technologies:
+      - Rust
+      - Tauri
+      - TypeScript
+      - React
+    link: https://clustercut.app
+    repo: https://github.com/keithvassallomt/clustercut
+    featured: false
+
   - id: spelling_mt
     title: spelling.mt
     shortDescription: Online Maltese spell checker

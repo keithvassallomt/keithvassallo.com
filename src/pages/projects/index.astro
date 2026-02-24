@@ -56,6 +56,8 @@ const projects = projectsData.projects;
     const cardsWrapper = document.getElementById('floating-cards');
     const backdrop = document.getElementById('card-backdrop');
     if (!cardsWrapper || !backdrop) return;
+    if (cardsWrapper.dataset.initialized === 'true') return;
+    cardsWrapper.dataset.initialized = 'true';
 
     const cards = cardsWrapper.querySelectorAll('.floating-card');
 
@@ -205,6 +207,40 @@ const projects = projectsData.projects;
 
       let currentIndex = 0;
 
+      slides.forEach(slide => {
+        const video = slide.querySelector('video') as HTMLVideoElement | null;
+        if (!video) return;
+
+        const markReady = () => {
+          slide.classList.remove('is-loading');
+          slide.classList.add('is-ready');
+        };
+
+        const markError = () => {
+          slide.classList.remove('is-loading');
+          slide.classList.add('is-error');
+        };
+
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          markReady();
+        } else {
+          video.addEventListener('loadeddata', markReady, { once: true });
+          video.addEventListener('canplay', markReady, { once: true });
+          video.addEventListener('error', markError, { once: true });
+        }
+      });
+
+      function playVideo(video: HTMLVideoElement | null) {
+        if (!video) return;
+        const playPromise = video.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {
+            // Some browsers reject autoplay intermittently during initial load;
+            // avoid noisy unhandled promise errors and let manual interaction retry.
+          });
+        }
+      }
+
       function goToSlide(index: number) {
         slides.forEach(slide => {
           const video = slide.querySelector('video');
@@ -219,9 +255,9 @@ const projects = projectsData.projects;
         });
 
         // Auto-play video on active slide
-        const activeSlide = slides[currentIndex];
-        const activeVideo = activeSlide?.querySelector('video');
-        if (activeVideo) activeVideo.play();
+        const activeSlide = slides[currentIndex] as HTMLElement | undefined;
+        const activeVideo = activeSlide?.querySelector('video') as HTMLVideoElement | null;
+        playVideo(activeVideo);
       }
 
       prevBtn?.addEventListener('click', (e) => {
@@ -240,6 +276,9 @@ const projects = projectsData.projects;
           goToSlide(i);
         });
       });
+
+      // Ensure first slide playback is initialized lazily and safely.
+      goToSlide(0);
     }
   }
 
