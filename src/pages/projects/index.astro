@@ -153,11 +153,12 @@ const projects = projectsData.projects;
         }
       });
 
-      // On mobile, scroll to top before expanding (fixes position:fixed issue with perspective parent)
-      const isMobile = window.innerWidth <= 600;
-      if (isMobile) {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-      }
+      // Scroll to top before expanding (fixes position:fixed issue with perspective parent)
+      window.scrollTo({ top: 0, behavior: 'instant' });
+
+      // Remove perspective so position:fixed works relative to viewport
+      const container = document.getElementById('floating-container');
+      container?.classList.add('has-expanded');
 
       card.classList.add('expanded');
       backdrop?.classList.add('visible');
@@ -178,6 +179,10 @@ const projects = projectsData.projects;
       if (!anyExpanded) {
         backdrop?.classList.remove('visible');
         document.body.style.overflow = '';
+
+        // Restore perspective for card tilt effects
+        const container = document.getElementById('floating-container');
+        container?.classList.remove('has-expanded');
       }
     }
 

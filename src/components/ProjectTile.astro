@@ -162,15 +162,19 @@ const accentColor = colors[colorIndex];
 
   .floating-card.expanded {
     position: fixed !important;
-    top: 50% !important;
+    top: 5vh !important;
     left: 50% !important;
-    transform: translate(-50%, -50%) !important;
+    transform: translateX(-50%) !important;
     width: min(90vw, 800px) !important;
     max-height: 90dvh;
     max-height: 90vh;
     overflow-y: auto;
     z-index: 1000 !important;
     cursor: default;
+  }
+
+  .floating-container.has-expanded {
+    perspective: none;
   }
 
   /* Card Face */
@@ -607,6 +611,7 @@ const accentColor = colors[colorIndex];
       border: none;
       height: 100%;
       box-sizing: border-box;
+      overflow-y: auto;
     }
 
     .card-logo,
