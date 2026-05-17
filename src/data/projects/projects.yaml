@@ -1,5 +1,84 @@
 # Projects data
 projects:
+  - id: touchshell
+    title: Touchshell
+    shortDescription: Tweaks to make GNOME more touch-friendly
+    description: Touchshell adds desktop and overview gestures, full-screen mode, text-actions and much more to GNOME, making it a joy to use on touch devices like tablets and 2-in-1s.
+    logo: /assets/projects/touchshell/touchshell_logo.avif
+    bgImage: /assets/projects/touchshell/bg_image.avif
+    media:
+      - type: video
+        src: /assets/projects/touchshell/touchshell_supercut.webm
+        label: Touchshell demo
+      - type: image
+        src: /assets/projects/touchshell/quick_settings.avif
+        label: Quick Settings with touch-friendly toggles
+      - type: image
+        src: /assets/projects/touchshell/prefs.avif
+        label: Touchshell preferences
+    technologies:
+      - JavaScript
+      - CSS
+      - GJS
+    link: https://touchshell.com
+    repo: https://github.com/keithvassallomt/touchshell
+    featured: false
+  - id: openclaw-nextcloud
+    title: OpenClaw Nextcloud Client
+    shortDescription: Use NextCloud via OpenClaw
+    description: Manage Notes, Tasks, Calendar, Files, and Contacts in your Nextcloud instance via CalDAV, WebDAV, and Notes API. Use for creating notes, managing todos and calendar events, uploading/downloading files, and managing contacts.
+    logo: /assets/projects/openclaw_nextcloud/openclaw_nextcloud_logo.avif
+    bgImage: /assets/projects/openclaw_nextcloud/bg_image.avif
+    media:
+      - type: image
+        src: /assets/projects/openclaw_nextcloud/list_tasks.avif
+        label: Showing tasks from Nextcloud
+      - type: image
+        src: /assets/projects/openclaw_nextcloud/create_task.avif
+        label: Creating a task with natural language input
+      - type: image
+        src: /assets/projects/openclaw_nextcloud/show_calendar.avif
+        label: Showing calendar events from Nextcloud
+      - type: image
+        src: /assets/projects/openclaw_nextcloud/edit_note.avif
+        label: Editing a note with natural language input
+    technologies:
+      - JavaScript
+      - AgentSkills Specification
+    link: https://clawhub.ai/keithvassallomt/openclaw-nextcloud
+    repo: https://github.com/keithvassallomt/openclaw-nextcloud
+    featured: false
+  - id: odrive-linux
+    title: odrive Linux Integration
+    shortDescription: GNOME & Plasma integration for the odrive cloud storage service
+    description: A graphical frontend for the odrive cloud sync agent on Linux, with GNOME (Nautilis) and Plasma (Dolphin) integration.
+    logo: /assets/projects/odrive_linux/odrive_logo.avif
+    bgImage: /assets/projects/odrive_linux/bg_image.avif
+    media:
+      - type: image
+        src: /assets/projects/odrive_linux/onboarding_install_odrive.avif
+        label: Onboarding wizard
+      - type: image
+        src: /assets/projects/odrive_linux/creating_sync_rule.avif
+        label: Creating a sync rule
+      - type: image
+        src: /assets/projects/odrive_linux/emblem_on_synced_folder.avif
+        label: Emblem on synced folder in Nautilus
+      - type: image
+        src: /assets/projects/odrive_linux/right_click_menu.avif
+        label: Right-click menu in Nautilus
+      - type: image
+        src: /assets/projects/odrive_linux/prefs_advanced.avif
+        label: Advanced preferences
+    technologies:
+      - Rust
+      - C++
+      - Python
+      - GTK 4 / libadwaita
+      - Qt 6
+    link: null
+    repo: https://github.com/keithvassallomt/odrive-linux
+    featured: false
   - id: loft
     title: Loft
     shortDescription: Desktop integration for messaging apps on Linux

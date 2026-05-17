@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 #
 # Resizes oversized project images and converts everything under
-# public/assets/projects/ to AVIF.
+# public/assets/projects/ to AVIF, replacing the source.
 #
-#   bg_image.*  -> max 1200px on long edge (they're rendered blurred at card size)
+#   bg_image.*  -> max 1200px on long edge (rendered blurred at card size)
 #   logo files  -> max 320px on long edge (rendered at 72px / 48px in the UI)
 #   everything  -> AVIF at quality 60, speed 4
 #
-# Outputs as *.opt.avif alongside originals. Spot-check, then swap them in
-# (update projects.yaml, delete originals).
+# Logo files are identified by the `logo:` paths in projects.yaml. The match
+# is done on filename-without-extension, so the YAML can already point at the
+# .avif name even when the source on disk is still .png.
+#
+# Workflow: drop new .png / .jpg / .jpeg files in, run this script. Output is
+# foo.avif next to foo.png, source is deleted. Idempotent.
 #
 # Usage:
-#   scripts/optimize-images.sh             # encode
-#   scripts/optimize-images.sh --dry-run   # print actions without running
+#   scripts/optimize-images.sh                 # convert + delete sources
+#   scripts/optimize-images.sh --dry-run       # print actions, change nothing
+#   scripts/optimize-images.sh --keep-source   # convert but do NOT delete sources
 #
 # Requires: magick (ImageMagick 7), avifenc (libavif-tools)
 
@@ -28,11 +33,13 @@ AVIF_QUALITY=60
 AVIF_SPEED=4
 
 DRY_RUN=0
+KEEP_SOURCE=0
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
+    --keep-source) KEEP_SOURCE=1 ;;
     -h|--help)
-      sed -n '2,18p' "$0"
+      sed -n '2,24p' "$0"
       exit 0
       ;;
     *) echo "unknown flag: $arg" >&2; exit 1 ;;
@@ -44,17 +51,25 @@ if (( DRY_RUN == 0 )); then
   command -v avifenc >/dev/null || { echo "avifenc not found — install with: sudo dnf install libavif-tools" >&2; exit 1; }
 fi
 
-# Build a set of logo files by reading the YAML's `logo:` entries.
+# Build a set of logo files keyed by filename-without-extension, so a source
+# .png still matches even when projects.yaml already references the .avif name.
 declare -A IS_LOGO=()
 while IFS= read -r p; do
-  IS_LOGO["$ROOT_DIR/public${p}"]=1
+  IS_LOGO["$ROOT_DIR/public${p%.*}"]=1
 done < <(awk '/^[[:space:]]*logo:[[:space:]]*\/assets\/projects\// {print $2}' "$YAML")
 
 human_size() { du -h "$1" 2>/dev/null | awk '{print $1}'; }
 
+remove_source() {
+  local in="$1"
+  if (( KEEP_SOURCE )) || (( DRY_RUN )); then return; fi
+  rm -- "$in"
+  echo "    removed source: $in"
+}
+
 encode_one() {
   local in="$1"
-  local out="${in%.*}.opt.avif"
+  local out="${in%.*}.avif"
   local base
   base="$(basename "$in")"
 
@@ -63,13 +78,14 @@ encode_one() {
   if [[ "$base" == bg_image.* ]]; then
     maxw=$BG_MAX
     role="bg_image"
-  elif [[ -n "${IS_LOGO[$in]:-}" ]]; then
+  elif [[ -n "${IS_LOGO[${in%.*}]:-}" ]]; then
     maxw=$LOGO_MAX
     role="logo"
   fi
 
   if [[ -f "$out" && "$out" -nt "$in" ]]; then
-    echo "skip (up to date): $in"
+    echo "already converted: $out"
+    remove_source "$in"
     return
   fi
 
@@ -86,6 +102,7 @@ encode_one() {
       echo "    magick \"$in\" -strip <tmp.png>"
     fi
     echo "    avifenc -q $AVIF_QUALITY -s $AVIF_SPEED <tmp.png> \"$out\""
+    echo "    (would remove source: $in)"
     return
   fi
 
@@ -104,23 +121,23 @@ encode_one() {
   local after
   after="$(human_size "$out")"
   echo "    -> $out  ($after)"
+  remove_source "$in"
 }
 
-mapfile -d '' files < <(find "$SRC_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) ! -iname '*.opt.avif' -print0)
+mapfile -d '' files < <(find "$SRC_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) -print0)
 
 if (( ${#files[@]} == 0 )); then
-  echo "no images found under $SRC_DIR"
+  echo "no source images (.png / .jpg / .jpeg) found under $SRC_DIR — nothing to do"
   exit 0
 fi
 
-echo "found ${#files[@]} image(s) under $SRC_DIR"
+echo "found ${#files[@]} source image(s) under $SRC_DIR"
 for f in "${files[@]}"; do
   encode_one "$f"
 done
 
 echo
 echo "done."
-if (( DRY_RUN == 0 )); then
-  echo "outputs written as *.opt.avif alongside originals."
-  echo "spot-check them, then I can update projects.yaml + delete originals."
+if (( DRY_RUN == 0 )) && (( KEEP_SOURCE == 0 )); then
+  echo "sources deleted. make sure projects.yaml references the .avif paths."
 fi
