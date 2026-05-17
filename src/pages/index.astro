@@ -106,9 +106,15 @@ const currentYear = new Date().getFullYear();
       let charIndex = 0;
       let isDeleting = false;
       const typingText = document.getElementById('typing-text');
+      if (!typingText) return;
 
-      // Reset the text content
-      if (typingText) typingText.textContent = '';
+      // Guard against double init: astro:page-load fires on initial load too,
+      // and we also call initHomePage() inline, so without this the typewriter
+      // runs twice on the same element and the two loops fight, producing a flicker.
+      if (typingText.dataset.typewriterInit === 'true') return;
+      typingText.dataset.typewriterInit = 'true';
+
+      typingText.textContent = '';
 
       function type() {
         if (!document.getElementById('typing-text')) return; // Stop if element is gone
