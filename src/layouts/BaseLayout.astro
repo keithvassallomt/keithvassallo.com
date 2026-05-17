@@ -1,5 +1,5 @@
 ---
-import { ViewTransitions } from 'astro:transitions';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -63,7 +63,7 @@ const imageUrl = new URL(image, siteUrl).href;
       rel="stylesheet"
     />
 
-    <ViewTransitions />
+    <ClientRouter />
   </head>
   <body>
     <slot />
