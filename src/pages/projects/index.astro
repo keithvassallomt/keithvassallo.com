@@ -156,6 +156,17 @@ const projects = projectsData.projects;
       });
     }
 
+    function playActiveVideos(card: Element) {
+      card.querySelectorAll('[data-carousel]').forEach(carousel => {
+        const slides = carousel.querySelectorAll('.carousel-slide');
+        const dots = Array.from(carousel.querySelectorAll('.carousel-dot'));
+        const activeIdx = Math.max(0, dots.findIndex(d => d.classList.contains('active')));
+        const video = slides[activeIdx]?.querySelector('video') as HTMLVideoElement | null;
+        const p = video?.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      });
+    }
+
     function expandCard(card: Element) {
       // Collapse any other expanded cards
       cards.forEach(c => {
@@ -176,6 +187,8 @@ const projects = projectsData.projects;
       card.classList.add('expanded');
       backdrop?.classList.add('visible');
       document.body.style.overflow = 'hidden';
+
+      playActiveVideos(card);
     }
 
     function collapseCard(card: Element) {

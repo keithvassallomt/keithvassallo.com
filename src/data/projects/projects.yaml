@@ -4,35 +4,35 @@ projects:
     title: Loft
     shortDescription: Desktop integration for messaging apps on Linux
     description: Loft provides full desktop integration for WhatsApp, Facebook Messenger, Slack and Telegram on Linux, including voice and video calling, system tray icons, badge counts, and close-to-tray behavior.
-    logo: /assets/projects/loft/loft.png
-    bgImage: /assets/projects/loft/bg_image.png
+    logo: /assets/projects/loft/loft.avif
+    bgImage: /assets/projects/loft/bg_image.avif
     media:
       - type: image
-        src: /assets/projects/loft/main_light.png
+        src: /assets/projects/loft/main_light.avif
         label: Loft manager UI (light mode)
       - type: image
-        src: /assets/projects/loft/main_dark.png
+        src: /assets/projects/loft/main_dark.avif
         label: Loft manager UI (dark mode)
       - type: image
-        src: /assets/projects/loft/service_settings.png
+        src: /assets/projects/loft/service_settings.avif
         label: Per-app service settings
       - type: image
-        src: /assets/projects/loft/whatsapp_light.png
+        src: /assets/projects/loft/whatsapp_light.avif
         label: WhatsApp integration (light mode)
       - type: image
-        src: /assets/projects/loft/video_call.png
+        src: /assets/projects/loft/video_call.avif
         label: Video call support
       - type: image
-        src: /assets/projects/loft/gnome_unified.png
+        src: /assets/projects/loft/gnome_unified.avif
         label: Unified app icons in GNOME Shell
       - type: image
-        src: /assets/projects/loft/gnome_individual.png
+        src: /assets/projects/loft/gnome_individual.avif
         label: Individual app icons in GNOME Shell
       - type: image
-        src: /assets/projects/loft/kde_unified.png
+        src: /assets/projects/loft/kde_unified.avif
         label: Unified app icons in KDE Plasma
       - type: image
-        src: /assets/projects/loft/kde_individual.png
+        src: /assets/projects/loft/kde_individual.avif
         label: Individual app icons in KDE Plasma
     technologies:
       - Rust
@@ -45,29 +45,29 @@ projects:
     title: FriendlyHub
     shortDescription: A friendly place for Flatpak app distribution
     description: FriendlyHub is a Flatpak app store and repository manager for Linux. It provides a user-friendly interface for discovering, installing, and managing Flatpak applications, with a focus on community-driven content and open-source principles.
-    logo: /assets/projects/friendlyhub/friendlyhub_logo.png
-    bgImage: /assets/projects/friendlyhub/bg_image.png
+    logo: /assets/projects/friendlyhub/friendlyhub_logo.avif
+    bgImage: /assets/projects/friendlyhub/bg_image.avif
     media:
       - type: image
-        src: /assets/projects/friendlyhub/friendlyhub_main.png
+        src: /assets/projects/friendlyhub/friendlyhub_main.avif
         label: FriendlyHub storefront
       - type: image
-        src: /assets/projects/friendlyhub/app_page.png
+        src: /assets/projects/friendlyhub/app_page.avif
         label: App page with information and screenshots
       - type: image
-        src: /assets/projects/friendlyhub/developer_app_page.png
+        src: /assets/projects/friendlyhub/developer_app_page.avif
         label: Developer app page with management options
       - type: image
-        src: /assets/projects/friendlyhub/developer_submit_manifest.png
+        src: /assets/projects/friendlyhub/developer_submit_manifest.avif
         label: Interactive UI for submitting app manifests
       - type: image
-        src: /assets/projects/friendlyhub/developer_submit_metainfo.png
+        src: /assets/projects/friendlyhub/developer_submit_metainfo.avif
         label: Interactive UI for submitting app metadata
       - type: image
-        src: /assets/projects/friendlyhub/developer_build_start.png
+        src: /assets/projects/friendlyhub/developer_build_start.avif
         label: Build status and logs
       - type: image
-        src: /assets/projects/friendlyhub/review_comment.png
+        src: /assets/projects/friendlyhub/review_comment.avif
         label: Reviewer comment interface
     technologies:
       - Rust 
@@ -84,14 +84,14 @@ projects:
     title: Friendly Manifesto
     shortDescription: A set of principles for the open-source community
     description: The Friendly Manifesto is a set of principles for open-source developers, gatekeepers and users, with the aim of creating friendly, supportive communities. 
-    logo: /assets/projects/friendly_manifesto/friendly.png
-    bgImage: /assets/projects/friendly_manifesto/bg_image.png
+    logo: /assets/projects/friendly_manifesto/friendly.avif
+    bgImage: /assets/projects/friendly_manifesto/bg_image.avif
     media:
       - type: image
-        src: /assets/projects/friendly_manifesto/fm_badge.png
+        src: /assets/projects/friendly_manifesto/fm_badge.avif
         label: The Friendly Manifesto badge
       - type: image
-        src: /assets/projects/friendly_manifesto/scr_web.png
+        src: /assets/projects/friendly_manifesto/scr_web.avif
         label: Friendly Manifesto website
     technologies:
       - Astro
@@ -105,8 +105,8 @@ projects:
     title: iCloudBridge
     shortDescription: Sync Apple Notes, Reminders, Photos & Passwords elsewhere
     description: A small window into Apple's walled garden. Keep your Apple Notes, Reminders, Passwords and Photos in sync with other services like Nextcloud and Bitwarden.
-    logo: /assets/projects/icloudbridge/iCloudBridge_1024_dark.png
-    bgImage: /assets/projects/icloudbridge/bg_image.png
+    logo: /assets/projects/icloudbridge/iCloudBridge_1024_dark.avif
+    bgImage: /assets/projects/icloudbridge/bg_image.avif
     media:
       - type: video
         src: /assets/projects/icloudbridge/notes-C2EcuAKE.webm
@@ -137,32 +137,32 @@ projects:
     title: ClusterCut
     shortDescription: Copy and paste across multiple devices without the cloud
     description: ClusterCut keeps your clipboard in sync across Windows, macOS, and Linux without your data ever leaving your local network. No clouds, no accounts, just seamless productivity.
-    logo: /assets/projects/clustercut/clustercut.png
-    bgImage: /assets/projects/clustercut/bg_image.png
+    logo: /assets/projects/clustercut/clustercut.avif
+    bgImage: /assets/projects/clustercut/bg_image.avif
     media:
       - type: video
         src: /assets/projects/clustercut/clustercut_promo.webm
         label: Overview
       - type: image
-        src: /assets/projects/clustercut/scr_main.png
+        src: /assets/projects/clustercut/scr_main.avif
         label: Main screen
       - type: image
-        src: /assets/projects/clustercut/scr_main_dark.png
+        src: /assets/projects/clustercut/scr_main_dark.avif
         label: Main screen (dark mode)
       - type: image
-        src: /assets/projects/clustercut/scr_history.png
+        src: /assets/projects/clustercut/scr_history.avif
         label: Clipboard history
       - type: image
-        src: /assets/projects/clustercut/scr_files.png
+        src: /assets/projects/clustercut/scr_files.avif
         label: File transfer
       - type: image
-        src: /assets/projects/clustercut/scr_remote.png
+        src: /assets/projects/clustercut/scr_remote.avif
         label: Remote connections (VPN/Web)
       - type: image
-        src: /assets/projects/clustercut/scr_settings1.png
+        src: /assets/projects/clustercut/scr_settings1.avif
         label: Settings - device name and provisioning mode
       - type: image
-        src: /assets/projects/clustercut/scr_settings2.png
+        src: /assets/projects/clustercut/scr_settings2.avif
         label: Settings - auto/manual mode and file transfer
     technologies:
       - Rust
@@ -177,17 +177,17 @@ projects:
     title: spelling.mt
     shortDescription: Online Maltese spell checker
     description: An online home and spell checker for the late Ramon Casha's open-source Maltese spell checker.
-    logo: /assets/projects/spelling_mt/spelling_logo.png
-    bgImage: /assets/projects/spelling_mt/bg_image.png
+    logo: /assets/projects/spelling_mt/spelling_logo.avif
+    bgImage: /assets/projects/spelling_mt/bg_image.avif
     media:
       - type: image
-        src: /assets/projects/spelling_mt/homepage_english.png
+        src: /assets/projects/spelling_mt/homepage_english.avif
         label: English-language homepage
       - type: image
-        src: /assets/projects/spelling_mt/homepage_maltese.png
+        src: /assets/projects/spelling_mt/homepage_maltese.avif
         label: Maltese-language homepage
       - type: image
-        src: /assets/projects/spelling_mt/docs_suggest.png
+        src: /assets/projects/spelling_mt/docs_suggest.avif
         label: Online spell-checker
     technologies:
       - JavaScript
@@ -201,23 +201,23 @@ projects:
     title: Status Tray
     shortDescription: Better tray icons for GNOME with customisation options
     description: Automatic system tray for applications using the StatusNotifierItem/DBusMenu protocol. Displays tray icons for apps like Discord, Slack, Dropbox, Nextcloud, Steam, and more. Supports symbolic (monochrome) and original icon modes, per-app icon customization, drag-and-drop reordering, and individual icon effect tuning.
-    logo: /assets/projects/statustray/statustray_logo.png
-    bgImage: /assets/projects/statustray/bg_image.png
+    logo: /assets/projects/statustray/statustray_logo.avif
+    bgImage: /assets/projects/statustray/bg_image.avif
     media: 
       - type: image
-        src: /assets/projects/statustray/screenshot-prefs.png
+        src: /assets/projects/statustray/screenshot-prefs.avif
         label: Preferences window
       - type: image
-        src: /assets/projects/statustray/screenshot-icon-picker.png
+        src: /assets/projects/statustray/screenshot-icon-picker.avif
         label: Choose custom icons
       - type: image
-        src: /assets/projects/statustray/screenshot-icon-modes.png
+        src: /assets/projects/statustray/screenshot-icon-modes.avif
         label: Support for icon re-colouring
       - type: image
-        src: /assets/projects/statustray/screenshot-effects.png
+        src: /assets/projects/statustray/screenshot-effects.avif
         label: Per-icon effect adjustments
       - type: image
-        src: /assets/projects/statustray/screenshot-menu.png
+        src: /assets/projects/statustray/screenshot-menu.avif
         label: Icon menu in action
     technologies:
       - JavaScript
@@ -231,20 +231,20 @@ projects:
     title: WebFruitOS
     shortDescription: Website template mimicking a certain fruit-themed operating system
     description: This is a template for a responsive web application with an interface reminiscent of a famously fruit-based operating system. Featuring responsive design and light/dark modes.
-    logo: /assets/projects/wfos/wfos_logo.png
-    bgImage: /assets/projects/wfos/bg_image.png
+    logo: /assets/projects/wfos/wfos_logo.avif
+    bgImage: /assets/projects/wfos/bg_image.avif
     media: 
       - type: video
         src: /assets/projects/wfos/webfruitos.webm
         label: WebFruitOS Demo
       - type: image
-        src: /assets/projects/wfos/wfos_multiwindow.png
+        src: /assets/projects/wfos/wfos_multiwindow.avif
         label: Multi-window support
       - type: image
-        src: /assets/projects/wfos/wfos_windowman.png
+        src: /assets/projects/wfos/wfos_windowman.avif
         label: Window management
       - type: image
-        src: /assets/projects/wfos/wfos_responsive.png
+        src: /assets/projects/wfos/wfos_responsive.avif
         label: Responsive design
     technologies:
       - JavaScript
@@ -258,23 +258,23 @@ projects:
     title: WordLeech
     shortDescription: Tool to add words from documents to the Maltese spell checker
     description: A desktop application that allows users to extract words from various document formats and add them to the Maltese spell checker dictionary.
-    logo: /assets/projects/wordleech/wordleech_logo.png
-    bgImage: /assets/projects/wordleech/bg_image.png
+    logo: /assets/projects/wordleech/wordleech_logo.avif
+    bgImage: /assets/projects/wordleech/bg_image.avif
     media: 
       - type: video
         src: /assets/projects/wordleech/wordleech.webm
         label: WordLeech Demo
       - type: image
-        src: /assets/projects/wordleech/wordleech3_en.png
+        src: /assets/projects/wordleech/wordleech3_en.avif
         label: Main interface (English)
       - type: image
-        src: /assets/projects/wordleech/wordleech3_mt.png
+        src: /assets/projects/wordleech/wordleech3_mt.avif
         label: Main interface (Maltese)
       - type: image
-        src: /assets/projects/wordleech/wordleech6_en.png
+        src: /assets/projects/wordleech/wordleech6_en.avif
         label: Ingesting document words
       - type: image
-        src: /assets/projects/wordleech/wordleech7_en.png
+        src: /assets/projects/wordleech/wordleech7_en.avif
         label: Adding words to dictionary
     technologies:
       - Python
@@ -288,20 +288,20 @@ projects:
     title: Maltese Spelling Dictionary
     shortDescription: Open-source Spell checking dictionary for the Maltese language
     description: An open-source spell checking dictionary for the Maltese language, usable online, in operating systems (Linux, Windows, macOS), and office suites (LibreOffice, Microsoft 365).
-    logo: /assets/projects/mtdict/dict_logo.png
-    bgImage: /assets/projects/mtdict/bg_image.png
+    logo: /assets/projects/mtdict/dict_logo.avif
+    bgImage: /assets/projects/mtdict/bg_image.avif
     media: 
       - type: image
-        src: /assets/projects/mtdict/online.png
+        src: /assets/projects/mtdict/online.avif
         label: Online spell-checker
       - type: image
-        src: /assets/projects/mtdict/libreglory.png
+        src: /assets/projects/mtdict/libreglory.avif
         label: LibreOffice extension
       - type: image
-        src: /assets/projects/mtdict/word6.png
+        src: /assets/projects/mtdict/word6.avif
         label: Microsoft 365 integration
       - type: image
-        src: /assets/projects/mtdict/te2.png
+        src: /assets/projects/mtdict/te2.avif
         label: macOS integration
     technologies:
       - Common Workflow Language
