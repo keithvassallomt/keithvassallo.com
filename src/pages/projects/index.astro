@@ -145,6 +145,17 @@ const projects = projectsData.projects;
       });
     });
 
+    function hydrateVideos(card: Element) {
+      card.querySelectorAll('video[data-src]').forEach(el => {
+        const video = el as HTMLVideoElement;
+        const src = video.dataset.src;
+        if (!src) return;
+        video.src = src;
+        video.removeAttribute('data-src');
+        video.load();
+      });
+    }
+
     function expandCard(card: Element) {
       // Collapse any other expanded cards
       cards.forEach(c => {
@@ -159,6 +170,8 @@ const projects = projectsData.projects;
       // Remove perspective so position:fixed works relative to viewport
       const container = document.getElementById('floating-container');
       container?.classList.add('has-expanded');
+
+      hydrateVideos(card);
 
       card.classList.add('expanded');
       backdrop?.classList.add('visible');

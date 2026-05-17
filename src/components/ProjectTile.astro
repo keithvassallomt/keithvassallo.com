@@ -87,7 +87,7 @@ const accentColor = colors[colorIndex];
               <div class={`carousel-slide ${item.type === 'video' ? 'video-slide is-loading' : ''}`} data-index={i}>
                 {item.type === 'video' ? (
                   <>
-                    <video src={item.src} muted loop playsinline preload="metadata">
+                    <video data-src={item.src} muted loop playsinline preload="none">
                       <track kind="captions" />
                     </video>
                     <div class="video-loader" aria-hidden="true">

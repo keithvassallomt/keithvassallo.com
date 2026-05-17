@@ -109,19 +109,19 @@ projects:
     bgImage: /assets/projects/icloudbridge/bg_image.png
     media:
       - type: video
-        src: /assets/projects/icloudbridge/notes-C2EcuAKE.mp4
+        src: /assets/projects/icloudbridge/notes-C2EcuAKE.webm
         label: Notes Sync
       - type: video
-        src: /assets/projects/icloudbridge/reminders-CAA3zEkU.mp4
+        src: /assets/projects/icloudbridge/reminders-CAA3zEkU.webm
         label: Reminders Sync
       - type: video
-        src: /assets/projects/icloudbridge/passwords-BdrjLOAq.mp4
+        src: /assets/projects/icloudbridge/passwords-BdrjLOAq.webm
         label: Passwords Sync
       - type: video
-        src: /assets/projects/icloudbridge/photos-CigsAZ0a.mp4
+        src: /assets/projects/icloudbridge/photos-CigsAZ0a.webm
         label: Photos Sync
       - type: video
-        src: /assets/projects/icloudbridge/logs-BXF8_2E9.mp4
+        src: /assets/projects/icloudbridge/logs-BXF8_2E9.webm
         label: Activity Logs
     technologies:
       - Python
@@ -141,7 +141,7 @@ projects:
     bgImage: /assets/projects/clustercut/bg_image.png
     media:
       - type: video
-        src: /assets/projects/clustercut/clustercut_promo.mp4
+        src: /assets/projects/clustercut/clustercut_promo.webm
         label: Overview
       - type: image
         src: /assets/projects/clustercut/scr_main.png
@@ -235,7 +235,7 @@ projects:
     bgImage: /assets/projects/wfos/bg_image.png
     media: 
       - type: video
-        src: /assets/projects/wfos/webfruitos.mp4
+        src: /assets/projects/wfos/webfruitos.webm
         label: WebFruitOS Demo
       - type: image
         src: /assets/projects/wfos/wfos_multiwindow.png
@@ -262,7 +262,7 @@ projects:
     bgImage: /assets/projects/wordleech/bg_image.png
     media: 
       - type: video
-        src: /assets/projects/wordleech/wordleech.mp4
+        src: /assets/projects/wordleech/wordleech.webm
         label: WordLeech Demo
       - type: image
         src: /assets/projects/wordleech/wordleech3_en.png
