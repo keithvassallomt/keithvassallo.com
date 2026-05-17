@@ -1,4 +1,10 @@
 version: 0.2
+
+env:
+  variables:
+    BUCKET: keithvassallo.com
+    DISTRIBUTION_ID: E1W88AN3N1ZWL6
+
 phases:
   install:
     runtime-versions:
@@ -9,7 +15,28 @@ phases:
   build:
     commands:
       - npm run build
-artifacts:
-  files:
-    - '**/*'
-  base-directory: dist
+  post_build:
+    commands:
+      # 1) Bulk sync with --delete and a sane medium-cache default for stable assets
+      #    (images, videos, fonts under /assets/ — filenames are stable so 7 days is safe).
+      - >
+        aws s3 sync dist/ s3://${BUCKET}/ --delete
+        --cache-control "public, max-age=604800"
+      # 2) Force-rewrite metadata on hashed Astro bundles so they cache for a year.
+      #    Filenames include a content hash, so they're safely immutable.
+      - >
+        aws s3 cp dist/_astro/ s3://${BUCKET}/_astro/ --recursive
+        --metadata-directive REPLACE
+        --cache-control "public, max-age=31536000, immutable"
+      # 3) Force-rewrite metadata on HTML and feed-like files so deploys go live
+      #    immediately — no manual invalidation needed for stale markup.
+      - >
+        aws s3 cp dist/ s3://${BUCKET}/ --recursive
+        --metadata-directive REPLACE
+        --exclude "*" --include "*.html" --include "*.xml" --include "*.txt"
+        --cache-control "public, max-age=0, must-revalidate"
+      # 4) Invalidate the edge so the next visitor sees the new HTML straight away.
+      - >
+        aws cloudfront create-invalidation
+        --distribution-id ${DISTRIBUTION_ID}
+        --paths "/*"
