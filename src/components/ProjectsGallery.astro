@@ -190,7 +190,7 @@ const projects = loadProjects();
 
       if (pushHistory) {
         const id = card.getAttribute('data-project-id');
-        if (id) history.pushState({ projectId: id }, '', `/projects/${id}`);
+        if (id) pushGalleryUrl(`/projects/${id}`);
       }
     }
 
@@ -214,9 +214,18 @@ const projects = loadProjects();
         container?.classList.remove('has-expanded');
 
         if (pushHistory) {
-          history.pushState({}, '', '/projects');
+          pushGalleryUrl('/projects');
         }
       }
+    }
+
+    // Push a history entry that mirrors Astro ClientRouter's own state shape
+    // ({ index, scrollX, scrollY }) so its scroll/index tracking stays sane when
+    // Back/Forward later hands these entries back to ClientRouter.
+    function pushGalleryUrl(url: string) {
+      const cur = (history.state as any) || {};
+      const index = typeof cur.index === 'number' ? cur.index + 1 : 1;
+      history.pushState({ ...cur, index, scrollX: 0, scrollY: 0 }, '', url);
     }
 
     // Close on backdrop click
@@ -228,8 +237,10 @@ const projects = loadProjects();
       });
     });
 
-    // Close on Escape
-    document.addEventListener('keydown', (e) => {
+    // Close on Escape. ClientRouter swaps create a fresh #floating-cards each
+    // /projects visit but window/document persist across swaps, so remove any
+    // previously-registered handler before adding a new one to avoid leaks.
+    function onKeydown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         cards.forEach(card => {
           if (card.classList.contains('expanded')) {
@@ -237,32 +248,18 @@ const projects = loadProjects();
           }
         });
       }
-    });
+    }
+    if ((window as any).__pgEscHandler) {
+      document.removeEventListener('keydown', (window as any).__pgEscHandler);
+    }
+    (window as any).__pgEscHandler = onKeydown;
+    document.addEventListener('keydown', onKeydown);
 
-    // Keep card state in sync with Back/Forward. Registered in the capture phase
-    // and stops propagation for our own /projects[/id] transitions so Astro's
-    // ClientRouter does not also try to swap the page for an in-page state change.
-    window.addEventListener('popstate', (e) => {
-      const match = location.pathname.match(/^\/projects\/([^/]+)\/?$/);
-      const targetId = match ? match[1] : null;
-      const target = targetId
-        ? cardsWrapper.querySelector(`.floating-card[data-project-id="${targetId}"]`)
-        : null;
-
-      // Only handle transitions that stay within this gallery: either the base
-      // /projects page, or /projects/<id> for a card that exists here.
-      const isInternal = location.pathname === '/projects' || !!target;
-      if (!isInternal) return; // let ClientRouter handle navigation elsewhere
-
-      e.stopImmediatePropagation();
-
-      const currentlyExpanded = cardsWrapper.querySelector('.floating-card.expanded');
-      const currentId = currentlyExpanded?.getAttribute('data-project-id') ?? null;
-      if (currentId === targetId) return;
-
-      if (currentlyExpanded) collapseCard(currentlyExpanded, false);
-      if (target) expandCard(target, false);
-    }, true);
+    // Back/Forward is handled by Astro's ClientRouter: it navigates to the
+    // correct pre-rendered page (/projects = collapsed, /projects/<id> =
+    // pre-expanded), so no custom popstate handler is needed here. The pushed
+    // state above mirrors ClientRouter's shape so its scroll/index tracking
+    // stays consistent.
 
     function initCarousel(card: Element) {
       const carousel = card.querySelector('[data-carousel]');
