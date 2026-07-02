@@ -1,5 +1,26 @@
 # Projects data
 projects:
+  - id: smart-dnd
+    title: Smart DnD
+    shortDescription: Automatically enable Do Not Disturb when you are busy
+    description: Smart DnD automatically enables Do Not Disturb mode on your GNOME desktop when you are busy. It supports setting a (recurring) schedule, or auto-triggering based on calendar events (with pattern matching).
+    logo: /assets/projects/smart_dnd/smart_dnd_logo.avif
+    bgImage: /assets/projects/smart_dnd/bg_image.avif
+    media:
+      - type: image
+        src: /assets/projects/smart_dnd/schedule.avif
+        label: Creating a recurring schedule for Smart DnD
+      - type: image
+        src: /assets/projects/smart_dnd/calendar_rule.avif
+        label: Calendar rule for auto-triggering DnD
+      - type: image
+        src: /assets/projects/smart_dnd/quick_settings.avif
+        label: Smart DnD Quick Settings in GNOME
+    technologies:
+      - GTK 4 / libadwaita
+      - JavaScript
+    link: null
+    repo: https://github.com/keithvassallomt/smart-dnd
   - id: touchshell
     title: Touchshell
     shortDescription: Tweaks to make GNOME more touch-friendly
