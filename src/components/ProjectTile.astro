@@ -19,9 +19,10 @@ interface Props {
   link?: string | null;
   repo?: string | null;
   index: number;
+  expanded?: boolean;
 }
 
-const { id, title, shortDescription, description, logo, bgImage, media, technologies, link, repo, index } = Astro.props;
+const { id, title, shortDescription, description, logo, bgImage, media, technologies, link, repo, index, expanded = false } = Astro.props;
 
 // Determine background image: bgImage > logo > gradient
 const backgroundSrc = bgImage || logo;
@@ -33,7 +34,7 @@ const accentColor = colors[colorIndex];
 ---
 
 <article
-  class="floating-card"
+  class:list={["floating-card", { expanded }]}
   data-project-id={id}
   style={`--accent: ${accentColor};`}
 >

@@ -21,9 +21,9 @@ const projects = loadProjects();
       <p class="page-subtitle">Things I've designed & built</p>
     </div>
 
-    <div class="floating-container" id="floating-container">
+    <div class:list={["floating-container", { "has-expanded": !!expandId }]} id="floating-container">
       <!-- Backdrop for expanded cards (must be before cards for z-index) -->
-      <div class="card-backdrop" id="card-backdrop"></div>
+      <div class:list={["card-backdrop", { visible: !!expandId }]} id="card-backdrop"></div>
 
       <div class="floating-cards" id="floating-cards">
         {projects.map((project: any, index: number) => (
@@ -39,6 +39,7 @@ const projects = loadProjects();
             link={project.link}
             repo={project.repo}
             index={index}
+            expanded={project.id === expandId}
           />
         ))}
       </div>
@@ -315,6 +316,17 @@ const projects = loadProjects();
 
       // Ensure first slide playback is initialized lazily and safely.
       goToSlide(0);
+    }
+
+    // If the server rendered a card pre-expanded (deep-link /projects/<id>),
+    // finish the parts the CSS class alone can't do: lock scroll, hydrate and
+    // play its videos. The expanded/backdrop/has-expanded classes are already
+    // present from SSR, so there is no collapse-then-expand flash.
+    const preExpanded = cardsWrapper.querySelector('.floating-card.expanded');
+    if (preExpanded) {
+      document.body.style.overflow = 'hidden';
+      hydrateVideos(preExpanded);
+      playActiveVideos(preExpanded);
     }
   }
 

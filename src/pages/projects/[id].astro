@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectsGallery from '../../components/ProjectsGallery.astro';
+import { loadProjects } from '../../lib/projects';
+
+export function getStaticPaths() {
+  return loadProjects().map((project) => ({
+    params: { id: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+---
+
+<BaseLayout
+  title={project.title}
+  description={project.shortDescription}
+  image={`/assets/og/${project.id}.jpg`}
+>
+  <ProjectsGallery expandId={project.id} />
+</BaseLayout>
