@@ -165,11 +165,11 @@ const projects = loadProjects();
       });
     }
 
-    function expandCard(card: Element) {
+    function expandCard(card: Element, pushHistory = true) {
       // Collapse any other expanded cards
       cards.forEach(c => {
         if (c !== card && c.classList.contains('expanded')) {
-          collapseCard(c);
+          collapseCard(c, false);
         }
       });
 
@@ -187,9 +187,14 @@ const projects = loadProjects();
       document.body.style.overflow = 'hidden';
 
       playActiveVideos(card);
+
+      if (pushHistory) {
+        const id = card.getAttribute('data-project-id');
+        if (id) history.pushState({ projectId: id }, '', `/projects/${id}`);
+      }
     }
 
-    function collapseCard(card: Element) {
+    function collapseCard(card: Element, pushHistory = true) {
       card.classList.remove('expanded');
 
       // Reset transform
@@ -207,6 +212,10 @@ const projects = loadProjects();
         // Restore perspective for card tilt effects
         const container = document.getElementById('floating-container');
         container?.classList.remove('has-expanded');
+
+        if (pushHistory) {
+          history.pushState({}, '', '/projects');
+        }
       }
     }
 
@@ -229,6 +238,31 @@ const projects = loadProjects();
         });
       }
     });
+
+    // Keep card state in sync with Back/Forward. Registered in the capture phase
+    // and stops propagation for our own /projects[/id] transitions so Astro's
+    // ClientRouter does not also try to swap the page for an in-page state change.
+    window.addEventListener('popstate', (e) => {
+      const match = location.pathname.match(/^\/projects\/([^/]+)\/?$/);
+      const targetId = match ? match[1] : null;
+      const target = targetId
+        ? cardsWrapper.querySelector(`.floating-card[data-project-id="${targetId}"]`)
+        : null;
+
+      // Only handle transitions that stay within this gallery: either the base
+      // /projects page, or /projects/<id> for a card that exists here.
+      const isInternal = location.pathname === '/projects' || !!target;
+      if (!isInternal) return; // let ClientRouter handle navigation elsewhere
+
+      e.stopImmediatePropagation();
+
+      const currentlyExpanded = cardsWrapper.querySelector('.floating-card.expanded');
+      const currentId = currentlyExpanded?.getAttribute('data-project-id') ?? null;
+      if (currentId === targetId) return;
+
+      if (currentlyExpanded) collapseCard(currentlyExpanded, false);
+      if (target) expandCard(target, false);
+    }, true);
 
     function initCarousel(card: Element) {
       const carousel = card.querySelector('[data-carousel]');
