@@ -19,7 +19,7 @@ projects:
     technologies:
       - GTK 4 / libadwaita
       - JavaScript
-    link: null
+    link: https://extensions.gnome.org/extension/10322/smart-dnd/
     repo: https://github.com/keithvassallomt/smart-dnd
   - id: touchshell
     title: Touchshell
