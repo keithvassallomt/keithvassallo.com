@@ -11,12 +11,9 @@ export function getStaticPaths() {
 }
 
 const { project } = Astro.props;
+const ogImage = project.bgImage || project.logo ? `/assets/og/${project.id}.jpg` : undefined;
 ---
 
-<BaseLayout
-  title={project.title}
-  description={project.shortDescription}
-  image={`/assets/og/${project.id}.jpg`}
->
+<BaseLayout title={project.title} description={project.shortDescription} image={ogImage}>
   <ProjectsGallery expandId={project.id} />
 </BaseLayout>
