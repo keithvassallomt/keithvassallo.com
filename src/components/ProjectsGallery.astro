@@ -1,0 +1,414 @@
+---
+import NavRail from './NavRail.astro';
+import BottomNav from './BottomNav.astro';
+import ProjectTile from './ProjectTile.astro';
+import { loadProjects } from '../lib/projects';
+
+interface Props {
+  expandId?: string;
+}
+
+const { expandId } = Astro.props;
+const projects = loadProjects();
+---
+
+<div class="app-layout">
+  <NavRail currentPage="projects" />
+
+  <main class="content-area" transition:name="content" transition:animate="slide">
+    <div class="page-header">
+      <h1>Projects</h1>
+      <p class="page-subtitle">Things I've designed & built</p>
+    </div>
+
+    <div class="floating-container" id="floating-container">
+      <!-- Backdrop for expanded cards (must be before cards for z-index) -->
+      <div class="card-backdrop" id="card-backdrop"></div>
+
+      <div class="floating-cards" id="floating-cards">
+        {projects.map((project: any, index: number) => (
+          <ProjectTile
+            id={project.id}
+            title={project.title}
+            shortDescription={project.shortDescription}
+            description={project.description}
+            logo={project.logo}
+            bgImage={project.bgImage}
+            media={project.media}
+            technologies={project.technologies}
+            link={project.link}
+            repo={project.repo}
+            index={index}
+          />
+        ))}
+      </div>
+    </div>
+  </main>
+
+  <BottomNav currentPage="projects" />
+</div>
+
+<script>
+  function initFloatingCards() {
+    const cardsWrapper = document.getElementById('floating-cards');
+    const backdrop = document.getElementById('card-backdrop');
+    if (!cardsWrapper || !backdrop) return;
+    if (cardsWrapper.dataset.initialized === 'true') return;
+    cardsWrapper.dataset.initialized = 'true';
+
+    const cards = cardsWrapper.querySelectorAll('.floating-card');
+
+    // Card expand/collapse
+    cards.forEach(card => {
+      const cardFace = card.querySelector('.card-face');
+      const closeBtn = card.querySelector('.close-btn');
+
+      cardFace?.addEventListener('click', () => {
+        expandCard(card);
+      });
+
+      closeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        collapseCard(card);
+      });
+
+      // Initialize carousel
+      initCarousel(card);
+    });
+
+    // Card hover effect - hovered card pops up, others look at it
+    const maxTilt = 15; // Maximum tilt in degrees
+
+    function makeCardsLookAt(targetCard: Element) {
+      const isMobile = window.innerWidth <= 600;
+      const tiltMultiplier = isMobile ? 0.5 : 3;
+
+      const targetRect = (targetCard as HTMLElement).getBoundingClientRect();
+      const targetCenterX = targetRect.left + targetRect.width / 2;
+      const targetCenterY = targetRect.top + targetRect.height / 2;
+
+      cards.forEach(card => {
+        if (card.classList.contains('expanded')) return;
+        const cardEl = card as HTMLElement;
+
+        if (card === targetCard) {
+          // Hovered card pops up
+          cardEl.style.transform = 'perspective(1000px) translateY(-20px) scale(1.08)';
+        } else {
+          // Other cards look at the hovered card
+          const rect = cardEl.getBoundingClientRect();
+          const cardCenterX = rect.left + rect.width / 2;
+          const cardCenterY = rect.top + rect.height / 2;
+
+          const deltaX = targetCenterX - cardCenterX;
+          const deltaY = targetCenterY - cardCenterY;
+
+          // Normalize based on distance for consistent effect
+          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          const maxDistance = Math.max(window.innerWidth, window.innerHeight);
+          const normalizedX = deltaX / maxDistance;
+          const normalizedY = deltaY / maxDistance;
+
+          let rotateY = normalizedX * maxTilt * tiltMultiplier;
+          let rotateX = -normalizedY * maxTilt * tiltMultiplier;
+
+          if (isMobile) {
+            rotateX = Math.max(-10, Math.min(10, rotateX));
+            rotateY = Math.max(-10, Math.min(10, rotateY));
+          }
+
+          cardEl.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        }
+      });
+    }
+
+    function resetAllCards() {
+      cards.forEach(card => {
+        if (card.classList.contains('expanded')) return;
+        (card as HTMLElement).style.transform = '';
+      });
+    }
+
+    // Add hover listeners to each card
+    cards.forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        if (card.classList.contains('expanded')) return;
+        makeCardsLookAt(card);
+      });
+
+      card.addEventListener('mouseleave', () => {
+        if (card.classList.contains('expanded')) return;
+        resetAllCards();
+      });
+    });
+
+    function hydrateVideos(card: Element) {
+      card.querySelectorAll('video[data-src]').forEach(el => {
+        const video = el as HTMLVideoElement;
+        const src = video.dataset.src;
+        if (!src) return;
+        video.src = src;
+        video.removeAttribute('data-src');
+        video.load();
+      });
+    }
+
+    function playActiveVideos(card: Element) {
+      card.querySelectorAll('[data-carousel]').forEach(carousel => {
+        const slides = carousel.querySelectorAll('.carousel-slide');
+        const dots = Array.from(carousel.querySelectorAll('.carousel-dot'));
+        const activeIdx = Math.max(0, dots.findIndex(d => d.classList.contains('active')));
+        const video = slides[activeIdx]?.querySelector('video') as HTMLVideoElement | null;
+        const p = video?.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      });
+    }
+
+    function expandCard(card: Element) {
+      // Collapse any other expanded cards
+      cards.forEach(c => {
+        if (c !== card && c.classList.contains('expanded')) {
+          collapseCard(c);
+        }
+      });
+
+      // Scroll to top before expanding (fixes position:fixed issue with perspective parent)
+      window.scrollTo({ top: 0, behavior: 'instant' });
+
+      // Remove perspective so position:fixed works relative to viewport
+      const container = document.getElementById('floating-container');
+      container?.classList.add('has-expanded');
+
+      hydrateVideos(card);
+
+      card.classList.add('expanded');
+      backdrop?.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+
+      playActiveVideos(card);
+    }
+
+    function collapseCard(card: Element) {
+      card.classList.remove('expanded');
+
+      // Reset transform
+      (card as HTMLElement).style.transform = '';
+
+      // Pause videos
+      card.querySelectorAll('video').forEach(v => v.pause());
+
+      // Hide backdrop if no cards expanded
+      const anyExpanded = Array.from(cards).some(c => c.classList.contains('expanded'));
+      if (!anyExpanded) {
+        backdrop?.classList.remove('visible');
+        document.body.style.overflow = '';
+
+        // Restore perspective for card tilt effects
+        const container = document.getElementById('floating-container');
+        container?.classList.remove('has-expanded');
+      }
+    }
+
+    // Close on backdrop click
+    backdrop.addEventListener('click', () => {
+      cards.forEach(card => {
+        if (card.classList.contains('expanded')) {
+          collapseCard(card);
+        }
+      });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        cards.forEach(card => {
+          if (card.classList.contains('expanded')) {
+            collapseCard(card);
+          }
+        });
+      }
+    });
+
+    function initCarousel(card: Element) {
+      const carousel = card.querySelector('[data-carousel]');
+      if (!carousel) return;
+
+      const track = carousel.querySelector('.carousel-track') as HTMLElement;
+      const slides = carousel.querySelectorAll('.carousel-slide');
+      const dots = carousel.querySelectorAll('.carousel-dot');
+      const prevBtn = carousel.querySelector('.carousel-btn.prev');
+      const nextBtn = carousel.querySelector('.carousel-btn.next');
+
+      if (!track || slides.length <= 1) return;
+
+      let currentIndex = 0;
+
+      slides.forEach(slide => {
+        const video = slide.querySelector('video') as HTMLVideoElement | null;
+        if (!video) return;
+
+        const markReady = () => {
+          slide.classList.remove('is-loading');
+          slide.classList.add('is-ready');
+        };
+
+        const markError = () => {
+          slide.classList.remove('is-loading');
+          slide.classList.add('is-error');
+        };
+
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          markReady();
+        } else {
+          video.addEventListener('loadeddata', markReady, { once: true });
+          video.addEventListener('canplay', markReady, { once: true });
+          video.addEventListener('error', markError, { once: true });
+        }
+      });
+
+      function playVideo(video: HTMLVideoElement | null) {
+        if (!video) return;
+        const playPromise = video.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {
+            // Some browsers reject autoplay intermittently during initial load;
+            // avoid noisy unhandled promise errors and let manual interaction retry.
+          });
+        }
+      }
+
+      function goToSlide(index: number) {
+        slides.forEach(slide => {
+          const video = slide.querySelector('video');
+          if (video) video.pause();
+        });
+
+        currentIndex = Math.max(0, Math.min(index, slides.length - 1));
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+        dots.forEach((dot, i) => {
+          dot.classList.toggle('active', i === currentIndex);
+        });
+
+        // Auto-play video on active slide
+        const activeSlide = slides[currentIndex] as HTMLElement | undefined;
+        const activeVideo = activeSlide?.querySelector('video') as HTMLVideoElement | null;
+        playVideo(activeVideo);
+      }
+
+      prevBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goToSlide(currentIndex - 1);
+      });
+
+      nextBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goToSlide(currentIndex + 1);
+      });
+
+      dots.forEach((dot, i) => {
+        dot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          goToSlide(i);
+        });
+      });
+
+      // Ensure first slide playback is initialized lazily and safely.
+      goToSlide(0);
+    }
+  }
+
+  // Initialize
+  initFloatingCards();
+  document.addEventListener('astro:page-load', initFloatingCards);
+</script>
+
+<style>
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .content-area {
+    flex: 1;
+    margin-left: 80px;
+    padding: var(--space-2xl);
+    background: var(--bg-primary);
+    overflow-x: hidden;
+  }
+
+  .page-header {
+    margin-bottom: var(--space-xl);
+  }
+
+  .page-header h1 {
+    font-family: var(--font-mono);
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .page-subtitle {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  /* Floating Container */
+  .floating-container {
+    position: relative;
+    min-height: 80vh;
+    perspective: 1000px;
+  }
+
+  .floating-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+    justify-content: center;
+    align-items: flex-start;
+    padding: var(--space-xl) 0;
+  }
+
+  /* Backdrop */
+  .card-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 17, 23, 0.7);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 500;
+  }
+
+  .card-backdrop.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 900px) {
+    .content-area {
+      margin-left: 0;
+      padding: var(--space-lg);
+      padding-bottom: calc(60px + var(--space-lg) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+    }
+
+    .floating-cards {
+      gap: var(--space-lg);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .floating-cards {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+</style>
