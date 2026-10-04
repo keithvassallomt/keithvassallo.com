@@ -1,5 +1,66 @@
 # Projects data
 projects:
+  - id: nc-media-provider
+    title: NC Media Provider
+    shortDescription: Your Nextcloud photo library in Android's system photo picker
+    description: Allows you to stream your Nextcloud photos/videos to the Android system photo picker, or as a keyboard for apps that don't use it.
+    logo: /assets/projects/nc_media_provider/nc_media_provider_logo.avif
+    bgimage: /assets/projects/nc_media_provider/bg_image.avif
+    media:
+      - type: image
+        src: /assets/projects/nc_media_provider/1-picker.avif
+        label: Android photo picker with Nextcloud photos
+      - type: image
+        src: /assets/projects/nc_media_provider/2-albums.avif
+        label: Android photo picker with Nextcloud albums
+      - type: image
+        src: /assets/projects/nc_media_provider/3-home.avif
+        label: NC Media Picker main screen
+      - type: image
+        src: /assets/projects/nc_media_provider/4-keyboard.avif
+        label: Browsing media via a custom keyboard
+      - type: image
+        src: /assets/projects/nc_media_provider/5-storage.avif
+        label: Thumbnail pre-caching settings
+      - type: image
+        src: /assets/projects/nc_media_provider/6-setup.avif
+        label: Onboarding setup wizard
+    technologies:
+      - Kotlin
+      - Python
+    link: null
+    repo: https://github.com/keithvassallomt/nc-media-provider
+  - id: digimem
+    title: DigiMem
+    shortDescription: Two-way face sync between digiKam and Nextcloud Memories
+    description: Syncs detected faces between your digiKam and Nextcloud Memories/recognize libraries.
+    logo: /assets/projects/digimem/digimem_logo.avif
+    bgImage: /assets/projects/digimem/bg_image.avif
+    media:
+      - type: image
+        src: /assets/projects/digimem/home-syncing.avif
+        label: Progress during a sync
+      - type: image
+        src: /assets/projects/digimem/sync-details.avif
+        label: Summary after a sync
+      - type: image
+        src: /assets/projects/digimem/review-face-boxes.avif
+        label: Reviewing mismatched/invalid tags
+      - type: image
+        src: /assets/projects/digimem/settings-1.avif
+        label: Settings (page 1)
+      - type: image
+        src: /assets/projects/digimem/settings-2.avif
+        label: Settings (page 2)
+      - type: image
+        src: /assets/projects/digimem/logs.avif
+        label: Logs
+    technologies:
+      - Python
+      - JavaScript
+      - PHP
+    link: null
+    repo: https://github.com/keithvassallomt/digikam-memories-sync
   - id: smart-dnd-linux
     title: Smart DnD (for Linux)
     shortDescription: Automatically enable Do Not Disturb when you are busy
