@@ -28,7 +28,7 @@ projects:
     technologies:
       - Kotlin
       - Python
-    link: null
+    link: https://play.google.com/store/apps/details?id=com.keithvassallo.ncmediaprovider
     repo: https://github.com/keithvassallomt/nc-media-provider
   - id: digimem
     title: DigiMem
