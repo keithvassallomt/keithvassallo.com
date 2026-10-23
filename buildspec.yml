@@ -4,6 +4,7 @@ env:
   variables:
     BUCKET: keithvassallo.com
     DISTRIBUTION_ID: E1W88AN3N1ZWL6
+    REDIRECTS_KVS_ARN: arn:aws:cloudfront::781345700122:key-value-store/afe01dc3-1fec-4b6a-ae4e-84d74a3001d4
 
 phases:
   install:
@@ -35,7 +36,10 @@ phases:
         --metadata-directive REPLACE
         --exclude "*" --include "*.html" --include "*.xml" --include "*.txt"
         --cache-control "public, max-age=0, must-revalidate"
-      # 4) Invalidate the edge so the next visitor sees the new HTML straight away.
+      # 4) Point renamed blog posts' old URLs at their new ones. The CloudFront Function
+      #    answers these with a 301 (infrastructure/cloudfront/viewer-request.js).
+      - node scripts/sync-redirects.mjs
+      # 5) Invalidate the edge so the next visitor sees the new HTML straight away.
       - >
         aws cloudfront create-invalidation
         --distribution-id ${DISTRIBUTION_ID}

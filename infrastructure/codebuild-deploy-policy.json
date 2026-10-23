@@ -32,6 +32,16 @@
         "cloudfront:ListInvalidations"
       ],
       "Resource": "arn:aws:cloudfront::781345700122:distribution/E1W88AN3N1ZWL6"
+    },
+    {
+      "Sid": "SyncRedirects",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront-keyvaluestore:DescribeKeyValueStore",
+        "cloudfront-keyvaluestore:ListKeys",
+        "cloudfront-keyvaluestore:UpdateKeys"
+      ],
+      "Resource": "arn:aws:cloudfront::781345700122:key-value-store/afe01dc3-1fec-4b6a-ae4e-84d74a3001d4"
     }
   ]
 }
