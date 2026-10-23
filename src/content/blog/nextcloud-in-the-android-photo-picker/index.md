@@ -17,6 +17,7 @@ share:
     #Android #Nextcloud #Kotlin #OpenSource
   x: "Your Nextcloud photos, right inside Android's system photo picker. How NC Media Provider does it, and the keyboard trick for apps that skip the picker."
   bluesky: "Your Nextcloud photos, right inside Android's system photo picker. How NC Media Provider does it, and the keyboard trick for apps that skip the picker."
+  threads: "Your Nextcloud photos, right inside Android's system photo picker. How NC Media Provider plugs a self-hosted library into the picker, and the keyboard trick for apps that skip it. #Nextcloud"
   mastodon: |
     Your Nextcloud photos, right inside Android's system photo picker.
 

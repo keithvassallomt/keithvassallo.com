@@ -1,11 +1,12 @@
 import type { Post } from './blog';
 
-export type SharePlatform = 'linkedin' | 'x' | 'bluesky' | 'mastodon' | 'facebook';
+export type SharePlatform = 'linkedin' | 'x' | 'bluesky' | 'threads' | 'mastodon' | 'facebook';
 
 const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 const characters = (text: string) => [...segmenter.segment(text)].length;
 
-// X and Mastodon count every link as 23 characters; Bluesky and LinkedIn count it as written.
+// X and Mastodon count every link as 23 characters. Bluesky, LinkedIn and Threads are counted
+// with the link as written, which errs on the safe side.
 const LINK_LENGTH = 23;
 
 /**
@@ -19,6 +20,7 @@ export function shareTexts(post: Post, url: string): Record<SharePlatform, strin
   const rules: Record<SharePlatform, { limit: number; length: (text: string) => number }> = {
     x: { limit: 280, length: (text) => characters(text) + 1 + LINK_LENGTH },
     bluesky: { limit: 300, length: (text) => characters(`${text}\n\n${url}`) },
+    threads: { limit: 500, length: (text) => characters(`${text} ${url}`) },
     mastodon: { limit: 500, length: (text) => characters(text) + 2 + LINK_LENGTH },
     linkedin: { limit: 3000, length: (text) => characters(`${text}\n\n${url}`) },
     facebook: { limit: 5000, length: characters },

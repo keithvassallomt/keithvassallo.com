@@ -13,7 +13,7 @@ interface Props {
 const { url, title, texts } = Astro.props;
 const encode = encodeURIComponent;
 
-// Plain links work without JavaScript. X and Bluesky accept prefilled text in the link itself.
+// Plain links work without JavaScript. X, Bluesky and Threads accept prefilled text in the link.
 // LinkedIn and Facebook only take a URL, so the script copies their text to the clipboard.
 const networks = [
   {
@@ -26,6 +26,11 @@ const networks = [
     name: 'Bluesky',
     icon: 'simple-icons:bluesky',
     href: `https://bsky.app/intent/compose?text=${encode(`${texts.bluesky}\n\n${url}`)}`,
+  },
+  {
+    name: 'Threads',
+    icon: 'simple-icons:threads',
+    href: `https://www.threads.com/intent/post?text=${encode(texts.threads)}&url=${encode(url)}`,
   },
   {
     name: 'X',

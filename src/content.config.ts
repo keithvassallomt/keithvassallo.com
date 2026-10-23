@@ -46,6 +46,7 @@ const blog = defineCollection({
             linkedin: z.string().trim().optional(),
             x: z.string().trim().optional(),
             bluesky: z.string().trim().optional(),
+            threads: z.string().trim().optional(),
             mastodon: z.string().trim().optional(),
             facebook: z.string().trim().optional(),
           })

@@ -47,7 +47,7 @@ Optional fields, each falling back to the fields above:
 | `socialImage`, `socialImageAlt` | Use your own image for social previews instead of the generated card. Cropped to 1200x630 JPEG. |
 | `canonicalURL` | Point the canonical URL elsewhere, for posts first published on another site. |
 | `redirectFrom` | Old paths (such as `/blog/old-slug`) that should redirect here after renaming the folder. Served as 301s by CloudFront. |
-| `share` | Suggested post text per network: `linkedin`, `x`, `bluesky`, `mastodon`, `facebook`. X, Bluesky and Mastodon open prefilled; LinkedIn and Facebook get it copied to the clipboard. The build fails if one is too long for its network. |
+| `share` | Suggested post text per network: `linkedin`, `x`, `bluesky`, `threads`, `mastodon`, `facebook`. X, Bluesky, Threads and Mastodon open prefilled; LinkedIn and Facebook get it copied to the clipboard. The build fails if one is too long for its network. |
 
 **Writing.** Start sections at `##` (the title is the page's only `#`). Beyond standard Markdown and
 GitHub tables:

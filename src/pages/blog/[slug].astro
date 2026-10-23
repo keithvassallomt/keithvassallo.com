@@ -25,7 +25,9 @@ export const getStaticPaths = (async () => {
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { post } = Astro.props;
-const { Content, headings } = await render(post);
+const { Content, headings: allHeadings } = await render(post);
+// The footnotes section adds a visually hidden heading; keep it out of the contents list
+const headings = allHeadings.filter((heading) => heading.slug !== 'footnote-label');
 const [posts, categories] = await Promise.all([getPosts(), getCategoryMap()]);
 const category = categories.get(post.data.category.id)!;
 const { title, description, pubDate, updatedDate, tags, cover, coverAlt, metaTitle, metaDescription, canonicalURL, draft } =
