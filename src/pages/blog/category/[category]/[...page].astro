@@ -1,0 +1,49 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import BlogShell from '../../../../layouts/BlogShell.astro';
+import ListingHeader from '../../../../components/blog/ListingHeader.astro';
+import Pagination from '../../../../components/blog/Pagination.astro';
+import PostGrid from '../../../../components/blog/PostGrid.astro';
+import { getActiveCategories, getCategoryMap, getPosts, POSTS_PER_PAGE } from '../../../../lib/blog';
+import { siteCardAsset } from '../../../../lib/social';
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = await getPosts();
+  const categories = await getActiveCategories(posts);
+  return categories.flatMap((category) =>
+    paginate(
+      posts.filter((post) => post.data.category.id === category.id),
+      { params: { category: category.id }, props: { category }, pageSize: POSTS_PER_PAGE },
+    ),
+  );
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { page, category } = Astro.props;
+const posts = await getPosts();
+const [categories, categoryMap] = await Promise.all([getActiveCategories(posts), getCategoryMap()]);
+const pageSuffix = page.currentPage > 1 ? `, page ${page.currentPage}` : '';
+---
+
+<BlogShell
+  currentPage="blog"
+  title={`${category.data.name} posts${pageSuffix}`}
+  description={`${category.data.description} Posts from Keith Vassallo's blog.`}
+  image={siteCardAsset('blog').image}
+>
+  <Fragment slot="head">
+    {page.url.prev && <link rel="prev" href={page.url.prev} />}
+    {page.url.next && <link rel="next" href={page.url.next} />}
+  </Fragment>
+
+  <ListingHeader
+    path={`blog/category/${category.id}`}
+    title={category.data.name}
+    intro={category.data.description}
+    categories={categories}
+    current={category.id}
+  />
+  <PostGrid posts={page.data} categories={categoryMap} />
+  <Pagination page={page} />
+</BlogShell>

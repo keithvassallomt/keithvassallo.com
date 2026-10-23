@@ -22,7 +22,7 @@ interface Props {
   expanded?: boolean;
 }
 
-const { id, title, shortDescription, description, logo, bgImage, media, technologies, link, repo, index, expanded = false } = Astro.props;
+const { id, title, shortDescription, description, logo, bgImage, media, technologies, link, repo, expanded = false } = Astro.props;
 
 // Determine background image: bgImage > logo > gradient
 const backgroundSrc = bgImage || logo;

@@ -1,0 +1,172 @@
+---
+import { Icon } from 'astro-icon/components';
+import PathPrompt from '../PathPrompt.astro';
+import { categoryUrl, type Category } from '../../lib/blog';
+
+interface Props {
+  path: string;
+  title: string;
+  intro: string;
+  categories: Category[];
+  /** Category id to mark as current, or 'all' for the main index. */
+  current?: string;
+}
+
+const { path, title, intro, categories, current } = Astro.props;
+---
+
+<header class="listing-header">
+  <div>
+    <PathPrompt path={path} />
+    <h1 class="listing-title">{title}</h1>
+  </div>
+  <p class="listing-intro">{intro}</p>
+</header>
+
+<div class="listing-tools">
+  {
+    categories.length > 0 && (
+      <nav aria-label="Categories">
+        <ul class="topics">
+          <li>
+            <a href="/blog" class="topic topic-all" aria-current={current === 'all' ? 'page' : undefined}>
+              All
+            </a>
+          </li>
+          {categories.map((category) => (
+            <li>
+              <a
+                href={categoryUrl(category.id)}
+                class="topic"
+                style={`--chip: var(--c-${category.data.color})`}
+                aria-current={current === category.id ? 'page' : undefined}
+              >
+                <span class="topic-dot" aria-hidden="true" />
+                {category.data.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
+  <a href="/blog/rss.xml" class="rss-link">
+    <Icon name="lucide:rss" aria-hidden="true" />
+    RSS feed
+  </a>
+</div>
+
+<style>
+  .listing-header {
+    max-width: 1180px;
+    margin: 0 auto 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    align-items: end;
+  }
+
+  .listing-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, 1.6rem + 3.6vw, 4.75rem);
+    font-weight: 800;
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    color: var(--blog-text);
+  }
+
+  .listing-intro {
+    margin: 0;
+    max-width: 560px;
+    font-size: 1.1875rem;
+    line-height: 1.6;
+    color: var(--blog-secondary);
+  }
+
+  @media (min-width: 1200px) {
+    .listing-header {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      gap: 64px;
+    }
+  }
+
+  .listing-tools {
+    max-width: 1180px;
+    margin: 0 auto 40px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .topic {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--blog-body);
+    background: var(--blog-surface);
+    border: 1px solid var(--blog-border);
+    border-radius: 999px;
+  }
+
+  .topic:hover {
+    color: var(--blog-text);
+    border-color: #3b4453;
+  }
+
+  .topic[aria-current='page'] {
+    font-weight: 700;
+    color: var(--blog-bg);
+    background: var(--blog-text);
+    border-color: var(--blog-text);
+  }
+
+  .topic-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--chip);
+  }
+
+  .rss-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-weight: 500;
+    color: var(--c-orange);
+  }
+
+  .rss-link:hover {
+    color: var(--blog-text);
+  }
+
+  @media (max-width: 700px) {
+    .topics {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin: 0 -20px;
+      padding: 2px 20px;
+      scrollbar-width: none;
+    }
+
+    .topic {
+      flex-shrink: 0;
+    }
+  }
+</style>

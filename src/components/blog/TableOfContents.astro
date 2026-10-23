@@ -1,0 +1,148 @@
+---
+import type { MarkdownHeading } from 'astro';
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  headings: MarkdownHeading[];
+  /** `sidebar` is the sticky desktop list; `inline` is a collapsible block for narrow screens. */
+  variant: 'sidebar' | 'inline';
+}
+
+const { headings, variant } = Astro.props;
+const items = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+let section = 0;
+const entries = items.map((heading) => ({
+  ...heading,
+  number: heading.depth === 2 ? String(++section).padStart(2, '0') : undefined,
+}));
+---
+
+{
+  variant === 'sidebar' ? (
+    <nav class="toc toc-sidebar" aria-labelledby="toc-heading">
+      <h2 id="toc-heading" class="toc-heading">
+        In this post
+      </h2>
+      <ol class="toc-list">
+        {entries.map((entry) => (
+          <li class:list={['toc-item', `depth-${entry.depth}`]}>
+            <a href={`#${entry.slug}`} data-toc-link={entry.slug}>
+              {entry.number && <span class="toc-number">{entry.number}</span>}
+              <span>{entry.text}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  ) : (
+    <details class="toc toc-inline">
+      <summary>
+        In this post
+        <Icon name="lucide:chevron-down" aria-hidden="true" class="toc-chevron" />
+      </summary>
+      <nav aria-label="In this post">
+        <ol class="toc-list">
+          {entries.map((entry) => (
+            <li class:list={['toc-item', `depth-${entry.depth}`]}>
+              <a href={`#${entry.slug}`}>
+                {entry.number && <span class="toc-number">{entry.number}</span>}
+                <span>{entry.text}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </details>
+  )
+}
+
+<style>
+  .toc-heading {
+    margin: 0 0 14px;
+    font-family: var(--font-reading);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--blog-muted);
+  }
+
+  .toc-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .toc-item a {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    color: var(--blog-secondary);
+  }
+
+  .toc-item a:hover,
+  .toc-item a[aria-current='true'] {
+    color: var(--blog-text);
+  }
+
+  .toc-item.depth-3 a {
+    padding-left: 34px;
+    font-size: 0.875rem;
+  }
+
+  .toc-number {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--blog-muted);
+  }
+
+  .toc-item a[aria-current='true'] .toc-number {
+    color: var(--c-green);
+  }
+
+  .toc-inline {
+    margin-bottom: 28px;
+    background: var(--blog-surface);
+    border: 1px solid var(--blog-border);
+    border-radius: 14px;
+  }
+
+  .toc-inline summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 0 16px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .toc-inline summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .toc-chevron {
+    transition: transform var(--transition-fast);
+  }
+
+  .toc-inline[open] .toc-chevron {
+    transform: rotate(180deg);
+  }
+
+  .toc-inline .toc-list {
+    padding: 0 16px 10px;
+  }
+
+  .toc-inline .toc-item a {
+    padding: 10px 0;
+    color: var(--blog-body);
+  }
+</style>

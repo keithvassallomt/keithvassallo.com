@@ -1,0 +1,22 @@
+# Blog categories. A post's `category` field must match one of these ids.
+# Categories without published posts are hidden from the blog automatically.
+- id: android
+  name: Android
+  description: Apps, APIs and tinkering on Android.
+  color: green
+- id: linux
+  name: Linux
+  description: The Linux desktop, GNOME, Plasma and the tools around them.
+  color: orange
+- id: self-hosting
+  name: Self-hosting
+  description: Running your own services, with a lot of Nextcloud.
+  color: cyan
+- id: open-source
+  name: Open source
+  description: Open-source projects, communities and the people in them.
+  color: purple
+- id: teaching
+  name: Teaching
+  description: Notes from the classroom on teaching technology.
+  color: blue

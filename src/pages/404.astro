@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NavRail from '../components/NavRail.astro';
+import BottomNav from '../components/BottomNav.astro';
+import PathPrompt from '../components/PathPrompt.astro';
+---
+
+<BaseLayout title="Page not found" description="The page you were looking for doesn't exist or has moved." noindex>
+  <div class="app-layout">
+    <NavRail />
+
+    <main class="content-area" transition:name="content" transition:animate="slide">
+      <div class="not-found">
+        <PathPrompt path="404" />
+        <h1>Page not found</h1>
+        <p>
+          The page you were looking for doesn't exist or has moved. Try the <a href="/">home page</a>, or browse the
+          <a href="/blog">blog</a>.
+        </p>
+      </div>
+    </main>
+
+    <BottomNav />
+  </div>
+</BaseLayout>
+
+<style>
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .content-area {
+    flex: 1;
+    margin-left: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2xl);
+  }
+
+  .not-found {
+    max-width: 520px;
+    text-align: center;
+  }
+
+  .not-found h1 {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-md);
+  }
+
+  .not-found a {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 900px) {
+    .content-area {
+      margin-left: 0;
+      padding: var(--space-lg);
+      padding-bottom: calc(60px + var(--space-lg) + env(safe-area-inset-bottom, 0px));
+    }
+  }
+</style>

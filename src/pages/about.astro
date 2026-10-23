@@ -1,0 +1,234 @@
+---
+import { Image } from 'astro:assets';
+import { Icon } from 'astro-icon/components';
+import BlogShell from '../layouts/BlogShell.astro';
+import PathPrompt from '../components/PathPrompt.astro';
+import PostCard from '../components/blog/PostCard.astro';
+import avatar from '../assets/keith-avatar.png';
+import { getCategoryMap, getPublishedPosts } from '../lib/blog';
+import { AUTHOR, SOCIAL_LINKS, absoluteUrl } from '../lib/site';
+import { siteCardAsset } from '../lib/social';
+
+const [posts, categories] = await Promise.all([getPublishedPosts(), getCategoryMap()]);
+const recent = posts.slice(0, 3);
+const profileUrl = absoluteUrl(AUTHOR.profilePath);
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfilePage',
+  url: profileUrl,
+  mainEntity: {
+    '@type': 'Person',
+    '@id': `${profileUrl}#person`,
+    name: AUTHOR.name,
+    url: profileUrl,
+    image: absoluteUrl(AUTHOR.photo),
+    jobTitle: AUTHOR.jobTitle,
+    worksFor: { '@type': 'Organization', name: AUTHOR.employer.name, url: AUTHOR.employer.url },
+    sameAs: SOCIAL_LINKS.map((link) => link.url),
+  },
+};
+const jsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
+
+const siteLinks = [
+  { label: 'CV', href: '/cv', icon: 'lucide:file-text' },
+  { label: 'Projects', href: '/projects', icon: 'lucide:code' },
+  { label: 'Blog', href: '/blog', icon: 'lucide:newspaper' },
+  { label: 'Contact', href: '/contact', icon: 'lucide:mail' },
+];
+---
+
+<BlogShell
+  title="About"
+  description={`About ${AUTHOR.name}, ${AUTHOR.jobTitle} at ${AUTHOR.employer.name}. ${AUTHOR.bio}`}
+  image={siteCardAsset('about').image}
+>
+  <script slot="head" type="application/ld+json" is:inline set:html={jsonLd} />
+
+  <div class="about">
+    <header class="about-header">
+      <Image src={avatar} alt={`Portrait of ${AUTHOR.name}`} width={320} height={320} class="about-photo" loading="eager" />
+      <div>
+        <PathPrompt path="about" />
+        <h1 class="about-name">{AUTHOR.name}</h1>
+        <p class="about-role">
+          {AUTHOR.jobTitle} @ <a href={AUTHOR.employer.url}>{AUTHOR.employer.name}</a>
+        </p>
+        <p class="about-location">
+          <Icon name="lucide:map-pin" aria-hidden="true" />
+          {AUTHOR.location}
+        </p>
+      </div>
+    </header>
+
+    <section class="about-section" aria-labelledby="about-bio">
+      <h2 id="about-bio" class="about-heading">Hello, world!</h2>
+      <p class="about-bio">{AUTHOR.bio}</p>
+      <p class="about-bio">
+        I've spent over 20 years writing software and teaching others to do the same. My <a href="/cv">CV</a> has the long
+        version, and the <a href="/projects">projects</a> page has the things I've built.
+      </p>
+    </section>
+
+    <div class="about-columns">
+      <section class="about-section" aria-labelledby="about-elsewhere">
+        <h2 id="about-elsewhere" class="about-heading">Elsewhere</h2>
+        <ul class="link-list">
+          {
+            SOCIAL_LINKS.map((link) => (
+              <li>
+                <a href={link.url} rel="me noopener" target="_blank">
+                  <Icon name={link.icon} aria-hidden="true" />
+                  <span>{link.name}</span>
+                  <span class="sr-only">(opens in a new tab)</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section class="about-section" aria-labelledby="about-site">
+        <h2 id="about-site" class="about-heading">On this site</h2>
+        <ul class="link-list">
+          {
+            siteLinks.map((link) => (
+              <li>
+                <a href={link.href}>
+                  <Icon name={link.icon} aria-hidden="true" />
+                  <span>{link.label}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </div>
+
+    {
+      recent.length > 0 && (
+        <section class="about-section" aria-labelledby="about-recent">
+          <h2 id="about-recent" class="about-heading">Recent writing</h2>
+          <div class="recent-grid">
+            {recent.map((post) => (
+              <PostCard post={post} category={categories.get(post.data.category.id)!} headingLevel={3} />
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </div>
+</BlogShell>
+
+<style>
+  .about {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .about-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 48px;
+  }
+
+  .about-photo {
+    width: 160px;
+    height: 160px;
+    border: 3px solid var(--c-green);
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .about-name {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 1.6rem + 3vw, 4rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    color: var(--blog-text);
+  }
+
+  .about-role {
+    margin: 0 0 6px;
+    font-size: 1.1875rem;
+    color: var(--blog-body);
+  }
+
+  .about-role a,
+  .about-bio a {
+    color: var(--c-green);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .about-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--blog-secondary);
+  }
+
+  .about-section {
+    margin-bottom: 48px;
+  }
+
+  .about-heading {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--blog-text);
+  }
+
+  .about-bio {
+    max-width: 700px;
+    margin: 0 0 1em;
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: var(--blog-body);
+  }
+
+  .about-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 0 48px;
+  }
+
+  .link-list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .link-list a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 16px;
+    font-weight: 500;
+    color: var(--blog-body);
+    background: var(--blog-surface);
+    border: 1px solid var(--blog-border);
+    border-radius: 12px;
+  }
+
+  .link-list a:hover {
+    color: var(--blog-text);
+    border-color: #3b4453;
+  }
+
+  .recent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 24px;
+  }
+</style>

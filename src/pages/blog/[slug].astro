@@ -1,0 +1,450 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import BlogShell from '../../layouts/BlogShell.astro';
+import AuthorCard from '../../components/blog/AuthorCard.astro';
+import CategoryChip from '../../components/blog/CategoryChip.astro';
+import FormattedDate from '../../components/blog/FormattedDate.astro';
+import PostCard from '../../components/blog/PostCard.astro';
+import ShareLinks from '../../components/blog/ShareLinks.astro';
+import TableOfContents from '../../components/blog/TableOfContents.astro';
+import avatar from '../../assets/keith-avatar.png';
+import { getCategoryMap, getPosts, postUrl, readingTime, relatedPosts, tagUrl } from '../../lib/blog';
+import { AUTHOR, SITE, absoluteUrl } from '../../lib/site';
+import { shareTexts } from '../../lib/share';
+import { postSocialAsset } from '../../lib/social';
+import '../../styles/prose.css';
+
+export const getStaticPaths = (async () => {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const [posts, categories] = await Promise.all([getPosts(), getCategoryMap()]);
+const category = categories.get(post.data.category.id)!;
+const { title, description, pubDate, updatedDate, tags, cover, coverAlt, metaTitle, metaDescription, canonicalURL, draft } =
+  post.data;
+
+const canonical = canonicalURL ?? absoluteUrl(postUrl(post));
+const summary = metaDescription ?? description;
+const socialImage = postSocialAsset(post, category).image;
+const authorUrl = absoluteUrl(AUTHOR.profilePath);
+const hasToc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3).length >= 2;
+const related = relatedPosts(post, posts);
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description: summary,
+  image: { '@type': 'ImageObject', url: socialImage.url, width: socialImage.width, height: socialImage.height },
+  datePublished: pubDate.toISOString(),
+  ...(updatedDate && { dateModified: updatedDate.toISOString() }),
+  author: { '@type': 'Person', name: AUTHOR.name, url: authorUrl },
+  publisher: { '@type': 'Person', name: SITE.name, url: SITE.url },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+  url: canonical,
+  inLanguage: SITE.lang,
+  articleSection: category.data.name,
+  ...(tags.length > 0 && { keywords: tags }),
+};
+// Escape < so a title can never close the script element early
+const jsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
+---
+
+<BlogShell
+  currentPage="blog"
+  title={metaTitle ?? title}
+  socialTitle={metaTitle ?? title}
+  description={summary}
+  image={socialImage}
+  type="article"
+  canonical={canonical}
+  noindex={draft}
+>
+  <Fragment slot="head">
+    <meta property="article:published_time" content={pubDate.toISOString()} />
+    {updatedDate && <meta property="article:modified_time" content={updatedDate.toISOString()} />}
+    <meta property="article:author" content={authorUrl} />
+    <meta property="article:section" content={category.data.name} />
+    {tags.map((tag) => <meta property="article:tag" content={tag} />)}
+    <script type="application/ld+json" is:inline set:html={jsonLd} />
+  </Fragment>
+
+  <div class="reading-progress" aria-hidden="true" hidden><div class="reading-progress-bar"></div></div>
+
+  <article class="post">
+    <a href="/blog" class="back-link">
+      <Icon name="lucide:arrow-left" aria-hidden="true" />
+      All posts
+    </a>
+
+    <header class="post-header">
+      <div class="post-tags">
+        <CategoryChip category={category} />
+        {tags.map((tag) => <a href={tagUrl(tag)} class="post-tag">{tag}</a>)}
+      </div>
+      {draft && <p class="draft-notice">Draft preview. This post is not published and is hidden from search engines.</p>}
+      <h1 class="post-title">{title}</h1>
+      <p class="post-lede">{description}</p>
+      <div class="post-meta">
+        <a href={AUTHOR.profilePath} rel="author" class="post-author">
+          <Image src={avatar} alt="" width={88} height={88} class="post-avatar" />
+          <span class="post-author-text">
+            <span class="post-author-name">{AUTHOR.name}</span>
+            <span>{AUTHOR.jobTitle} @ {AUTHOR.employer.name}</span>
+          </span>
+        </a>
+        <span class="post-meta-divider" aria-hidden="true"></span>
+        <span>Published <FormattedDate date={pubDate} /></span>
+        {updatedDate && <span>Updated <FormattedDate date={updatedDate} /></span>}
+        <span class="post-reading-time">
+          <Icon name="lucide:clock" aria-hidden="true" />
+          {readingTime(post)} min read
+        </span>
+      </div>
+    </header>
+
+    {
+      cover && (
+        <Image
+          src={cover}
+          alt={coverAlt ?? ''}
+          widths={[640, 960, 1280, 1800]}
+          sizes="(min-width: 1372px) 1180px, (min-width: 901px) calc(100vw - 192px), calc(100vw - 40px)"
+          loading="eager"
+          fetchpriority="high"
+          class="post-cover"
+        />
+      )
+    }
+
+    <div class:list={['post-layout', { 'has-toc': hasToc }]}>
+      {
+        hasToc && (
+          <aside class="post-sidebar">
+            <TableOfContents headings={headings} variant="sidebar" />
+          </aside>
+        )
+      }
+      <div class="post-content">
+        {hasToc && <TableOfContents headings={headings} variant="inline" />}
+        <div class="prose">
+          <Content />
+        </div>
+        <ShareLinks url={canonical} title={title} texts={shareTexts(post, canonical)} />
+        <AuthorCard />
+      </div>
+    </div>
+  </article>
+
+  {
+    related.length > 0 && (
+      <section class="keep-reading" aria-labelledby="keep-reading-heading">
+        <h2 id="keep-reading-heading" class="keep-reading-heading">
+          Keep reading
+        </h2>
+        <div class="keep-reading-grid">
+          {related.map((other) => (
+            <PostCard post={other} category={categories.get(other.data.category.id)!} headingLevel={3} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+</BlogShell>
+
+<script>
+  // Progressive enhancements: reading progress, current section in the contents list,
+  // and copy buttons on code blocks. The page is fully readable without them.
+  let teardown: AbortController | undefined;
+
+  function initPost() {
+    teardown?.abort();
+    const article = document.querySelector<HTMLElement>('.post .prose');
+    if (!article) return;
+    teardown = new AbortController();
+    const { signal } = teardown;
+
+    const progress = document.querySelector<HTMLElement>('.reading-progress');
+    const bar = progress?.querySelector<HTMLElement>('.reading-progress-bar');
+    if (progress && bar) {
+      progress.hidden = false;
+      const update = () => {
+        const rect = article.getBoundingClientRect();
+        const travel = rect.height - window.innerHeight;
+        const ratio = travel > 0 ? Math.min(1, Math.max(0, -rect.top / travel)) : 1;
+        bar.style.transform = `scaleX(${ratio})`;
+      };
+      update();
+      window.addEventListener('scroll', update, { passive: true, signal });
+      window.addEventListener('resize', update, { passive: true, signal });
+    }
+
+    const links = new Map(
+      [...document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')].map((link) => [link.dataset.tocLink, link]),
+    );
+    if (links.size > 0) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            links.forEach((link) => link.removeAttribute('aria-current'));
+            links.get(entry.target.id)?.setAttribute('aria-current', 'true');
+          }
+        },
+        { rootMargin: '0px 0px -70% 0px' },
+      );
+      article.querySelectorAll('h2[id], h3[id]').forEach((heading) => observer.observe(heading));
+      signal.addEventListener('abort', () => observer.disconnect());
+    }
+
+    if (navigator.clipboard) {
+      article.querySelectorAll<HTMLElement>('.code-block').forEach((block) => {
+        const header = block.querySelector('.code-block-header');
+        const code = block.querySelector('pre');
+        if (!header || !code || header.querySelector('.code-copy')) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'code-copy';
+        button.innerHTML = 'Copy<span class="sr-only"> code</span>';
+        button.addEventListener('click', async () => {
+          await navigator.clipboard.writeText(code.innerText);
+          button.innerHTML = 'Copied<span class="sr-only"> code to clipboard</span>';
+          setTimeout(() => (button.innerHTML = 'Copy<span class="sr-only"> code</span>'), 2000);
+        });
+        header.append(button);
+      });
+    }
+  }
+
+  document.addEventListener('astro:page-load', initPost);
+</script>
+
+<style>
+  .reading-progress {
+    position: fixed;
+    top: 0;
+    left: 80px;
+    right: 0;
+    z-index: 150;
+    height: 3px;
+    background: var(--blog-surface);
+  }
+
+  .reading-progress-bar {
+    height: 100%;
+    background: var(--c-green);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .post {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    color: var(--blog-secondary);
+  }
+
+  .back-link:hover {
+    color: var(--blog-text);
+  }
+
+  .post-header {
+    max-width: 940px;
+    margin-bottom: 40px;
+  }
+
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .post-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--blog-body);
+    background: var(--blog-surface);
+    border: 1px solid var(--blog-border);
+    border-radius: 999px;
+  }
+
+  .post-tag:hover {
+    color: var(--blog-text);
+    border-color: #3b4453;
+  }
+
+  .draft-notice {
+    margin: 0 0 20px;
+    padding: 12px 16px;
+    font-weight: 700;
+    color: var(--c-orange);
+    background: color-mix(in srgb, var(--c-orange) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c-orange) 35%, transparent);
+    border-radius: 12px;
+  }
+
+  .post-title {
+    margin: 0 0 20px;
+    font-family: var(--font-display);
+    font-size: clamp(2.125rem, 1.2rem + 3.4vw, 4rem);
+    font-weight: 800;
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    color: var(--blog-text);
+  }
+
+  .post-lede {
+    max-width: 760px;
+    margin: 0 0 28px;
+    font-size: clamp(1.125rem, 1rem + 0.45vw, 1.3125rem);
+    line-height: 1.55;
+    color: var(--blog-secondary);
+  }
+
+  .post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+    font-size: 0.9375rem;
+    color: var(--blog-secondary);
+  }
+
+  .post-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--blog-secondary);
+  }
+
+  .post-author:hover .post-author-name {
+    text-decoration: underline;
+  }
+
+  .post-avatar {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--c-green);
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .post-author-text {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .post-author-name {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--blog-text);
+  }
+
+  .post-meta-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--blog-border);
+  }
+
+  .post-reading-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .post-cover {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: 56px;
+    border-radius: 20px;
+  }
+
+  .post-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 700px);
+    justify-content: center;
+  }
+
+  .post-sidebar {
+    display: none;
+  }
+
+  @media (min-width: 1180px) {
+    .post-layout.has-toc {
+      grid-template-columns: 200px minmax(0, 700px);
+      gap: 56px;
+    }
+
+    .post-sidebar {
+      display: block;
+      position: sticky;
+      top: 32px;
+      align-self: start;
+    }
+
+    .post-content :global(.toc-inline) {
+      display: none;
+    }
+  }
+
+  .keep-reading {
+    max-width: 1180px;
+    margin: 80px auto 0;
+  }
+
+  .keep-reading-heading {
+    margin: 0 0 20px;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--blog-text);
+  }
+
+  .keep-reading-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 24px;
+  }
+
+  @media (max-width: 900px) {
+    .reading-progress {
+      left: 0;
+    }
+
+    .post-meta-divider {
+      display: none;
+    }
+
+    .post-cover {
+      width: calc(100% + 40px);
+      max-width: none;
+      margin: 0 -20px 32px;
+      border-radius: 0;
+    }
+  }
+</style>

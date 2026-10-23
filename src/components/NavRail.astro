@@ -1,6 +1,6 @@
 ---
 interface Props {
-  currentPage?: 'cv' | 'projects' | 'contact';
+  currentPage?: 'cv' | 'projects' | 'blog' | 'contact';
 }
 
 const { currentPage } = Astro.props;
@@ -12,7 +12,7 @@ const { currentPage } = Astro.props;
   </a>
 
   <div class="nav-rail-items">
-    <a href="/cv" class:list={["nav-rail-item", { active: currentPage === 'cv' }]} title="CV">
+    <a href="/cv" class:list={["nav-rail-item", { active: currentPage === 'cv' }]} aria-current={currentPage === 'cv' ? 'page' : undefined} title="CV">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/>
         <path d="M19 17V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/>
@@ -21,14 +21,23 @@ const { currentPage } = Astro.props;
       </svg>
     </a>
 
-    <a href="/projects" class:list={["nav-rail-item", { active: currentPage === 'projects' }]} title="Projects">
+    <a href="/projects" class:list={["nav-rail-item", { active: currentPage === 'projects' }]} aria-current={currentPage === 'projects' ? 'page' : undefined} title="Projects">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="16 18 22 12 16 6"/>
         <polyline points="8 6 2 12 8 18"/>
       </svg>
     </a>
 
-    <a href="/contact" class:list={["nav-rail-item", { active: currentPage === 'contact' }]} title="Contact">
+    <a href="/blog" class:list={["nav-rail-item", { active: currentPage === 'blog' }]} aria-current={currentPage === 'blog' ? 'page' : undefined} title="Blog">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+        <path d="M18 14h-8"/>
+        <path d="M15 18h-5"/>
+        <path d="M10 6h8v4h-8V6Z"/>
+      </svg>
+    </a>
+
+    <a href="/contact" class:list={["nav-rail-item", { active: currentPage === 'contact' }]} aria-current={currentPage === 'contact' ? 'page' : undefined} title="Contact">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
         <polyline points="22,6 12,13 2,6"/>

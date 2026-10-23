@@ -1,0 +1,55 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import BlogShell from '../../../../layouts/BlogShell.astro';
+import ListingHeader from '../../../../components/blog/ListingHeader.astro';
+import Pagination from '../../../../components/blog/Pagination.astro';
+import PostGrid from '../../../../components/blog/PostGrid.astro';
+import { getActiveCategories, getCategoryMap, getPosts, POSTS_PER_PAGE, tagSlug } from '../../../../lib/blog';
+import { siteCardAsset } from '../../../../lib/social';
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = await getPosts();
+  // Tags match case-insensitively; the first spelling seen becomes the display name
+  const tags = new Map<string, string>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      if (!tags.has(tagSlug(tag))) tags.set(tagSlug(tag), tag);
+    }
+  }
+  return [...tags].flatMap(([slug, name]) =>
+    paginate(
+      posts.filter((post) => post.data.tags.some((tag) => tagSlug(tag) === slug)),
+      { params: { tag: slug }, props: { name }, pageSize: POSTS_PER_PAGE },
+    ),
+  );
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { page, name } = Astro.props;
+const { tag } = Astro.params;
+const posts = await getPosts();
+const [categories, categoryMap] = await Promise.all([getActiveCategories(posts), getCategoryMap()]);
+const pageSuffix = page.currentPage > 1 ? `, page ${page.currentPage}` : '';
+---
+
+<BlogShell
+  currentPage="blog"
+  title={`Posts tagged ${name}${pageSuffix}`}
+  description={`Posts tagged ${name} on Keith Vassallo's blog.`}
+  image={siteCardAsset('blog').image}
+>
+  <Fragment slot="head">
+    {page.url.prev && <link rel="prev" href={page.url.prev} />}
+    {page.url.next && <link rel="next" href={page.url.next} />}
+  </Fragment>
+
+  <ListingHeader
+    path={`blog/tag/${tag}`}
+    title={`Tagged “${name}”`}
+    intro={`Every post tagged ${name}, newest first.`}
+    categories={categories}
+  />
+  <PostGrid posts={page.data} categories={categoryMap} />
+  <Pagination page={page} />
+</BlogShell>

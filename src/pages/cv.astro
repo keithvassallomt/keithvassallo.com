@@ -2,6 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import NavRail from '../components/NavRail.astro';
 import BottomNav from '../components/BottomNav.astro';
+import PathPrompt from '../components/PathPrompt.astro';
+import { siteCardAsset } from '../lib/social';
 import SkillTabs from '../components/SkillTabs.astro';
 import ExperienceTimeline from '../components/ExperienceTimeline.astro';
 import EducationCard from '../components/EducationCard.astro';
@@ -24,12 +26,13 @@ const certifications = yaml.load(fs.readFileSync(path.join(contentDir, 'certific
 const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publications.yaml'), 'utf8')) as any;
 ---
 
-<BaseLayout title="CV">
+<BaseLayout title="CV" description="Keith Vassallo's CV: experience, skills, education and publications" image={siteCardAsset('cv').image}>
   <div class="app-layout">
     <NavRail currentPage="cv" />
 
     <main class="content-area" transition:name="content" transition:animate="slide">
       <div class="page-header">
+        <PathPrompt path="cv" />
         <h1>Curriculum Vitae</h1>
         <p class="page-subtitle">Experience, skills, and education</p>
       </div>
@@ -196,7 +199,7 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
 <script>
   function initCVAnimations() {
     // Email obfuscation
-    const emailLink = document.getElementById('email-link');
+    const emailLink = document.querySelector<HTMLAnchorElement>('#email-link');
     if (emailLink) {
       const user = 'keith';
       const domain = 'vassallo.cloud';
@@ -242,7 +245,7 @@ const publications = yaml.load(fs.readFileSync(path.join(contentDir, 'publicatio
     }
     const ageElement = document.getElementById('age');
     if (ageElement) {
-      ageElement.textContent = age;
+      ageElement.textContent = String(age);
     }
   }
 

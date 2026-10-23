@@ -1,0 +1,77 @@
+---
+import PostCard from './PostCard.astro';
+import type { Category, Post } from '../../lib/blog';
+
+interface Props {
+  posts: Post[];
+  categories: Map<string, Category>;
+  /** Show the first post as the large featured card. */
+  featureFirst?: boolean;
+}
+
+const { posts, categories, featureFirst = false } = Astro.props;
+---
+
+<div class="post-grid-wrap">
+  {
+    posts.length > 0 ? (
+      <div class="post-grid">
+        {posts.map((post, index) => (
+          <PostCard
+            post={post}
+            category={categories.get(post.data.category.id)!}
+            variant={featureFirst && index === 0 ? 'featured' : 'standard'}
+          />
+        ))}
+      </div>
+    ) : (
+      <p class="post-grid-empty">No posts here yet. The first one is on its way.</p>
+    )
+  }
+</div>
+
+<style>
+  .post-grid-wrap {
+    container-type: inline-size;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  @container (min-width: 640px) {
+    .post-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .post-grid > :global(.featured) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @container (min-width: 1000px) {
+    .post-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .post-grid > :global(.featured) {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+  }
+
+  .post-grid-empty {
+    margin: 0;
+    padding: 48px 24px;
+    text-align: center;
+    font-size: 1.125rem;
+    color: var(--blog-secondary);
+    background: var(--blog-surface);
+    border: 1px dashed var(--blog-border);
+    border-radius: 20px;
+  }
+</style>

@@ -2,6 +2,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProjectsGallery from '../../components/ProjectsGallery.astro';
 import { loadProjects } from '../../lib/projects';
+import { absoluteUrl } from '../../lib/site';
+import { siteCardAsset, SOCIAL_IMAGE_HEIGHT, SOCIAL_IMAGE_WIDTH } from '../../lib/social';
 
 export function getStaticPaths() {
   return loadProjects().map((project) => ({
@@ -11,7 +13,16 @@ export function getStaticPaths() {
 }
 
 const { project } = Astro.props;
-const ogImage = project.bgImage || project.logo ? `/assets/og/${project.id}.jpg` : undefined;
+// Per-project images come from scripts/generate-og-images.sh (1200x630 JPEG)
+const ogImage = project.bgImage || project.logo
+  ? {
+      url: absoluteUrl(`/assets/og/${project.id}.jpg`),
+      width: SOCIAL_IMAGE_WIDTH,
+      height: SOCIAL_IMAGE_HEIGHT,
+      type: 'image/jpeg' as const,
+      alt: `${project.title}: ${project.shortDescription}`,
+    }
+  : siteCardAsset('projects').image;
 ---
 
 <BaseLayout title={project.title} description={project.shortDescription} image={ogImage}>

@@ -1,0 +1,134 @@
+---
+import type { ComponentProps } from 'astro/types';
+import BaseLayout from './BaseLayout.astro';
+import NavRail from '../components/NavRail.astro';
+import BottomNav from '../components/BottomNav.astro';
+import '@fontsource-variable/bricolage-grotesque/opsz.css';
+import '@fontsource-variable/atkinson-hyperlegible-next/wght.css';
+import '@fontsource-variable/atkinson-hyperlegible-next/wght-italic.css';
+
+// Page chrome for the blog and the about page: the "Field Notes" palette and type,
+// the site navigation, a skip link and the footer.
+
+type Props = ComponentProps<typeof BaseLayout> & {
+  /** Highlighted navigation item. The about page passes none. */
+  currentPage?: 'blog';
+};
+
+const { currentPage, ...layoutProps } = Astro.props;
+const currentYear = new Date().getFullYear();
+---
+
+<BaseLayout {...layoutProps}>
+  <slot name="head" slot="head" />
+  <div class="blog-shell">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <NavRail currentPage={currentPage} />
+
+    <main id="main" class="blog-main" transition:name="content" transition:animate="slide">
+      <slot />
+
+      <footer class="blog-footer">
+        <span>&copy; 2003 - {currentYear} Keith Vassallo.</span>
+        <nav aria-label="Footer" class="blog-footer-links">
+          <a href="/blog/rss.xml">RSS</a>
+          <a href="/about">About</a>
+          <a href="https://github.com/keithvassallomt">GitHub</a>
+          <a href="https://mt.linkedin.com/in/keithvassallo">LinkedIn</a>
+        </nav>
+      </footer>
+    </main>
+
+    <BottomNav currentPage={currentPage} />
+  </div>
+</BaseLayout>
+
+<style>
+  .blog-shell {
+    /* Field Notes palette. --bg-primary and --border-default are overridden so the
+       shared navigation blends with the darker blog background. */
+    --bg-primary: #0b0d12;
+    --border-default: #262c37;
+    --blog-bg: #0b0d12;
+    --blog-surface: #12161d;
+    --blog-raised: #181d26;
+    --blog-border: #262c37;
+    --blog-text: #eef1f5;
+    --blog-body: #d5dae1;
+    --blog-secondary: #a3acb9;
+    --blog-muted: #8a93a1;
+    --c-green: #8cd49c;
+    --c-orange: #ffa657;
+    --c-cyan: #56d4dd;
+    --c-purple: #d2a8ff;
+    --c-blue: #79c0ff;
+    --c-red: #ff7b72;
+    --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+    --font-reading: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif;
+
+    min-height: 100vh;
+    background: var(--blog-bg);
+    color: var(--blog-text);
+    font-family: var(--font-reading);
+  }
+
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 96px;
+    z-index: 200;
+    padding: var(--space-sm) var(--space-md);
+    font-weight: 700;
+    color: var(--blog-bg);
+    background: var(--c-green);
+    border-radius: var(--radius-md);
+  }
+
+  .skip-link:focus {
+    top: var(--space-md);
+  }
+
+  .blog-main {
+    margin-left: 80px;
+    padding: var(--space-2xl) 56px var(--space-3xl);
+  }
+
+  .blog-footer {
+    max-width: 1180px;
+    margin: 72px auto 0;
+    padding-top: 28px;
+    border-top: 1px solid var(--blog-border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-md);
+    font-size: 0.875rem;
+    color: var(--blog-muted);
+  }
+
+  .blog-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+  }
+
+  .blog-footer-links a {
+    color: var(--blog-secondary);
+  }
+
+  .blog-footer-links a:hover {
+    color: var(--blog-text);
+  }
+
+  @media (max-width: 900px) {
+    .skip-link {
+      left: var(--space-md);
+    }
+
+    .blog-main {
+      margin-left: 0;
+      padding: var(--space-lg) 20px;
+      padding-bottom: calc(60px + var(--space-xl) + env(safe-area-inset-bottom, 0px));
+    }
+  }
+</style>

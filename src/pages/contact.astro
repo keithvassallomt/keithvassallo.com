@@ -2,15 +2,18 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import NavRail from '../components/NavRail.astro';
 import BottomNav from '../components/BottomNav.astro';
+import PathPrompt from '../components/PathPrompt.astro';
+import { siteCardAsset } from '../lib/social';
 ---
 
-<BaseLayout title="Contact">
+<BaseLayout title="Contact" description="Get in touch with Keith Vassallo" image={siteCardAsset('contact').image}>
   <div class="app-layout">
     <NavRail currentPage="contact" />
 
     <main class="content-area" transition:name="content" transition:animate="slide">
       <div class="contact-container">
         <div class="contact-header">
+          <PathPrompt path="contact" />
           <h1>Get in Touch</h1>
           <p class="contact-subtitle">Have a question or want to work together?</p>
         </div>

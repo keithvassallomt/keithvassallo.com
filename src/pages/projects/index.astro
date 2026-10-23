@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProjectsGallery from '../../components/ProjectsGallery.astro';
+import { siteCardAsset } from '../../lib/social';
 ---
 
-<BaseLayout title="Projects" description="Things I've designed & built — projects by Keith Vassallo">
+<BaseLayout title="Projects" description="Things I've designed & built — projects by Keith Vassallo" image={siteCardAsset('projects').image}>
   <ProjectsGallery />
 </BaseLayout>

@@ -1,0 +1,338 @@
+/* ============================================
+   Blog post body: the HTML rendered from Markdown.
+   Scoped under .prose; tokens come from BlogShell.astro.
+   ============================================ */
+
+.prose {
+  font-family: var(--font-reading);
+  font-size: 1.25rem;
+  line-height: 1.7;
+  color: var(--blog-body);
+  overflow-wrap: break-word;
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose p {
+  margin: 0 0 1.3em;
+  color: inherit;
+}
+
+/* Headings */
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: var(--font-display);
+  color: var(--blog-text);
+  scroll-margin-top: 24px;
+}
+
+.prose h2 {
+  margin: 2.4em 0 0.6em;
+  font-size: 1.6em;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.prose h3 {
+  margin: 2em 0 0.5em;
+  font-size: 1.25em;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.prose h4 {
+  margin: 1.8em 0 0.4em;
+  font-family: var(--font-reading);
+  font-size: 1em;
+  font-weight: 700;
+}
+
+/* Inline */
+.prose a {
+  color: var(--c-green);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.prose a:hover {
+  color: var(--blog-text);
+  text-decoration-thickness: 2px;
+}
+
+.prose strong {
+  font-weight: 700;
+  color: var(--blog-text);
+}
+
+.prose :not(pre) > code {
+  padding: 0.12em 0.4em;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: var(--blog-text);
+  background: var(--blog-raised);
+  border: 1px solid var(--blog-border);
+  border-radius: 6px;
+}
+
+.prose kbd {
+  padding: 0.1em 0.45em;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--blog-text);
+  background: var(--blog-raised);
+  border: 1px solid var(--blog-border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+}
+
+/* Lists */
+.prose ul,
+.prose ol {
+  margin: 0 0 1.3em;
+  padding-left: 1.4em;
+}
+
+.prose li {
+  margin: 0.35em 0;
+  padding-left: 0.2em;
+}
+
+.prose li::marker {
+  color: var(--c-green);
+}
+
+.prose ol > li::marker {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin-bottom: 0;
+}
+
+/* Quotations */
+.prose blockquote {
+  margin: 1.6em 0;
+  padding: 0.1em 0 0.1em 1.2em;
+  font-style: italic;
+  color: var(--blog-text);
+  border-left: 3px solid var(--c-green);
+}
+
+.prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Callouts: > [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION] */
+.prose .callout {
+  --callout: var(--c-cyan);
+  margin: 1.6em 0;
+  padding: 16px 20px;
+  font-size: 0.9em;
+  line-height: 1.6;
+  background: color-mix(in srgb, var(--callout) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--callout) 30%, transparent);
+  border-radius: 14px;
+}
+
+.prose .callout-tip {
+  --callout: var(--c-green);
+}
+
+.prose .callout-important {
+  --callout: var(--c-purple);
+}
+
+.prose .callout-warning {
+  --callout: var(--c-orange);
+}
+
+.prose .callout-caution {
+  --callout: var(--c-red);
+}
+
+.prose .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--callout);
+}
+
+.prose .callout-title::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.prose .callout p:last-child {
+  margin-bottom: 0;
+}
+
+/* Images and figures */
+.prose img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  /* Keeps tall images, such as phone screenshots, from filling several screens */
+  max-height: min(75vh, 680px);
+  margin: 0 auto;
+  border: 1px solid var(--blog-border);
+  border-radius: 14px;
+}
+
+.prose figure:not(.code-block) {
+  margin: 1.8em 0;
+}
+
+.prose figcaption {
+  margin-top: 10px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--blog-secondary);
+}
+
+/* Code blocks: figure.code-block > figcaption.code-block-header + pre (src/lib/markdown.mjs) */
+.prose .code-block {
+  margin: 1.6em 0;
+  background: var(--blog-surface);
+  border: 1px solid var(--blog-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.prose .code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 6px 0 18px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  text-align: left;
+  color: var(--blog-secondary);
+  border-bottom: 1px solid var(--blog-border);
+}
+
+.prose .code-block pre {
+  margin: 0;
+  padding: 18px 22px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  /* Shiki sets an inline background; use the card surface instead */
+  background: var(--blog-surface) !important;
+  border: 0;
+  border-radius: 0;
+}
+
+.prose pre code {
+  padding: 0;
+  font-size: inherit;
+  background: none;
+  border: 0;
+}
+
+.prose .code-copy {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  font-family: var(--font-reading);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--blog-body);
+  background: transparent;
+  border: 1px solid var(--blog-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.prose .code-copy:hover {
+  color: var(--blog-text);
+  border-color: #3b4453;
+}
+
+/* Tables: wrapped in .table-scroll (src/lib/markdown.mjs) */
+.prose .table-scroll {
+  margin: 1.6em 0;
+  overflow-x: auto;
+  border: 1px solid var(--blog-border);
+  border-radius: 14px;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.prose th,
+.prose td {
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--blog-border);
+}
+
+.prose th {
+  font-weight: 700;
+  color: var(--blog-text);
+  background: var(--blog-surface);
+}
+
+.prose tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Rules and footnotes */
+.prose hr {
+  height: 1px;
+  margin: 3em 0;
+  background: var(--blog-border);
+  border: 0;
+}
+
+.prose .footnotes {
+  margin-top: 3em;
+  padding-top: 1em;
+  font-size: 0.875em;
+  color: var(--blog-secondary);
+  border-top: 1px solid var(--blog-border);
+}
+
+@media (max-width: 900px) {
+  .prose {
+    font-size: 1.125rem;
+    line-height: 1.65;
+  }
+
+  .prose .code-block {
+    margin-left: -20px;
+    margin-right: -20px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  .prose .code-block pre {
+    padding: 16px 20px;
+    font-size: 0.8125rem;
+  }
+}

@@ -1,0 +1,12 @@
+---
+import { formatDate } from '../../lib/blog';
+
+interface Props {
+  date: Date;
+  format?: 'long' | 'short';
+}
+
+const { date, format = 'long' } = Astro.props;
+---
+
+<time datetime={date.toISOString()}>{formatDate(date, format)}</time>

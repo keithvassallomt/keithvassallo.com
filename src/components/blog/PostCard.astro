@@ -1,0 +1,214 @@
+---
+import { Image } from 'astro:assets';
+import CategoryChip from './CategoryChip.astro';
+import FormattedDate from './FormattedDate.astro';
+import avatar from '../../assets/keith-avatar.png';
+import { postUrl, readingTime, type Category, type Post } from '../../lib/blog';
+import { AUTHOR } from '../../lib/site';
+
+interface Props {
+  post: Post;
+  category: Category;
+  variant?: 'featured' | 'standard';
+  headingLevel?: 2 | 3;
+}
+
+const { post, category, variant = 'standard', headingLevel = 2 } = Astro.props;
+const { title, description, cover, pubDate, draft } = post.data;
+const featured = variant === 'featured';
+const Heading = `h${headingLevel}` as 'h2' | 'h3';
+---
+
+<article class:list={['card', variant]}>
+  {
+    cover && (
+      <div class="card-media">
+        <Image
+          src={cover}
+          alt=""
+          widths={featured ? [640, 960, 1400] : [400, 760]}
+          sizes={featured ? '(min-width: 1180px) 760px, 100vw' : '(min-width: 1180px) 380px, (min-width: 700px) 50vw, 100vw'}
+          loading={featured ? 'eager' : 'lazy'}
+          class="card-image"
+        />
+      </div>
+    )
+  }
+  <div class="card-body">
+    <div class="card-flags">
+      <CategoryChip category={category} />
+      {featured && <span class="card-flag">Latest</span>}
+      {draft && <span class="card-flag card-flag-draft">Draft</span>}
+    </div>
+    <Heading class="card-title"><a href={postUrl(post)} class="card-link">{title}</a></Heading>
+    <p class="card-excerpt">{description}</p>
+    <p class="card-meta">
+      {featured && <Image src={avatar} alt="" width={56} height={56} class="card-avatar" />}
+      {featured && <span class="card-author">{AUTHOR.name}</span>}
+      <FormattedDate date={pubDate} format="short" />
+      <span aria-hidden="true">·</span>
+      <span>{readingTime(post)} min read</span>
+    </p>
+  </div>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--blog-surface);
+    border: 1px solid var(--blog-border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: border-color var(--transition-fast);
+  }
+
+  .card:hover {
+    border-color: #3b4453;
+  }
+
+  /* The title link covers the whole card, so outline the card when it has focus */
+  .card:has(.card-link:focus-visible) {
+    outline: 2px solid var(--c-green);
+    outline-offset: 3px;
+  }
+
+  .card-link:focus-visible {
+    outline: none;
+  }
+
+  .card-media {
+    display: flex;
+    background: var(--blog-raised);
+  }
+
+  .card-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1200 / 560;
+    object-fit: cover;
+  }
+
+  .card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    padding: 22px 24px 24px;
+  }
+
+  .card-flags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-flag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--blog-muted);
+  }
+
+  .card-flag-draft {
+    color: var(--c-orange);
+  }
+
+  .card-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+  }
+
+  .card-link {
+    color: var(--blog-text);
+  }
+
+  .card-link:hover {
+    color: var(--blog-text);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.15em;
+  }
+
+  .card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .card-excerpt {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--blog-secondary);
+  }
+
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin: auto 0 0;
+    padding-top: 4px;
+    font-size: 0.875rem;
+    color: var(--blog-muted);
+  }
+
+  .card-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .card-author {
+    font-weight: 500;
+    color: var(--blog-body);
+  }
+
+  .featured .card-title {
+    font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+
+  .featured .card-excerpt {
+    font-size: 1.125rem;
+  }
+
+  .featured .card-body {
+    flex: 0 0 auto;
+    gap: 12px;
+    padding: 28px 32px 32px;
+  }
+
+  /* In the three-column grid the featured card spans two rows; let its image fill the height */
+  @container (min-width: 1000px) {
+    .featured .card-media {
+      flex: 1 1 auto;
+      min-height: 320px;
+    }
+
+    .featured .card-image {
+      height: 100%;
+      aspect-ratio: auto;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .card-body,
+    .featured .card-body {
+      padding: 20px;
+    }
+  }
+</style>

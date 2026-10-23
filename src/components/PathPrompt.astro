@@ -1,0 +1,18 @@
+---
+interface Props {
+  path: string;
+}
+
+const { path } = Astro.props;
+---
+
+<p class="path-prompt">~/{path}</p>
+
+<style>
+  .path-prompt {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--accent-green);
+    margin-bottom: var(--space-sm);
+  }
+</style>

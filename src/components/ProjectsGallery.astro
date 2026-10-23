@@ -1,6 +1,7 @@
 ---
 import NavRail from './NavRail.astro';
 import BottomNav from './BottomNav.astro';
+import PathPrompt from './PathPrompt.astro';
 import ProjectTile from './ProjectTile.astro';
 import { loadProjects } from '../lib/projects';
 
@@ -17,6 +18,7 @@ const projects = loadProjects();
 
   <main class="content-area" transition:name="content" transition:animate="slide">
     <div class="page-header">
+      <PathPrompt path="projects" />
       <h1>Projects</h1>
       <p class="page-subtitle">Things I've designed & built</p>
     </div>
@@ -105,7 +107,6 @@ const projects = loadProjects();
           const deltaY = targetCenterY - cardCenterY;
 
           // Normalize based on distance for consistent effect
-          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
           const maxDistance = Math.max(window.innerWidth, window.innerHeight);
           const normalizedX = deltaX / maxDistance;
           const normalizedY = deltaY / maxDistance;

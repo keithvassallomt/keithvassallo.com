@@ -1,0 +1,45 @@
+---
+import { categoryUrl, type Category } from '../../lib/blog';
+
+interface Props {
+  category: Category;
+  /** Render as a link to the category page. */
+  link?: boolean;
+}
+
+const { category, link = true } = Astro.props;
+const Tag = link ? 'a' : 'span';
+---
+
+<Tag class="chip" href={link ? categoryUrl(category.id) : undefined} style={`--chip: var(--c-${category.data.color})`}>
+  <span class="chip-dot" aria-hidden="true"></span>{category.data.name}
+</Tag>
+
+<style>
+  .chip {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 12px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--chip);
+    background: color-mix(in srgb, var(--chip) 12%, transparent);
+    border-radius: 999px;
+  }
+
+  a.chip:hover {
+    background: color-mix(in srgb, var(--chip) 22%, transparent);
+  }
+
+  .chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+</style>
