@@ -209,9 +209,11 @@ smoke test of each flow. You check how it looks and feels on your phone and lapt
   - A title field and a CodeMirror 6 markdown editor. Its toolbar has bold, italic, heading,
     link, code, list, callout, image, `kbd` and `mark`.
   - On a laptop the editor sits beside the preview. On a phone, Write and Preview are tabs.
-- **Preview.** It runs in the browser using Sätteri's browser build, with the site's own plugins,
-  Shiki theme and blog CSS. It renders in a sandboxed frame, so nothing in a post can run code with
-  your session. That matters because AI text comes partly from web pages.
+- **Preview.** The API renders it with Sätteri's native build and the site's own plugins and
+  Shiki theme, the same pipeline as the real build, a moment after you stop typing. Sätteri's
+  browser build is threaded WebAssembly, which would need cross-origin isolation headers on
+  `/admin`. The admin shows the result with the blog CSS in a sandboxed frame, so nothing in a post
+  can run code with your session. That matters because AI text comes partly from web pages.
 - **Details panel.** Slug, description, category, tags, cover and alt text, and the share blurbs,
   each with a counter for its network's limit.
 - **Checks.** `checks.mjs` is split so the same rules run in the browser as you type, with
@@ -383,7 +385,7 @@ Then the test post is deleted.
 
 - **Cognito passkeys.** Do they need the custom domain, and how does managed login look on a phone?
   Checked in stage 2.
-- **Sätteri's browser build.** The preview should match the live page. If it doesn't, the preview
-  is drawn in the Lambda instead. Checked in stage 3.
+- **Sätteri's browser build.** Checked: it's threaded WebAssembly, so the preview renders in the
+  Lambda instead (stage 3).
 - **6.1 Sol against Astra.** The first draft generated in stage 5 shows how 6.1 Sol's writing
   compares. Astra stays available as a per-run choice.
