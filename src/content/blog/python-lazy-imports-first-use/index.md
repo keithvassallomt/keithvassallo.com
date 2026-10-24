@@ -1,5 +1,5 @@
 ---
-title: 'Python 3.15 lazy imports: when should the work happen?'
+title: 'Python 3.15: choosing which imports to defer'
 description: Python 3.15's lazy imports let you delay loading dependencies. The useful question is what to defer, when to fail and how to measure the result.
 pubDate: 2026-10-24
 category: programming
@@ -53,6 +53,18 @@ def run(command):
 ```
 
 The [lazy declaration](https://docs.python.org/3.15/reference/simple_stmts.html#lazy-imports) is at module scope, but it doesn't load the backend there. Loading waits until something accesses the imported name.
+
+For this example, the two paths look like this:
+
+```text
+run(command)
+    |
+    +--> status --> return 'status available'
+    |               (report_backend stays unloaded)
+    |
+    +--> report --> load report_backend --> call render()
+                    (first access)
+```
 
 Take the status branch. Nothing touches `report_backend`, so, provided nothing elsewhere loads it, the tool can answer and exit without loading it at all. That's work we've removed from this particular run, not merely shuffled somewhere less visible.
 
@@ -114,5 +126,11 @@ Keep the interpreter, installed dependencies, hardware and workload the same bet
 [Python's `-X importtime` option](https://docs.python.org/3.15/using/cmdline.html#cmdoption-X) helps locate import costs, reporting self time and cumulative time including nested imports. Use it to diagnose where loading time goes, rather than treating it as the timing of the whole job; its output also has a documented limitation with multithreaded applications.
 
 Fresh processes matter because Python checks its [module cache](https://docs.python.org/3.15/reference/import.html#the-module-cache). A report generated after the backend has loaded isn't measuring the same thing as the first one. Keep those results separate.
+
+## Where lazy imports earn their keep
+
+I think this is a useful addition to Python, particularly for tools with several commands that need different dependencies. It lets a simple command stay simple without loading everything the application knows how to do. If a run needs those dependencies anyway, you're mainly choosing when it pays the loading cost.
+
+That's still a useful choice, but a faster arrival at ‘ready’ followed by the same wait isn't a faster completed job. It's the software equivalent of being shown to your table before anyone checks whether the kitchen is open.
 
 For our tool, I'd retain deferral if it lets status avoid irrelevant work and leaves the delay and possible failure at an acceptable point when reporting is selected. If reporting must already be available when the application announces readiness, check it during initialisation instead. That gives you a concrete decision based on both the initial response and the completed operation, rather than one flattering startup number.
