@@ -8,7 +8,7 @@ const categories = defineCollection({
     name: z.string(),
     description: z.string(),
     // Accent colours from the site palette; see the --c-* tokens in BlogShell.astro
-    color: z.enum(['green', 'orange', 'cyan', 'purple', 'blue', 'red']),
+    color: z.enum(['green', 'orange', 'cyan', 'purple', 'blue', 'red', 'indigo', 'yellow', 'pink', 'lime']),
   }),
 });
 

@@ -20,3 +20,23 @@
   name: Teaching
   description: Notes from the classroom on teaching technology.
   color: blue
+- id: dev
+  name: Dev
+  description: Apps I've built, how they work, and what's new in each release.
+  color: indigo
+- id: cloud
+  name: Cloud
+  description: AWS and other clouds, from architecture and deployment to cost and reliability.
+  color: yellow
+- id: ai
+  name: AI
+  description: AI models, agents and coding assistants, and what they're actually good for.
+  color: pink
+- id: programming
+  name: Programming
+  description: Python and the craft of writing software.
+  color: lime
+- id: policy
+  name: Tech policy
+  description: Technology news and policy from the UK, Malta and the EU, and what it means in practice.
+  color: red

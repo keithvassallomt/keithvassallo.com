@@ -4,7 +4,7 @@
 title: Putting Nextcloud inside Android's photo picker
 description: Android's system photo picker can show photos from a cloud provider. I wanted that provider to be my own Nextcloud server, so I built one.
 pubDate: 2026-10-23
-category: android
+category: dev
 tags: [Kotlin, Nextcloud, Android]
 cover: ./cover.avif
 coverAlt: "NC Media Provider: your Nextcloud photos, in Android's photo picker"

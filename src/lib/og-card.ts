@@ -19,6 +19,10 @@ const COLORS = {
   purple: '#d2a8ff',
   blue: '#79c0ff',
   red: '#ff7b72',
+  indigo: '#a5a6ff',
+  yellow: '#f2cc60',
+  pink: '#f2a0d6',
+  lime: '#b9e06f',
 };
 
 const root = process.cwd();

@@ -49,10 +49,18 @@ ids:
 | `self-hosting` | Running your own services, Nextcloud and friends |
 | `open-source` | Open-source projects, communities and the people in them |
 | `teaching` | Teaching technology, notes from the classroom |
+| `dev` | One of Keith's own projects as the main subject: a first proper look at an app, or the highlights of a new release from its changelog |
+| `cloud` | AWS and other cloud platforms: infrastructure, deployment, architecture, cost and reliability |
+| `ai` | AI models, agents, automation and coding assistants |
+| `programming` | Python and software engineering practice |
+| `policy` | Technology news and policy in the UK, Malta and the EU |
+
+When the main subject is one of Keith's projects, use `dev`, even for an Android or Linux app. The
+platform categories are for posts about the platform itself.
 
 Only add a new category when none of these fit, and mention it to Keith when you hand over. A new
 entry needs an `id`, `name`, `description` and a `color` from: `green`, `orange`, `cyan`, `purple`,
-`blue`, `red`.
+`blue`, `red`, `indigo`, `yellow`, `pink`, `lime`.
 
 ## Frontmatter
 
@@ -61,7 +69,7 @@ entry needs an `id`, `name`, `description` and a `color` from: `green`, `orange`
 title: Putting Nextcloud inside Android's photo picker
 description: Android's system photo picker can show photos from a cloud provider. I wanted that provider to be my own Nextcloud server, so I built one.
 pubDate: 2026-10-23
-category: android
+category: dev
 tags: [Kotlin, Nextcloud, Android]
 cover: ./cover.avif
 coverAlt: "NC Media Provider: your Nextcloud photos, in Android's photo picker"
