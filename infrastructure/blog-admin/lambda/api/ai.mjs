@@ -270,7 +270,9 @@ export async function coverPost(id, input = {}) {
   if (!post.title.trim()) throw new HttpError(409, 'Give the post a title first, so the cover has something to go on.');
   const settings = await aiSettings();
   const instruction = typeof input.instruction === 'string' ? input.instruction.slice(0, 1000) : '';
-  return startAiJob('cover', post, { ...(await choices(input, settings)), instruction });
+  // Only a direction can stand in for the house style
+  const overrideStyle = input.overrideStyle === true && !!instruction.trim();
+  return startAiJob('cover', post, { ...(await choices(input, settings)), instruction, overrideStyle });
 }
 
 export async function cancelJob(id) {

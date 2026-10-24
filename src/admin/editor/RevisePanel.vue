@@ -1,7 +1,7 @@
 <script setup>
 // Revising with the AI: notes on passages chosen in the preview, an overall request, and the
-// model. The AI rewrites from the current text, so hand edits stay.
-import { ref } from 'vue';
+// model. The AI rewrites from the current text, so hand edits stay. The editor holds the
+// request and choices, since this panel closes whenever another one opens.
 import Icon from '../Icon.vue';
 import ModelPicker from './ModelPicker.vue';
 
@@ -12,9 +12,9 @@ defineProps({
 });
 const emit = defineEmits(['remove', 'revise', 'close']);
 
-const request = ref('');
-const learn = ref(true);
-const choice = ref({});
+const request = defineModel('request', { type: String, default: '' });
+const learn = defineModel('learn', { type: Boolean, default: true });
+const choice = defineModel('choice', { type: Object, default: () => ({}) });
 </script>
 
 <template>

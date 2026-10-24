@@ -525,14 +525,19 @@ async function revise() {
 async function newCover() {
   await stage('cover', 'Cover');
   const snap = job.snapshot;
+  // Keith's direction is the scene itself, word for word, so the model only writes its alt text.
+  // Without one, the model picks a scene from the post.
+  const direction = choice.instruction?.trim();
   const response = await respond({
     model,
     reasoning: { effort: 'low' },
-    instructions: 'You suggest cover illustrations for blog posts. Reply with one concrete scene or object that captures the post, slightly playful if it fits, with no text, logos, user interfaces, screenshots or real people, and alt text describing that illustration.',
+    instructions: direction
+      ? 'You write alt text for blog cover illustrations. Describe the scene exactly as given, for someone who cannot see it, in one or two sentences. Include any wording it shows. Add nothing that is not in the scene. Return the scene unchanged as cover_idea.'
+      : 'You suggest cover illustrations for blog posts. Reply with one concrete scene or object that captures the post, slightly playful if it fits, with no text, logos, user interfaces, screenshots or real people, and alt text describing that illustration.',
     input: [
       {
         role: 'user',
-        content: `Title: ${snap.title}\nDescription: ${snap.description}\n${choice.instruction ? `Keith's direction for the cover: ${choice.instruction}\n` : ''}\nThe post:\n${snap.body.slice(0, 6000)}`,
+        content: direction ? `The scene: ${direction}` : `Title: ${snap.title}\nDescription: ${snap.description}\n\nThe post:\n${snap.body.slice(0, 6000)}`,
       },
     ],
     text: {
@@ -550,12 +555,16 @@ async function newCover() {
     },
     max_output_tokens: 4000,
   });
-  const { cover_idea, cover_alt } = JSON.parse(outputText(response));
+  const reply = JSON.parse(outputText(response));
+  const cover_idea = direction || reply.cover_idea;
+  const { cover_alt } = reply;
   const image = await generateCover({
     siteDir,
     title: snap.title,
     idea: cover_idea,
     color: categories.find((category) => category.id === snap.category)?.color ?? 'green',
+    quotedText: !!direction,
+    houseStyle: !(direction && choice.overrideStyle),
   });
   await stage('saving', 'Saving');
   await putObject(`posts/${job.postId}/${COVER_FILE}`, image, 'image/webp');

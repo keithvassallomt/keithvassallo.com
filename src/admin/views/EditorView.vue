@@ -75,6 +75,8 @@ const diff = ref(null);
 const aiRefresh = ref(0);
 const coverChoice = ref({});
 const coverInstruction = ref('');
+// Off unless Keith asks: then his direction alone sets the look, without the blog's house style
+const coverOverride = ref(false);
 const highlights = ref((() => {
   try {
     return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
@@ -89,6 +91,25 @@ watch(highlights, (list) => {
     // Kept for this visit only
   }
 }, { deep: true });
+// The revision's overall request, kept like the notes, so changing panels or reloading keeps it
+const REQUEST_KEY = `kv-admin-request-${props.id}`;
+const reviseRequest = ref((() => {
+  try {
+    return localStorage.getItem(REQUEST_KEY) ?? '';
+  } catch {
+    return '';
+  }
+})());
+watch(reviseRequest, (text) => {
+  try {
+    if (text) localStorage.setItem(REQUEST_KEY, text);
+    else localStorage.removeItem(REQUEST_KEY);
+  } catch {
+    // Kept for this visit only
+  }
+});
+const reviseLearn = ref(true);
+const reviseChoice = ref({});
 
 const fields = () => JSON.stringify(Object.fromEntries(FIELDS.map((key) => [key, post[key]])));
 
@@ -413,7 +434,7 @@ const pin = () => act(() => api(`/posts/${props.id}/pin`, { method: 'POST', body
 const unpin = () => act(() => api(`/posts/${props.id}/pin`, { method: 'DELETE' }));
 const cancelSchedule = () => act(() => api(`/posts/${props.id}/schedule`, { method: 'DELETE' }));
 const generate = (choice) => act(() => api(`/posts/${props.id}/generate`, { method: 'POST', body: choice }));
-const newCover = () => act(() => api(`/posts/${props.id}/cover`, { method: 'POST', body: { ...coverChoice.value, instruction: coverInstruction.value } }));
+const newCover = () => act(() => api(`/posts/${props.id}/cover`, { method: 'POST', body: { ...coverChoice.value, instruction: coverInstruction.value, overrideStyle: coverOverride.value && !!coverInstruction.value.trim() } }));
 
 async function revise({ request, learn, choice }) {
   await act(() => api(`/posts/${props.id}/revise`, { method: 'POST', body: { highlights: highlights.value, request, learn, ...choice } }));
@@ -488,6 +509,7 @@ async function jobFinished(job) {
     const before = await api(`/posts/${props.id}/versions/${encodeURIComponent(job.beforeId)}`).catch(() => null);
     if (before) diff.value = { before: before.post.body, after: post.body, changes: job.changes ?? [], lessons: job.lessons ?? [], problems: job.problems ?? [], beforeId: job.beforeId };
     highlights.value = [];
+    reviseRequest.value = '';
     reviseMode.value = false;
   }
   if (job.status === 'done' && job.kind === 'pin') pinned.value = (await api('/settings').catch(() => ({}))).pin ?? pinned.value;
@@ -669,6 +691,9 @@ function goToProblem(line) {
         </nav>
         <RevisePanel
           v-if="showPanel('revise')"
+          v-model:request="reviseRequest"
+          v-model:learn="reviseLearn"
+          v-model:choice="reviseChoice"
           :highlights="highlights"
           :busy="acting || jobActive"
           :error="dialog ? '' : actionError"
@@ -739,7 +764,12 @@ function goToProblem(line) {
     <GenerateDialog v-if="dialog === 'generate'" :notes="post.notes" :body="post.body" :busy="acting" :error="actionError" @close="dialog = null" @generate="generate" />
     <Dialog v-if="dialog === 'cover'" title="Draw a new cover?" @close="dialog = null">
       <p>The AI draws a new illustration in the blog's palette. The current cover stays in History.</p>
-      <label><span class="dialog-label">Direction (optional)</span><input v-model="coverInstruction" class="inp" placeholder="For example: a lighthouse made of circuit boards" /></label>
+      <label><span class="dialog-label">Direction (optional)</span><textarea v-model="coverInstruction" class="inp" rows="3" placeholder="For example: a lighthouse made of circuit boards"></textarea></label>
+      <p class="muted dialog-note">It's drawn as you describe it, in the blog's style. Words in quotes appear in the image exactly. Leave it empty and the AI picks a scene from the post.</p>
+      <label class="override" :class="{ off: !coverInstruction.trim() }">
+        <input v-model="coverOverride" type="checkbox" :disabled="!coverInstruction.trim()" />
+        <span><strong>Override default style</strong><br /><span class="muted">Your direction sets the whole look: no house style, dark palette or mood. Needs a direction.</span></span>
+      </label>
       <div class="cover-model"><ModelPicker v-model="coverChoice" kind="cover" /></div>
       <p v-if="actionError" class="dialog-error">{{ actionError }}</p>
       <template #buttons>
@@ -903,6 +933,31 @@ function goToProblem(line) {
 
 .dialog-note {
   font-size: 13px;
+}
+
+.override {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 12px 0 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.override.off {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.override input {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  accent-color: var(--pink);
+}
+
+.override strong {
+  color: var(--text);
 }
 
 .narrow {
