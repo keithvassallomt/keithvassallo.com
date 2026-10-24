@@ -375,6 +375,10 @@ emails at 14 days, at 3 days and on expiry, and every screen shows a banner from
 
 **Done when:** a draft committed from VS Code can be finished and published from the phone.
 
+**As built:** done along with stage 4. The list shows posts on `main`, drafts included, from
+`/admin/posts.json`; opening one copies it and its files into the admin, and publishing writes
+it back to the same folder. Not yet tried with a draft committed from VS Code.
+
 ## Running costs
 
 - **AWS:** under a dollar a month at your usage.
