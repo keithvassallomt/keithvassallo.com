@@ -6,8 +6,11 @@ const BASE = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 const ATTEMPTS = 3;
 const TIMEOUT_MS = 15 * 60_000;
 
-/** Running totals for the run summary. */
-export const usage = { requests: 0, inputTokens: 0, cachedTokens: 0, outputTokens: 0, webSearches: 0, images: 0 };
+/** Running totals for the run summary, and each request's tokens for pricing it. */
+export const usage = { requests: 0, inputTokens: 0, cachedTokens: 0, outputTokens: 0, webSearches: 0, images: 0, calls: [] };
+
+/** The model's reasoning summaries, filed under whichever stage the caller says it is in. */
+export const trace = { stage: 'other', summaries: {} };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -45,12 +48,30 @@ async function post(path, body) {
 export async function respond(body) {
   // Encrypted reasoning lets a stateless conversation keep the model's reasoning across
   // tool calls. Newer models include it anyway; older ones need asking.
-  const response = await post('/responses', { store: false, include: ['reasoning.encrypted_content'], ...body });
+  const request = { store: false, include: ['reasoning.encrypted_content'], ...body };
+  // Summaries of the model's reasoning, for the admin's AI notes
+  if (body.reasoning && !body.reasoning.summary) request.reasoning = { ...body.reasoning, summary: 'auto' };
+  let response;
+  try {
+    response = await post('/responses', request);
+  } catch (error) {
+    if (!request.reasoning?.summary || !/summary/i.test(error.message)) throw error;
+    response = await post('/responses', { ...request, reasoning: body.reasoning });
+  }
+  const tokens = {
+    model: body.model,
+    input: response.usage?.input_tokens ?? 0,
+    cached: response.usage?.input_tokens_details?.cached_tokens ?? 0,
+    output: response.usage?.output_tokens ?? 0,
+  };
   usage.requests += 1;
-  usage.inputTokens += response.usage?.input_tokens ?? 0;
-  usage.cachedTokens += response.usage?.input_tokens_details?.cached_tokens ?? 0;
-  usage.outputTokens += response.usage?.output_tokens ?? 0;
+  usage.inputTokens += tokens.input;
+  usage.cachedTokens += tokens.cached;
+  usage.outputTokens += tokens.output;
+  usage.calls.push(tokens);
   usage.webSearches += response.output.filter((item) => item.type === 'web_search_call').length;
+  const summaries = response.output.filter((item) => item.type === 'reasoning').flatMap((item) => item.summary ?? []).map((part) => part.text).filter(Boolean);
+  if (summaries.length) (trace.summaries[trace.stage] ??= []).push(...summaries);
   if (response.status === 'incomplete') {
     throw new Error(`OpenAI response incomplete: ${response.incomplete_details?.reason ?? 'unknown reason'}`);
   }

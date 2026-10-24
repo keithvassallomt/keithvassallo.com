@@ -6,7 +6,7 @@ import { api } from '../api.js';
 import Icon from '../Icon.vue';
 
 const props = defineProps({ job: { type: Object, required: true }, slug: { type: String, default: '' } });
-const emit = defineEmits(['finished', 'dismiss']);
+const emit = defineEmits(['finished', 'dismiss', 'cancel']);
 
 const STAGES = {
   publish: [['queued', 'Waiting to start'], ['preparing', 'Getting the post ready'], ['building', 'Checking the site builds'], ['committing', 'Committing to main'], ['deploying', 'Deploying'], ['live', 'Live']],
@@ -14,7 +14,19 @@ const STAGES = {
   pin: [['queued', 'Waiting to start'], ['preparing', 'Setting the pin'], ['building', 'Checking the site builds'], ['committing', 'Committing to main'], ['deploying', 'Deploying'], ['live', 'Done']],
 };
 STAGES.delete = STAGES.unpublish;
-const TITLES = { publish: 'Publishing', unpublish: 'Unpublishing', delete: 'Deleting from the live site', pin: 'Changing the pin' };
+STAGES.generate = [['queued', 'Waiting to start'], ['starting', 'Starting'], ['researching', 'Research'], ['drafting', 'Facts-first draft'], ['editing', 'Story edit'], ['cover', 'Cover'], ['checking', 'Checks and build'], ['saving', 'Saving']];
+STAGES.revise = [['queued', 'Waiting to start'], ['starting', 'Starting'], ['revising', 'Revising, with the checks and build'], ['saving', 'Saving']];
+STAGES.cover = [['queued', 'Waiting to start'], ['starting', 'Starting'], ['cover', 'Drawing the cover'], ['saving', 'Saving']];
+const TITLES = {
+  publish: 'Publishing',
+  unpublish: 'Unpublishing',
+  delete: 'Deleting from the live site',
+  pin: 'Changing the pin',
+  generate: 'Generating',
+  revise: 'Revising',
+  cover: 'Drawing a new cover',
+};
+const AI = new Set(['generate', 'revise', 'cover']);
 
 const current = ref({ ...props.job });
 let timer = null;
@@ -29,7 +41,14 @@ const steps = computed(() => {
   }));
 });
 
-const finished = computed(() => ['done', 'failed'].includes(current.value.status));
+const finished = computed(() => ['done', 'failed', 'cancelled'].includes(current.value.status));
+const doneTitle = computed(() => {
+  const { kind, outcome } = current.value;
+  if (kind === 'generate') return outcome === 'skip' ? 'No post this time: nothing met the editorial bar' : 'The draft is ready';
+  if (kind === 'revise') return 'The revision is ready';
+  if (kind === 'cover') return 'The new cover is ready';
+  return kind === 'publish' ? 'Live' : 'Done';
+});
 
 async function poll() {
   try {
@@ -61,12 +80,14 @@ watch(
       <strong>
         <template v-if="current.status === 'failed'">{{ TITLES[current.kind] ?? 'The job' }} stopped</template>
         <template v-else-if="current.status === 'done' && current.dryRun">The build passed. Nothing was published.</template>
-        <template v-else-if="current.status === 'done'">{{ current.kind === 'publish' ? 'Live' : 'Done' }}</template>
+        <template v-else-if="current.status === 'cancelled'">Cancelled</template>
+        <template v-else-if="current.status === 'done'">{{ doneTitle }}</template>
         <template v-else>{{ TITLES[current.kind] ?? 'Working' }}{{ current.dryRun ? ' (checking only)' : '' }}</template>
       </strong>
       <span class="links">
         <a v-if="current.status === 'done' && current.kind === 'publish' && !current.dryRun && slug" :href="`https://keithvassallo.com/blog/${slug}`" target="_blank" rel="noopener">View it<Icon name="external" /></a>
         <a v-if="current.runUrl" :href="current.runUrl" target="_blank" rel="noopener">Log</a>
+        <button v-if="!finished && AI.has(current.kind)" type="button" class="btn small cancel" @click="emit('cancel', current)">Cancel</button>
         <button v-if="finished" type="button" class="close" aria-label="Dismiss" @click="emit('dismiss')"><Icon name="close" /></button>
       </span>
     </div>
@@ -76,6 +97,8 @@ watch(
       </li>
     </ol>
     <p v-if="current.status === 'failed'" class="error">{{ current.error }}</p>
+    <p v-if="current.status === 'done' && current.outcome === 'skip'" class="muted reason">{{ current.reason }}</p>
+    <p v-if="!finished && AI.has(current.kind)" class="muted reason">You can leave this page. The post stays locked until it finishes.</p>
   </div>
 </template>
 
@@ -180,6 +203,21 @@ watch(
 
 .steps .failed {
   color: var(--red);
+}
+
+.btn.small {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.cancel {
+  color: var(--red);
+}
+
+.reason {
+  margin: 8px 0 0;
+  font-size: 14px;
 }
 
 .error {

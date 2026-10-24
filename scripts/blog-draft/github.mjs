@@ -31,27 +31,6 @@ async function api(path, { raw = false } = {}) {
 
 const encodePath = (path) => path.split('/').filter(Boolean).map(encodeURIComponent).join('/');
 
-/** Open pull requests on the site repository whose branch starts with `prefix`. */
-export async function openDraftPullRequests(siteRepo, prefix) {
-  const pulls = (await api(`/repos/${siteRepo}/pulls?state=open&per_page=100`)) ?? [];
-  return pulls
-    .filter((pull) => pull.head.ref.startsWith(prefix))
-    .map((pull) => ({ number: pull.number, title: pull.title, branch: pull.head.ref, opened: pull.created_at.slice(0, 10) }));
-}
-
-/** A pull request with its conversation, reviews and line comments. */
-export async function pullRequestWithFeedback(siteRepo, number) {
-  const base = `/repos/${siteRepo}`;
-  const [pull, comments, reviews, lineComments] = await Promise.all([
-    api(`${base}/pulls/${number}`),
-    api(`${base}/issues/${number}/comments?per_page=100`),
-    api(`${base}/pulls/${number}/reviews?per_page=100`),
-    api(`${base}/pulls/${number}/comments?per_page=100`),
-  ]);
-  if (!pull) throw new Error(`There is no pull request #${number} on ${siteRepo}`);
-  return { pull, comments, reviews, lineComments };
-}
-
 export function createGitHubTools(excluded) {
   const repos = new Map();
 

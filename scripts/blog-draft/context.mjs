@@ -1,7 +1,6 @@
-// What both entry points load: Keith's private material, the site's own data, and reading
+// What the AI jobs load: Keith's private material, the site's own data, and reading
 // and writing post files.
 
-import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
@@ -9,7 +8,6 @@ import { readBlogFrontmatter } from '../../src/lib/blog-frontmatter.mjs';
 import { usage } from './openai.mjs';
 
 export const SITE_REPO = 'keithvassallomt/keithvassallo.com';
-export const BRANCH_PREFIX = 'blog-draft/';
 const MAX_PRIVATE_CHARACTERS = 600_000;
 
 export const model = process.env.OPENAI_MODEL || 'gpt-6.1-sol';
@@ -34,7 +32,8 @@ export function runSummary(attempts = 0) {
 }
 
 /**
- * The private repository's material (see the layout in draft.mjs). Briefs come oldest first.
+ * The private repository's material (see the layout in scripts/blog-admin/ai-job.mjs and the
+ * private repository's README). Briefs come oldest first.
  */
 export function loadPrivate(privateDir) {
   const read = (folder) => {
@@ -94,8 +93,8 @@ export function loadSite(siteDir) {
       categoryIds: new Set(categories.map((category) => category.id)),
       publishedSlugs: new Set(posts.filter((post) => !post.draft).map((post) => post.slug)),
       projectIds: new Set(yaml.load(projects).projects.map((project) => project.id)),
-      branchExists: (slug) =>
-        spawnSync('git', ['ls-remote', '--exit-code', '--heads', 'origin', `${BRANCH_PREFIX}${slug}`], { cwd: siteDir }).status === 0,
+      // Slugs taken outside the repo's folders. The AI job fills it in with the admin's other posts.
+      slugTaken: () => false,
       // The slug of the post being revised, which is "taken" by the post itself
       ownSlug: null,
     },

@@ -1,6 +1,7 @@
 // The blog admin's API. API Gateway has already checked the Cognito access token (issuer,
 // client, expiry) before this runs; this checks the caller is in the admins group, then
 // routes on the request. EventBridge Scheduler also calls it directly, for scheduled posts.
+import * as ai from './ai.mjs';
 import * as posts from './posts.mjs';
 import * as publishing from './publishing.mjs';
 import { HttpError } from './store.mjs';
@@ -53,9 +54,17 @@ export const routes = {
   'POST /posts/{id}/pin': ({ id, body }) => publishing.pinPost(id, body),
   'DELETE /posts/{id}/pin': ({ id }) => publishing.unpinPost(id),
   'POST /posts/{id}/repo': ({ id, body }) => publishing.repoChoice(id, body),
+  'POST /posts/{id}/generate': ({ id, body }) => ai.generatePost(id, body),
+  'POST /posts/{id}/revise': ({ id, body }) => ai.revisePost(id, body),
+  'POST /posts/{id}/cover': ({ id, body }) => ai.coverPost(id, body),
+  'GET /posts/{id}/ai': ({ id }) => ai.aiNotes(id),
   'GET /jobs/{id}': ({ id }) => publishing.getJob(id),
-  'GET /settings': () => publishing.getSettings(),
+  'POST /jobs/{id}/cancel': ({ id }) => ai.cancelJob(id),
+  'GET /models': () => ai.listModels(),
+  'GET /spend': ({ query }) => ai.spend(query),
+  'GET /settings': async () => ({ ...(await publishing.getSettings()), ai: await ai.aiSettings() }),
   'PUT /settings/github-token': ({ body }) => publishing.setGitHubToken(body),
+  'PUT /settings/ai': ({ body }) => ai.saveAiSettings(body),
 };
 
 export async function handler(event, context) {
@@ -69,7 +78,7 @@ export async function handler(event, context) {
   if (!route) return json(404, { error: `No route for ${event.routeKey}` });
   try {
     const { id, version } = event.pathParameters ?? {};
-    return json(200, await route({ claims, id, version: version && decodeURIComponent(version), body: input(event) }));
+    return json(200, await route({ claims, id, version: version && decodeURIComponent(version), body: input(event), query: event.queryStringParameters ?? {} }));
   } catch (error) {
     if (error instanceof HttpError) return json(error.status, { error: error.message, ...error.extra });
     console.error(error);

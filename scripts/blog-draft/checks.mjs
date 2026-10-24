@@ -14,7 +14,7 @@ export function checkSlug(slug, site) {
   const form = slugFormatProblem(slug);
   if (form) return form;
   if (slug === site.ownSlug) return null;
-  if (existsSync(path.join(site.siteDir, 'src/content/blog', slug)) || site.branchExists(slug)) {
+  if (existsSync(path.join(site.siteDir, 'src/content/blog', slug)) || site.slugTaken?.(slug)) {
     return `The slug "${slug}" is already taken. Choose another.`;
   }
   return null;
@@ -22,7 +22,7 @@ export function checkSlug(slug, site) {
 
 /**
  * @param {object} post the model's structured output
- * @param {{ siteDir: string, publishedSlugs: Set<string>, projectIds: Set<string>, categoryIds: Set<string>, branchExists: (slug: string) => boolean, ownSlug: string | null }} site
+ * @param {{ siteDir: string, publishedSlugs: Set<string>, projectIds: Set<string>, categoryIds: Set<string>, slugTaken: (slug: string) => boolean, ownSlug: string | null }} site
  * @param {{ story?: boolean }} options `story` adds the checks for the finished voice, which a
  *   facts-first draft doesn't have to meet yet
  * @returns {string[]} problems, empty when the post passes

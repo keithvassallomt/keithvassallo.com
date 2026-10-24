@@ -14,7 +14,7 @@ const props = defineProps({
   coverUrl: { type: String, default: null },
   busy: { type: Boolean, default: false },
 });
-const emit = defineEmits(['cover', 'remove-cover']);
+const emit = defineEmits(['cover', 'remove-cover', 'regenerate']);
 
 const NETWORKS = { linkedin: 'LinkedIn', x: 'X', bluesky: 'Bluesky', threads: 'Threads', mastodon: 'Mastodon', facebook: 'Facebook' };
 
@@ -74,8 +74,8 @@ function pickedCover(event) {
       <div v-else class="cover empty muted">No cover</div>
       <div class="row">
         <button type="button" class="btn small" :disabled="busy" @click="coverPicker.click()"><Icon name="image" />{{ post.cover ? 'Replace' : 'Upload a cover' }}</button>
+        <button type="button" class="btn small ai" :disabled="busy" @click="emit('regenerate')"><Icon name="sparkles" />{{ post.cover ? 'Regenerate' : 'Draw one' }}</button>
         <button v-if="post.cover" type="button" class="btn small quiet" :disabled="busy" @click="emit('remove-cover')">Remove</button>
-        <span class="muted small-note">Regenerating with AI arrives in stage 5</span>
       </div>
       <input ref="coverPicker" type="file" accept="image/*" hidden @change="pickedCover" />
     </div>
@@ -207,6 +207,10 @@ function pickedCover(event) {
 
 .btn.quiet {
   color: var(--secondary);
+}
+
+.btn.ai {
+  color: var(--pink);
 }
 
 .link {

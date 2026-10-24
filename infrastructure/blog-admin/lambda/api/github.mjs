@@ -51,6 +51,13 @@ export async function dispatch(repo, workflow, inputs) {
   throw new GitHubError(`GitHub didn't start ${workflow} (${response.status}): ${detail.slice(0, 300)}`);
 }
 
+/** Cancels a workflow run. One that has already finished is left alone. */
+export async function cancelRun(repo, runId) {
+  const response = await request(`/repos/${repo}/actions/runs/${runId}/cancel`, { method: 'POST' });
+  if (response.status === 202 || response.status === 409) return;
+  throw new GitHubError(`GitHub didn't cancel the run (${response.status}).`);
+}
+
 /** A file or folder on the site repo's main branch, or null when it doesn't exist. */
 export async function siteContents(path) {
   const response = await request(`/repos/${SITE_REPO}/contents/${path}?ref=main`);

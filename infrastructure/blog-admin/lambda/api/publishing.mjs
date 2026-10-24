@@ -13,7 +13,7 @@ import { adminFields, parsePost } from '../../../../src/lib/post-file.mjs';
 import { slugFormatProblem } from '../../../../src/lib/post-checks.mjs';
 import { GitHubError, dispatch, download, saveToken, siteContents } from './github.mjs';
 import { FILE_NAME, allPosts, editable, getPost, snapshot, writeFields } from './posts.mjs';
-import { BUCKET, HttpError, TABLE, db, loadPost, now, s3, setting, update } from './store.mjs';
+import { BUCKET, HttpError, TABLE, busy, db, loadPost, now, s3, setting, update } from './store.mjs';
 
 const { SITE_REPO, PRIVATE_REPO, SCHEDULE_GROUP, SCHEDULER_ROLE_ARN } = process.env;
 const SITE_WORKFLOW = 'blog-admin-site.yml';
@@ -26,9 +26,7 @@ const decode = (content) => Buffer.from(content, 'base64').toString('utf8');
 
 /** Records a site job and starts the workflow. A job that can't start is marked failed. */
 async function startSiteJob(kind, post, { params = {}, snapshotted = false, dryRun = false } = {}) {
-  // A job only blocks the next for as long as the workflow could still be running it
-  const busy = ['queued', 'running'].includes(post.job?.status) && Date.now() - Date.parse(post.job.at ?? 0) < 45 * 60 * 1000;
-  if (busy) throw new HttpError(409, 'Something is already happening to this post. Wait for it to finish.');
+  if (busy(post)) throw new HttpError(409, 'Something is already happening to this post. Wait for it to finish.');
   const job = {
     id: randomUUID(),
     kind,

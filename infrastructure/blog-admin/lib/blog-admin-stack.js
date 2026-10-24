@@ -290,6 +290,26 @@ export class BlogAdminStack extends Stack {
       }),
     );
 
+    // ---- the AI runner ------------------------------------------------------------------
+    // blog-ai.yml on blog-private's main branch: it reads the job and the post, reports its
+    // stages, saves the result as a new version and writes the AI's notes under ai/
+    const aiRole = new iam.Role(this, 'AiRunnerRole', {
+      roleName: 'keithvassallo-com-blog-admin-ai',
+      description: 'The blog admin\'s AI jobs, run by blog-private\'s blog-ai.yml on main',
+      maxSessionDuration: Duration.hours(2),
+      assumedBy: new iam.WebIdentityPrincipal(github.openIdConnectProviderArn, {
+        StringEquals: {
+          'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+          'token.actions.githubusercontent.com:sub': `repo:${PRIVATE_REPO}:ref:refs/heads/main`,
+        },
+      }),
+    });
+    aiRole.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'], resources: [table.tableArn] }));
+    aiRole.addToPolicy(
+      new iam.PolicyStatement({ actions: ['s3:ListBucket'], resources: [files.bucketArn], conditions: { StringLike: { 's3:prefix': ['posts/*', 'ai/*'] } } }),
+    );
+    aiRole.addToPolicy(new iam.PolicyStatement({ actions: ['s3:GetObject', 's3:PutObject'], resources: [files.arnForObjects('posts/*'), files.arnForObjects('ai/*')] }));
+
     const http = new HttpApi(this, 'HttpApi', {
       apiName: 'keithvassallo-com-admin',
       corsPreflight: {
@@ -322,9 +342,17 @@ export class BlogAdminStack extends Stack {
       '/posts/{id}/delete-live': [HttpMethod.POST],
       '/posts/{id}/pin': [HttpMethod.POST, HttpMethod.DELETE],
       '/posts/{id}/repo': [HttpMethod.POST],
+      '/posts/{id}/generate': [HttpMethod.POST],
+      '/posts/{id}/revise': [HttpMethod.POST],
+      '/posts/{id}/cover': [HttpMethod.POST],
+      '/posts/{id}/ai': [HttpMethod.GET],
       '/jobs/{id}': [HttpMethod.GET],
+      '/jobs/{id}/cancel': [HttpMethod.POST],
+      '/models': [HttpMethod.GET],
+      '/spend': [HttpMethod.GET],
       '/settings': [HttpMethod.GET],
       '/settings/github-token': [HttpMethod.PUT],
+      '/settings/ai': [HttpMethod.PUT],
     };
     for (const [routePath, methods] of Object.entries(routes)) http.addRoutes({ path: routePath, methods, integration });
 
@@ -337,5 +365,7 @@ export class BlogAdminStack extends Stack {
     new CfnOutput(this, 'BucketName', { value: files.bucketName });
     // For the site repo's BLOG_ADMIN_SITE_ROLE_ARN variable
     new CfnOutput(this, 'SiteRunnerRoleArn', { value: siteRole.roleArn });
+    // For blog-private's BLOG_ADMIN_AI_ROLE_ARN variable
+    new CfnOutput(this, 'AiRunnerRoleArn', { value: aiRole.roleArn });
   }
 }

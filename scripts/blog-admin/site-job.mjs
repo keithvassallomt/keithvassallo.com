@@ -12,65 +12,20 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import { CodePipelineClient, ListPipelineExecutionsCommand } from '@aws-sdk/client-codepipeline';
 import { PIN_FILE, readPin, removePostFolder, ukDate, writePin, writePostFolder } from './post-folder.mjs';
+import { JOB, failJob, finishJob, getItem, now, postFiles, reportStage, update } from './store.mjs';
 
-const { TABLE, BUCKET, JOB, RUN_URL } = process.env;
 const DRY_RUN = process.env.DRY_RUN === 'true';
 const SITE = 'https://keithvassallo.com';
 const PIPELINE = 'keithvassallo.com';
 const siteDir = process.cwd();
 
-const db = DynamoDBDocumentClient.from(new DynamoDBClient({}), { marshallOptions: { removeUndefinedValues: true } });
-const s3 = new S3Client({});
 const pipeline = new CodePipelineClient({});
 
-const now = () => new Date().toISOString();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const git = (...args) => execFileSync('git', args, { cwd: siteDir, encoding: 'utf8' }).trim();
-
-/** Sets fields on an item. `remove` lists attributes to delete. */
-async function update(key, fields, remove = []) {
-  const set = Object.entries(fields).filter(([, value]) => value !== undefined);
-  const names = Object.fromEntries([...set.map(([name]) => name), ...remove].map((name, index) => [`#n${index}`, name]));
-  const alias = Object.fromEntries(Object.entries(names).map(([placeholder, name]) => [name, placeholder]));
-  const clauses = [
-    set.length ? `SET ${set.map(([name], index) => `${alias[name]} = :v${index}`).join(', ')}` : '',
-    remove.length ? `REMOVE ${remove.map((name) => alias[name]).join(', ')}` : '',
-  ];
-  await db.send(
-    new UpdateCommand({
-      TableName: TABLE,
-      Key: key,
-      UpdateExpression: clauses.filter(Boolean).join(' '),
-      ExpressionAttributeNames: names,
-      ...(set.length ? { ExpressionAttributeValues: Object.fromEntries(set.map(([, value], index) => [`:v${index}`, value])) } : {}),
-    }),
-  );
-}
-
-const jobKey = { pk: 'JOB', sk: JOB };
-
-async function stage(job, name, extra = {}) {
-  console.log(`stage: ${name}`);
-  const state = { id: job.id, kind: job.kind, status: 'running', stage: name, dryRun: DRY_RUN, at: now() };
-  await update(jobKey, { status: 'running', stage: name, updated: now(), runUrl: RUN_URL, ...extra });
-  if (job.postId) await update({ pk: 'POST', sk: job.postId }, { job: state });
-}
-
-async function images(postId) {
-  const prefix = `posts/${postId}/`;
-  const { Contents = [] } = await s3.send(new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefix }));
-  return Promise.all(
-    Contents.map(async ({ Key }) => {
-      const object = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key }));
-      return { name: Key.slice(prefix.length), data: await object.Body.transformToByteArray() };
-    }),
-  );
-}
+const stage = (job, name, extra = {}) => reportStage(job, name, { dryRun: DRY_RUN, ...extra });
 
 function build() {
   // A production build: drafts off, exactly what the deploy will build
@@ -122,9 +77,9 @@ const answers = async (url, status) => {
 };
 
 async function run() {
-  const { Item: job } = await db.send(new GetCommand({ TableName: TABLE, Key: jobKey }));
+  const job = await getItem({ pk: 'JOB', sk: JOB });
   if (!job) throw new Error(`There is no job ${JOB}`);
-  const { Item: current } = job.postId ? await db.send(new GetCommand({ TableName: TABLE, Key: { pk: 'POST', sk: job.postId } })) : {};
+  const current = job.postId ? await getItem({ pk: 'POST', sk: job.postId }) : null;
   await stage(job, 'preparing', { dryRun: DRY_RUN });
 
   let message;
@@ -137,7 +92,7 @@ async function run() {
     const post = { ...job.snapshot, liveSlug: current.liveSlug, repoSlug: current.repoSlug, redirectFrom: current.redirectFrom, frontmatter: current.frontmatter };
     const first = !current.liveSlug;
     const dates = first ? { pubDate: job.params?.pubDate ?? ukDate() } : { pubDate: current.livePubDate, updatedDate: ukDate() };
-    const { movedFrom, redirectFrom } = writePostFolder(siteDir, post, await images(job.postId), dates);
+    const { movedFrom, redirectFrom } = writePostFolder(siteDir, post, await postFiles(job.postId), dates);
     const pin = readPin(siteDir);
     if (job.params?.pin) writePin(siteDir, post.slug, job.params.pin.until ?? null);
     else if (movedFrom && pin.slug === movedFrom) writePin(siteDir, post.slug, pin.until ?? null);
@@ -187,7 +142,7 @@ async function run() {
   if (DRY_RUN) {
     console.log(`Dry run: would commit "${message}"`);
     console.log(git('status', '--short'));
-    await finish(job, { status: 'done', stage: 'checked', dryRun: true });
+    await finishJob(job, { status: 'done', stage: 'checked', dryRun: true });
     return;
   }
 
@@ -195,35 +150,21 @@ async function run() {
   const sha = commit(message);
   if (postKey && after) {
     const { fields, remove } = after(sha);
-    await update(postKey, fields, remove);
+    await update(postKey, fields, { remove });
   }
   if (job.kind === 'pin' || job.params?.pin) await update({ pk: 'SETTING', sk: 'pin' }, { value: readPin(siteDir), updated: now() });
   await stage(job, 'deploying', { commit: sha });
   await deployed(sha, check);
-  await finish(job, { status: 'done', stage: 'live', commit: sha });
-}
-
-async function finish(job, fields) {
-  await update(jobKey, { ...fields, updated: now() });
-  if (job.postId) {
-    await update({ pk: 'POST', sk: job.postId }, { job: { id: job.id, kind: job.kind, status: fields.status, stage: fields.stage, dryRun: !!job.dryRun, at: now() } });
-  }
-}
-
-async function fail(error) {
-  console.error(error);
-  const { Item: job } = await db.send(new GetCommand({ TableName: TABLE, Key: jobKey }));
-  if (!job || job.status === 'failed') return;
-  await finish(job, { status: 'failed', stage: job.stage ?? 'preparing', error: String(error?.message ?? error).slice(0, 4000), runUrl: RUN_URL });
+  await finishJob(job, { status: 'done', stage: 'live', commit: sha });
 }
 
 if (process.argv.includes('--failed')) {
-  await fail(new Error('The site job stopped unexpectedly. The log has the details.'));
+  await failJob(new Error('The site job stopped unexpectedly. The log has the details.'));
 } else {
   try {
     await run();
   } catch (error) {
-    await fail(error);
+    await failJob(error);
     process.exitCode = 1;
   }
 }

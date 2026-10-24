@@ -238,10 +238,11 @@ smoke test of each flow. You check how it looks and feels on your phone and lapt
 
 ### Stage 4: publishing
 
-- **The GitHub token.** A fine-grained token for the API, kept as an SSM parameter, with:
+- **The GitHub token.** A fine-grained token you paste into Settings, which checks it can see
+  both repos and stores it as an SSM SecureString. It needs:
   - Actions read and write on both repos, to start and cancel runs
-  - Contents read and write on blog-private, for ideas and style lessons in stage 7
-- **The site runner.** `blog-site.yml` in the site repo, started by the API. It signs in to AWS
+  - Contents read and write, for ideas and style lessons in stage 7
+- **The site runner.** `blog-admin-site.yml` in the site repo, started by the API. It signs in to AWS
   through OIDC, to a role that can only read posts and update jobs.
 - **Publishing actions.**
   - **Publish now.**
@@ -251,8 +252,9 @@ smoke test of each flow. You check how it looks and feels on your phone and lapt
   - **Delete live post.** You type the title to confirm, and it goes to the bin.
 - **Pinning.**
   - Pin and unpin one post at a time, with an optional end date.
-  - The blog listing shows the pinned post first, with a Pinned label. After the end date, a few
-    lines of script hide the pin and show the post in its normal place.
+  - The blog listing shows the pinned post first. When it is also the newest post, its card gets
+    a Pinned label; otherwise it gets its own Pinned card above the grid, and its card in the
+    grid is hidden. After the end date, a few lines of script undo either.
   - Pinning and unpinning deploy the site. Expiry doesn't.
 - **Scheduling.** Schedule, reschedule and cancel, using one-off timers.
 - **Editing a live post.**
@@ -260,7 +262,10 @@ smoke test of each flow. You check how it looks and feels on your phone and lapt
   - If `main` has changed since, for example after an edit in VS Code, the admin loads the newer
     file first.
 - **Progress.** The admin shows checking, committing, deploying and live as they happen. Site jobs
-  run one at a time.
+  run one at a time. "Live" means the CodePipeline run for that commit finished and the page
+  answers.
+- **Check the build.** The publish dialog can run everything except the commit, to see whether a
+  post would build before anything goes live.
 
 **Done when:**
 

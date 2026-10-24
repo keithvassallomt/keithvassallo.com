@@ -11,7 +11,7 @@ import { DeleteCommand, GetCommand, PutCommand, QueryCommand } from '@aws-sdk/li
 import { DeleteObjectsCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { renderPreview } from './preview.mjs';
-import { BUCKET, HttpError, TABLE, db, imageKey, loadPost, now, s3, update, viewUrl } from './store.mjs';
+import { BUCKET, HttpError, TABLE, aiBusy, db, imageKey, loadPost, now, s3, update, viewUrl } from './store.mjs';
 
 const DAY = 24 * 60 * 60 * 1000;
 const CHECKPOINT_EVERY = 10 * 60 * 1000;
@@ -160,6 +160,7 @@ export async function getPost(id, extra = {}) {
 export async function savePost(id, input) {
   const current = await loadPost(id);
   if (current.status === 'bin') throw new HttpError(409, 'This post is in the bin. Restore it first.');
+  if (aiBusy(current)) throw new HttpError(423, 'The AI is working on this post. Wait for it to finish, or cancel it.');
   if (input.version !== current.version) {
     throw new HttpError(409, 'This post changed on another device', { current: publicPost(current) });
   }

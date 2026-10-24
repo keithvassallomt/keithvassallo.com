@@ -14,6 +14,11 @@ import DetailsPanel from '../editor/DetailsPanel.vue';
 import ChecksPanel from '../editor/ChecksPanel.vue';
 import HistoryPanel from '../editor/HistoryPanel.vue';
 import JobBanner from '../editor/JobBanner.vue';
+import GenerateDialog from '../editor/GenerateDialog.vue';
+import RevisePanel from '../editor/RevisePanel.vue';
+import DiffDialog from '../editor/DiffDialog.vue';
+import AiNotes from '../editor/AiNotes.vue';
+import ModelPicker from '../editor/ModelPicker.vue';
 import PublishDialog from '../editor/PublishDialog.vue';
 import Dialog from '../Dialog.vue';
 import Icon from '../Icon.vue';
@@ -58,6 +63,32 @@ const confirmTitle = ref('');
 const pinUntil = ref('');
 const pinned = ref(null);
 const dismissed = ref(null);
+
+// ---- the AI ----------------------------------------------------------------------------
+const NOTES_KEY = `kv-admin-notes-${props.id}`;
+const AI_KINDS = new Set(['generate', 'revise', 'cover']);
+const preview = ref(null);
+const selection = ref(null);
+const noteDraft = ref(null);
+const reviseMode = ref(false);
+const diff = ref(null);
+const aiRefresh = ref(0);
+const coverChoice = ref({});
+const coverInstruction = ref('');
+const highlights = ref((() => {
+  try {
+    return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+  } catch {
+    return [];
+  }
+})());
+watch(highlights, (list) => {
+  try {
+    localStorage.setItem(NOTES_KEY, JSON.stringify(list));
+  } catch {
+    // Kept for this visit only
+  }
+}, { deep: true });
 
 const fields = () => JSON.stringify(Object.fromEntries(FIELDS.map((key) => [key, post[key]])));
 
@@ -330,7 +361,11 @@ async function unbin() {
 
 // ---- publishing ------------------------------------------------------------------------
 const changed = computed(() => meta.liveSlug && meta.publishedVersion !== null && meta.version > meta.publishedVersion);
-const jobActive = computed(() => ['queued', 'running'].includes(meta.job?.status));
+const jobActive = computed(() => ['queued', 'running'].includes(meta.job?.status) && Date.now() - Date.parse(meta.job.at ?? 0) < 60 * 60 * 1000);
+const aiActive = computed(() => jobActive.value && AI_KINDS.has(meta.job.kind));
+// Nothing can be edited while the AI works on the post, or while it's in the bin
+const locked = computed(() => aiActive.value || meta.status === 'bin');
+const hasText = computed(() => !!post.body.trim());
 const showJob = computed(() => meta.job && meta.job.id !== dismissed.value);
 const chip = computed(() => {
   if (meta.status === 'bin') return { label: 'In the bin', style: 'color: var(--red); background: rgba(255,123,114,0.12)' };
@@ -377,6 +412,55 @@ const deleteLive = () => act(() => api(`/posts/${props.id}/delete-live`, { metho
 const pin = () => act(() => api(`/posts/${props.id}/pin`, { method: 'POST', body: { until: ukEndOfDay(pinUntil.value) } }));
 const unpin = () => act(() => api(`/posts/${props.id}/pin`, { method: 'DELETE' }));
 const cancelSchedule = () => act(() => api(`/posts/${props.id}/schedule`, { method: 'DELETE' }));
+const generate = (choice) => act(() => api(`/posts/${props.id}/generate`, { method: 'POST', body: choice }));
+const newCover = () => act(() => api(`/posts/${props.id}/cover`, { method: 'POST', body: { ...coverChoice.value, instruction: coverInstruction.value } }));
+
+async function revise({ request, learn, choice }) {
+  await act(() => api(`/posts/${props.id}/revise`, { method: 'POST', body: { highlights: highlights.value, request, learn, ...choice } }));
+}
+
+async function cancelAi(job) {
+  try {
+    await api(`/jobs/${job.id}/cancel`, { method: 'POST' });
+    meta.job = { ...meta.job, status: 'cancelled' };
+  } catch (error) {
+    actionError.value = error.message;
+  }
+}
+
+function aiButton() {
+  actionError.value = '';
+  if (hasText.value) {
+    reviseMode.value = !reviseMode.value;
+    if (reviseMode.value) {
+      if (phone.value) pane.value = 'revise';
+      else panel.value = 'revise';
+    }
+  } else {
+    dialog.value = 'generate';
+  }
+}
+
+/** A selection in the preview becomes a note for the next revision. */
+function startNote() {
+  noteDraft.value = { quote: selection.value.text, note: '' };
+  preview.value?.clearSelection();
+  selection.value = null;
+}
+
+function saveNote() {
+  if (!noteDraft.value.note.trim()) return;
+  highlights.value = [...highlights.value, { quote: noteDraft.value.quote, note: noteDraft.value.note.trim() }];
+  noteDraft.value = null;
+  reviseMode.value = true;
+  if (!phone.value) panel.value = 'revise';
+}
+
+async function undoRevision() {
+  const target = diff.value;
+  diff.value = null;
+  await restore({ id: target.beforeId });
+}
 
 function open(name) {
   menuOpen.value = false;
@@ -387,7 +471,25 @@ function open(name) {
 
 async function jobFinished(job) {
   const data = await api(`/posts/${props.id}`).catch(() => null);
-  if (data) applyStatus(data);
+  if (data && AI_KINDS.has(job.kind)) {
+    // The post was locked, so its text can be replaced with what the AI saved
+    apply(data);
+    images.value = data.images;
+    if (localCover.value) URL.revokeObjectURL(localCover.value);
+    localCover.value = null;
+    storage.clear();
+    renderPreview();
+    aiRefresh.value += 1;
+    history.value?.load();
+  } else if (data) {
+    applyStatus(data);
+  }
+  if (job.status === 'done' && job.kind === 'revise' && job.beforeId) {
+    const before = await api(`/posts/${props.id}/versions/${encodeURIComponent(job.beforeId)}`).catch(() => null);
+    if (before) diff.value = { before: before.post.body, after: post.body, changes: job.changes ?? [], lessons: job.lessons ?? [], problems: job.problems ?? [], beforeId: job.beforeId };
+    highlights.value = [];
+    reviseMode.value = false;
+  }
   if (job.status === 'done' && job.kind === 'pin') pinned.value = (await api('/settings').catch(() => ({}))).pin ?? pinned.value;
   if (job.status === 'done' && job.kind === 'delete') router.push('/');
 }
@@ -454,8 +556,10 @@ onBeforeUnmount(() => {
 const panes = computed(() => [
   ['write', 'Write'],
   ['preview', 'Preview'],
+  ...(reviseMode.value ? [['revise', `Revise${highlights.value.length ? ` (${highlights.value.length})` : ''}`]] : []),
   ['details', 'Details'],
   ['checks', checked.value.length ? `Checks (${checked.value.length})` : 'Checks'],
+  ['ai', 'AI notes'],
   ['history', 'History'],
 ]);
 const panels = computed(() => panes.value.slice(2));
@@ -479,7 +583,9 @@ function goToProblem(line) {
       <span class="chip" :style="chip.style">{{ chip.label }}</span>
       <span class="state" :class="saveState" role="status">{{ loaded ? saveLabel : 'Loading' }}</span>
       <span class="grow"></span>
-      <button type="button" class="btn ai" disabled title="Generate and Revise arrive in stage 5"><Icon name="sparkles" /><span class="wide">Generate</span></button>
+      <button type="button" class="btn ai" :class="{ on: reviseMode }" :disabled="locked || jobActive" @click="aiButton">
+        <Icon name="sparkles" /><span class="wide">{{ aiActive ? 'Working' : hasText ? 'Revise' : 'Generate' }}</span>
+      </button>
       <button v-if="meta.liveSlug" type="button" class="btn btn-go" :disabled="!changed || jobActive || meta.status === 'bin'" :title="changed ? '' : 'No changes since it went live'" @click="open('publish')">
         <span class="wide">Update live post</span><span class="narrow">Update</span>
       </button>
@@ -487,6 +593,8 @@ function goToProblem(line) {
       <div class="menu-wrap">
         <button type="button" class="btn icon" aria-label="More actions" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><Icon name="more" /></button>
         <div v-if="menuOpen" class="card menu">
+          <button v-if="hasText && !locked" type="button" :disabled="jobActive" @click="open('generate')"><Icon name="sparkles" />Generate again</button>
+          <button v-if="!locked" type="button" :disabled="jobActive || !post.title.trim()" @click="open('cover')"><Icon name="image" />Draw a new cover</button>
           <template v-if="meta.liveSlug">
             <button v-if="pinned?.slug === meta.liveSlug" type="button" :disabled="jobActive" @click="unpin"><Icon name="pin" />Unpin it</button>
             <button v-else type="button" :disabled="jobActive" @click="open('pin')"><Icon name="pin" />Pin it to the top</button>
@@ -531,7 +639,7 @@ function goToProblem(line) {
       </span>
     </div>
     <p v-if="actionError && !dialog" class="card banner error-banner" role="alert">{{ actionError }}</p>
-    <JobBanner v-if="showJob" :job="meta.job" :slug="meta.liveSlug ?? post.slug" @finished="jobFinished" @dismiss="dismissed = meta.job.id" />
+    <JobBanner v-if="showJob" :job="meta.job" :slug="meta.liveSlug ?? post.slug" @finished="jobFinished" @dismiss="dismissed = meta.job.id" @cancel="cancelAi" />
 
     <nav v-if="phone" class="panes" aria-label="Editor views">
       <button v-for="[name, label] in panes" :key="name" type="button" :class="{ on: pane === name }" :aria-pressed="pane === name" @click="pane = name">{{ label }}</button>
@@ -540,18 +648,18 @@ function goToProblem(line) {
     <div class="body">
       <section v-show="!phone || pane === 'write' || pane === 'preview'" class="work">
         <div v-show="!phone || pane === 'write'" class="writing">
-          <input v-model="post.title" class="title hd" placeholder="Title" aria-label="Title" :readonly="meta.status === 'bin'" />
+          <input v-model="post.title" class="title hd" placeholder="Title" aria-label="Title" :readonly="locked" />
           <details class="card notes">
-            <summary><Icon name="sparkles" />Notes for the AI <span class="muted">{{ post.notes.trim() ? '' : '· optional, used from stage 5' }}</span></summary>
-            <textarea v-model="post.notes" class="inp" rows="3" placeholder="What you want written, or facts from your own experience. Never published." :readonly="meta.status === 'bin'"></textarea>
+            <summary><Icon name="sparkles" />Notes for the AI <span class="muted">{{ post.notes.trim() ? '' : '· optional' }}</span></summary>
+            <textarea v-model="post.notes" class="inp" rows="3" placeholder="What you want written, or facts from your own experience. Never published." :readonly="locked"></textarea>
           </details>
           <div class="card pane-card">
-            <MarkdownEditor ref="editor" v-model="post.body" :problems="checked" :busy="busy" :read-only="meta.status === 'bin'" @files="addImages" />
+            <MarkdownEditor ref="editor" v-model="post.body" :problems="checked" :busy="busy" :read-only="locked" @files="addImages" />
           </div>
         </div>
         <div v-show="!phone || pane === 'preview'" class="card pane-card previewing">
           <div class="pane-head"><span>Preview</span><span v-if="previewError" class="bad">{{ previewError }}</span><span v-else class="muted">The site's own rendering</span></div>
-          <PreviewFrame :html="html" :title="post.title" />
+          <PreviewFrame ref="preview" :html="html" :title="post.title" :marks="highlights.map((item) => item.quote)" @selection="selection = $event" />
         </div>
       </section>
 
@@ -559,7 +667,19 @@ function goToProblem(line) {
         <nav v-if="!phone" class="tabs" aria-label="Post panels">
           <button v-for="[name, label] in panels" :key="name" type="button" :class="{ on: panel === name }" :aria-pressed="panel === name" @click="panel = name">{{ label }}</button>
         </nav>
-        <DetailsPanel v-if="showPanel('details') && loaded" :post="post" :categories="site?.categories ?? []" :cover-url="coverUrl" :busy="!!busy" @cover="setCover" @remove-cover="post.cover = null" />
+        <RevisePanel
+          v-if="showPanel('revise')"
+          :highlights="highlights"
+          :busy="acting || jobActive"
+          :error="dialog ? '' : actionError"
+          @remove="highlights.splice($event, 1)"
+          @revise="revise"
+          @close="reviseMode = false; panel = 'details'; pane = 'preview'"
+        />
+        <fieldset v-if="showPanel('details') && loaded" class="plain" :disabled="locked">
+          <DetailsPanel :post="post" :categories="site?.categories ?? []" :cover-url="coverUrl" :busy="!!busy" @cover="setCover" @remove-cover="post.cover = null" @regenerate="open('cover')" />
+        </fieldset>
+        <AiNotes v-if="showPanel('ai')" :post-id="id" :refresh="aiRefresh" />
         <ChecksPanel v-if="showPanel('checks')" :problems="checked" @go="goToProblem" />
         <HistoryPanel v-if="showPanel('history')" ref="history" :post-id="id" @restore="restore" />
       </aside>
@@ -594,6 +714,40 @@ function goToProblem(line) {
         <button type="button" class="btn danger-btn" :disabled="acting || confirmTitle !== post.title" @click="deleteLive">Delete it</button>
       </template>
     </Dialog>
+    <button
+      v-if="selection && !locked && hasText && !phone"
+      type="button"
+      class="btn btn-ai note-button"
+      :style="{ top: `${Math.max(selection.top - 52, 8)}px`, left: `${selection.left}px` }"
+      @mousedown.prevent
+      @click="startNote"
+    >
+      <Icon name="pen" />Add a note
+    </button>
+    <div v-if="selection && !locked && hasText && phone" class="note-bar">
+      <span class="muted">Text selected in the preview</span>
+      <button type="button" class="btn btn-ai" @click="startNote"><Icon name="pen" />Add a note</button>
+    </div>
+    <Dialog v-if="noteDraft" title="Note on this passage" @close="noteDraft = null">
+      <blockquote class="quoted">"{{ noteDraft.quote }}"</blockquote>
+      <label><span class="dialog-label">Your note</span><textarea v-model="noteDraft.note" class="inp" rows="3" placeholder="What should change here?"></textarea></label>
+      <template #buttons>
+        <button type="button" class="btn" @click="noteDraft = null">Cancel</button>
+        <button type="button" class="btn btn-go" :disabled="!noteDraft.note.trim()" @click="saveNote">Save the note</button>
+      </template>
+    </Dialog>
+    <GenerateDialog v-if="dialog === 'generate'" :notes="post.notes" :body="post.body" :busy="acting" :error="actionError" @close="dialog = null" @generate="generate" />
+    <Dialog v-if="dialog === 'cover'" title="Draw a new cover?" @close="dialog = null">
+      <p>The AI draws a new illustration in the blog's palette. The current cover stays in History.</p>
+      <label><span class="dialog-label">Direction (optional)</span><input v-model="coverInstruction" class="inp" placeholder="For example: a lighthouse made of circuit boards" /></label>
+      <div class="cover-model"><ModelPicker v-model="coverChoice" kind="cover" /></div>
+      <p v-if="actionError" class="dialog-error">{{ actionError }}</p>
+      <template #buttons>
+        <button type="button" class="btn" @click="dialog = null">Cancel</button>
+        <button type="button" class="btn btn-ai" :disabled="acting" @click="newCover">Draw it</button>
+      </template>
+    </Dialog>
+    <DiffDialog v-if="diff" :before="diff.before" :after="diff.after" :changes="diff.changes" :lessons="diff.lessons" :problems="diff.problems" :busy="acting" @keep="diff = null" @undo="undoRevision" />
     <Dialog v-if="dialog === 'pin'" title="Pin it to the top of the blog?" @close="dialog = null">
       <p>It shows first on the blog's listing, labelled Pinned.{{ pinned?.slug ? ` It replaces the current pin, ${pinned.slug}.` : '' }}</p>
       <label><span class="dialog-label">Pinned until (optional)</span><input v-model="pinUntil" class="inp" type="date" /></label>
@@ -753,6 +907,52 @@ function goToProblem(line) {
 
 .narrow {
   display: none;
+}
+
+.btn.ai.on {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+
+.plain {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.note-button {
+  position: fixed;
+  z-index: 30;
+  transform: translateX(-50%);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+.note-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  background: #151a22;
+  border-top: 1px solid var(--line-strong);
+}
+
+.quoted {
+  margin: 0 0 14px;
+  padding-left: 12px;
+  border-left: 3px solid #264f78;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.cover-model {
+  margin-top: 14px;
 }
 
 .banner {

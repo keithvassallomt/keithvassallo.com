@@ -1,4 +1,4 @@
-// The write, check, build and repair loop shared by draft.mjs and revise.mjs.
+// The write, check, build and repair loop the blog admin's AI jobs share (scripts/blog-admin/ai-job.mjs).
 
 import { buildSite, findLeaks } from './checks.mjs';
 import { outputText, respond } from './openai.mjs';

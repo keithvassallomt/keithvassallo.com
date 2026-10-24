@@ -1,11 +1,12 @@
 <script setup>
-// Settings: access (the passkey, signing out) and the GitHub token the admin starts its jobs
-// with. Models, the spending cap and notifications arrive with stages 5 and 6 of
+// Settings: the GitHub token the admin starts its jobs with, the AI models and spending cap,
+// and access (the passkey, signing out). Notifications arrive with stage 6 of
 // docs/blog-admin-plan.md.
 import { onMounted, ref } from 'vue';
 import { api } from '../api.js';
 import { addPasskey, session, signOut } from '../auth.js';
 import Icon from '../Icon.vue';
+import AiSettings from '../AiSettings.vue';
 
 const github = ref(null);
 const loaded = ref(false);
@@ -107,9 +108,11 @@ async function saveToken() {
       </div>
     </section>
 
+    <AiSettings />
+
     <section class="card section">
       <h2 class="hd">Still to come</h2>
-      <p class="sec">AI models and the monthly spending cap arrive in stage 5, notifications in stage 6.</p>
+      <p class="sec">Notifications, by email and on your phone, arrive in stage 6.</p>
     </section>
   </div>
 </template>

@@ -22,6 +22,11 @@ export class HttpError extends Error {
 }
 
 export const now = () => new Date().toISOString();
+
+export const AI_KINDS = new Set(['generate', 'revise', 'cover']);
+/** True while a job may still be running for a post: its workflow can't outlast an hour. */
+export const busy = (post) => ['queued', 'running'].includes(post.job?.status) && Date.now() - Date.parse(post.job.at ?? 0) < 60 * 60 * 1000;
+export const aiBusy = (post) => busy(post) && AI_KINDS.has(post.job.kind);
 export const imageKey = (id, name) => `posts/${id}/${name.replace(/^\.\//, '')}`;
 export const viewUrl = (key) => getSignedUrl(s3, new GetObjectCommand({ Bucket: BUCKET, Key: key }), { expiresIn: 3600 });
 
