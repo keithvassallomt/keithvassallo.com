@@ -63,12 +63,14 @@ const TASKS = {
 
 ${NEW_POST}`,
 
-  edit: `You are Keith's editor. The facts_draft above is accurate and passes every check, but it reads like a technical reference. Rewrite it into the post Keith would actually publish: the same facts, told as a story in his voice, with a clear and pleasant flow and his dry humour.
+  edit: `You are Keith's editor. The facts_draft above is accurate and passes every check, but it reads like a reference rather than something written for a person. Rewrite it into the post Keith would actually publish: the same facts, told as a story in his voice, with a clear and pleasant flow, talking to the reader, with his humour.
 
 - Keep the facts the story needs, and add none that aren't in the draft or the brief's evidence. Drop detail the story doesn't need.
-- Rebuild the structure if that helps. Start with the situation that set things off, and make the headings read like stages of the story rather than reference sections.
+- Rebuild the structure if that helps: an introduction that says what the post is about and why it matters, a middle whose headings read like stages of the story rather than reference sections, and a conclusion that answers the question and makes it practical.
 - Rewrite the title, description, share blurbs and cover idea if they no longer fit. Keep the category and tags unless they are plainly wrong.
 - Move any caveats Keith should check into notes_for_keith.
+
+Before you finish, read it as a stranger would. Do you know from the introduction what the post is about and why you should care? Does the conclusion answer that and tell you how to put it into practice? Does it talk to you? Did anything make you smile? Fix whatever doesn't.
 ${NEW_POST}`,
 
   revise: `Revise current_post after Keith's review. His comments are the highest authority after the site guide's hard rules: apply every one. A comment that corrects a fact is Keith's own statement and replaces the old claim. A comment that says how he would put something gives you his wording.
@@ -93,7 +95,10 @@ Order of authority, highest first:
 How the post should read:
 
 - It is a story told by Keith, not a technical reference or a research report. Follow what happened, in order, with a clear and pleasant flow, and let the technical detail serve the story. A reader should enjoy it, not study it.
-- Be funny where the situation allows, in Keith's dry way. The humour comes from his commentary on real events, never from invented ones.
+- Give it a real introduction. Within the first two or three paragraphs, before the first heading, tell the reader what the post is about, the question it answers and why it matters to them. A hook or example can come first, but never assume the reader already knows the subject.
+- Give it a real conclusion. Answer the question the introduction raised, pull the threads together and make it practical: how it would work in practice, how you'd measure or check it, what to try next. No moral, slogan or engagement question, but no abrupt stop either.
+- Talk to the reader. Use "you" naturally, anticipate their questions and objections, and bring them along, the way Keith does in his videos and longer posts.
+- Be funny. Every post needs some humour, serious subjects included: dry asides, self-deprecation, the absurdity of the situation, a well-placed rhetorical question. It must never rest on invented events or claims, but a clearly hypothetical example can be played for laughs.
 - Don't hedge in the prose. If a claim isn't certain, leave it out of the post and put it in notes_for_keith. Never describe how the research was done: what was inspected, read, run or not run.
 - Keep only the caveats a reader needs. Use code, tables and lists where they help the reader follow the story, not to fill sections: one good code excerpt beats three.
 

@@ -64,9 +64,11 @@ export function checkSlug(slug, site) {
 /**
  * @param {object} post the model's structured output
  * @param {{ siteDir: string, publishedSlugs: Set<string>, projectIds: Set<string>, categoryIds: Set<string>, branchExists: (slug: string) => boolean, ownSlug: string | null }} site
+ * @param {{ story?: boolean }} options `story` adds the checks for the finished voice, which a
+ *   facts-first draft doesn't have to meet yet
  * @returns {string[]} problems, empty when the post passes
  */
-export function checkPost(post, site) {
+export function checkPost(post, site, { story = false } = {}) {
   const { slug, title, description, tags, share, body } = post;
   const problems = [checkSlug(slug, site)].filter(Boolean);
 
@@ -135,6 +137,13 @@ export function checkPost(post, site) {
 
   const words = body.split(/\s+/).filter(Boolean).length;
   if (words < 500 || words > 2500) problems.push(`The body is ${words} words. Aim for 800 to 1,800.`);
+
+  // Keith wants every post to talk to its reader; "you" is the measurable part of that
+  const address = (text.match(/\byou(?:rs?|rself|rselves)?\b/gi) ?? []).length;
+  if (story && address < 5) {
+    const times = `${address} time${address === 1 ? '' : 's'}`;
+    problems.push(`The post says "you" ${times}. Talk to the reader directly, using "you" naturally throughout.`);
+  }
 
   return [...new Set(problems)];
 }

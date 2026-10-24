@@ -187,7 +187,7 @@ if (!count) {
       text: { format: prompts.postFormat(categoryIds, { revision: true }) },
       max_output_tokens: 64_000,
     },
-    check: (post) => checkPost({ ...post, slug }, site),
+    check: (post) => checkPost({ ...post, slug }, site, { story: true }),
     publicText: (post) =>
       [post.title, post.description, ...Object.values(post.share), post.body, ...post.changes, ...post.notes_for_keith].join('\n'),
     privateShingles: shingles([...instructions, ...samples].map((doc) => doc.text).concat(briefReasons)),

@@ -148,7 +148,7 @@ async function draft(brief) {
   // need the topic and the evidence, and anything they see could end up in public notes
   const { chosen, evidence, questions_for_keith } = brief;
   const context = { today, catalogue, categories, brief: { chosen, evidence, questions_for_keith }, projects, samples };
-  const pass = (content) =>
+  const pass = (content, { story = false } = {}) =>
     writeUntilClean({
       request: {
         model,
@@ -158,7 +158,7 @@ async function draft(brief) {
         text: { format: prompts.postFormat(categoryIds) },
         max_output_tokens: 64_000,
       },
-      check: (post) => checkPost(post, site),
+      check: (post) => checkPost(post, site, { story }),
       publicText: (post) =>
         [post.title, post.description, post.cover_alt, ...Object.values(post.share), post.body, prBody(brief, post, [], 1)].join('\n'),
       privateShingles,
@@ -178,7 +178,7 @@ async function draft(brief) {
   }
 
   console.log('Story edit');
-  const edited = await pass(prompts.editInput({ ...context, draft: facts.post }));
+  const edited = await pass(prompts.editInput({ ...context, draft: facts.post }), { story: true });
   if (clean(edited)) return { ...edited, attempts: facts.attempts + edited.attempts, notes: [] };
   writePost(facts.post);
   return {

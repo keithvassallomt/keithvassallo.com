@@ -142,6 +142,10 @@ Any network without a blurb falls back to the `description`.
 
 - Write as Keith: first person, conversational but technically precise, British English spelling
   (colour, organise, licence as a noun). The site's language is `en-GB`.
+- Talk to the reader. Use "you" naturally, anticipate their questions and bring them along.
+- Every post needs some humour, serious ones included: dry asides, self-deprecation, the absurdity
+  of the situation. It must never rest on invented events, but a clearly hypothetical example can
+  be played for laughs.
 - **Never use an em dash** (the long dash, Unicode U+2014). Use a comma, a colon, parentheses or a
   new sentence instead. Don't use an en dash (U+2013) as a substitute either.
 - **Never begin a sentence with "And".** Restructure the sentence.
@@ -156,13 +160,18 @@ Any network without a blurb falls back to the `description`.
 
 ### Structure
 
-- Open with one or two short paragraphs that set up the problem or the hook. No heading before them.
+- Open with an introduction of two or three short paragraphs, with no heading before them. A hook
+  or an example can come first, but by the end of the introduction the reader must know what the
+  post is about, the question it answers and why it matters to them. Never assume they already
+  know.
 - Use `##` for sections and `###` for subsections. **Never use `#`** in the body: the title is
   already the page's only top-level heading. Don't skip levels (no `####` straight under `##`).
 - Headings are sentence case and short (under about 50 characters). Two or more `##` headings
   produce a table of contents automatically, so headings double as navigation.
-- Close with a short section that tells the reader what to do next: try the project, read the
-  code, or a one-paragraph takeaway.
+- Close with a real conclusion. Answer the question the introduction raised, pull the threads
+  together and make it practical: how it works in practice, how to measure or check it, what to
+  try next, or where to find the project or code. No moral or engagement question, but no abrupt
+  stop either.
 
 ### Avoiding walls of text
 
