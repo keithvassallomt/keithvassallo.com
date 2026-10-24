@@ -122,10 +122,30 @@ jobs:
           BRANCH: ${{ steps.pr.outputs.branch }}
           TITLE: ${{ steps.pr.outputs.title }}
         run: |
-          git -c user.name="$BOT_NAME" -c user.email="$BOT_EMAIL" commit -am "Published blog post: $TITLE"
-          git push origin "HEAD:$BRANCH"
-          gh api -X PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" \
-            -f merge_method=squash -f commit_title="Added blog post: $TITLE (#$PR)" -f sha="$(git rev-parse HEAD)"
+          # Nothing to commit when an earlier /publish got this far, so a retry carries on
+          if ! git diff --quiet; then
+            git -c user.name="$BOT_NAME" -c user.email="$BOT_EMAIL" commit -am "Published blog post: $TITLE"
+            git push origin "HEAD:$BRANCH"
+            sleep 3
+          fi
+
+          # GitHub works out whether a pull request can merge after every push, and refuses to
+          # merge until it has
+          for _ in $(seq 1 20); do
+            mergeable=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .mergeable)
+            [[ "$mergeable" != null ]] && break
+            sleep 3
+          done
+          if [[ "$mergeable" != true ]]; then
+            echo "GitHub says the pull request can't merge (mergeable: $mergeable). It may conflict with main."
+            exit 1
+          fi
+          for attempt in 1 2 3; do
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" \
+              -f merge_method=squash -f commit_title="Added blog post: $TITLE (#$PR)" -f sha="$(git rev-parse HEAD)" && break
+            [[ $attempt == 3 ]] && exit 1
+            sleep 10
+          done
           gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$BRANCH"
 
       # The merge to main starts the CodePipeline deploy; this only watches for its result
@@ -152,6 +172,6 @@ jobs:
           if [[ "$MERGED" == success ]]; then
             message="Merged, but the post isn't live after 25 minutes. Check the CodePipeline deploy. Log: $RUN_URL"
           else
-            message="Publishing stopped before merging, so nothing changed. Log: $RUN_URL"
+            message="Publishing stopped before merging, so the post isn't live. It's safe to comment /publish again. Log: $RUN_URL"
           fi
           gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "$message"
