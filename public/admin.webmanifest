@@ -1,0 +1,14 @@
+{
+  "name": "keithvassallo.com admin",
+  "short_name": "Blog admin",
+  "description": "Write, generate, revise and publish posts for keithvassallo.com",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "icons": [
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

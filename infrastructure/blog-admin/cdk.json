@@ -7,6 +7,8 @@
     "certificateArn": "arn:aws:acm:us-east-1:781345700122:certificate/73760abb-934d-476b-9dbb-c2e949276894",
     "hostedZoneId": "ZDXNG14HB1YN5",
     "zoneName": "keithvassallo.com",
-    "adminEmail": "keith@vassallo.cloud"
+    "adminEmail": "keith@vassallo.cloud",
+    "vapidPublicKey": "BD38UAyMwpLTC9cI-qnBnaKoOn9Fu3PB_PguCTHCWz6Mu5RFxPHRxP85_avFDJi6l-msG5eid_qis6P3LE63h2k",
+    "sesRegion": "us-east-1"
   }
 }

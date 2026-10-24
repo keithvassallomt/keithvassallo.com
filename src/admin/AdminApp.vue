@@ -13,7 +13,24 @@ const admin = ref(null);
 // The editor takes the whole screen, without the navigation
 const route = useRoute();
 
+// A notification that arrives while the admin is open, passed on by public/admin-sw.js
+const toast = ref(null);
+let toastTimer;
+function showToast({ title, body, url }) {
+  const target = url ? new URL(url, location.origin) : null;
+  const inAdmin = target?.origin === location.origin && target.pathname.startsWith('/admin');
+  toast.value = { title, body, to: inAdmin ? target.hash.slice(1) || '/' : null, href: inAdmin ? null : target?.href };
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (toast.value = null), 12000);
+}
+
 onMounted(async () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'notification') showToast(event.data);
+    });
+    navigator.serviceWorker.startMessages();
+  }
   await startSession();
   if (session.status !== 'signed-in') return;
   try {
@@ -64,6 +81,15 @@ const nav = [
         <RouterLink v-for="item in nav.filter((entry) => entry.phone)" :key="item.to" :to="item.to"><Icon :name="item.icon" />{{ item.label }}</RouterLink>
         <RouterLink to="/more"><Icon name="menu" />More</RouterLink>
       </nav>
+      <div v-if="toast" class="card toast" role="status">
+        <div class="toast-text">
+          <strong>{{ toast.title }}</strong>
+          <span v-if="toast.body" class="muted">{{ toast.body }}</span>
+        </div>
+        <RouterLink v-if="toast.to" :to="toast.to" class="btn" @click="toast = null">Open</RouterLink>
+        <a v-else-if="toast.href" :href="toast.href" class="btn" target="_blank" rel="noopener" @click="toast = null">Open</a>
+        <button type="button" class="btn toast-close" aria-label="Dismiss" @click="toast = null"><Icon name="close" /></button>
+      </div>
     </div>
   </div>
 </template>
@@ -159,7 +185,53 @@ const nav = [
   display: none;
 }
 
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 30;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--surface-raised);
+  border-color: var(--line-strong);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.toast-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toast-text strong {
+  color: var(--text);
+}
+
+.toast-text .muted {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toast-close {
+  padding: 0 12px;
+}
+
 @media (max-width: 760px) {
+  .toast {
+    left: 16px;
+    right: 16px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    width: auto;
+  }
+
   .side {
     display: none;
   }

@@ -11,6 +11,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNode from 'aws-cdk-lib/aws-lambda-nodejs';
+import { DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
@@ -28,6 +29,7 @@ const SITE_REPO = 'keithvassallomt/keithvassallo.com';
 const PRIVATE_REPO = 'keithvassallomt/blog-private';
 const GITHUB_TOKEN_PARAMETER = '/blog-admin/github-token';
 const SCHEDULE_GROUP = 'blog-admin';
+const VAPID_PARAMETER = '/blog-admin/vapid-private-key';
 // blog-private's OIDC tokens use GitHub's immutable subjects, which name the owner and the
 // repository by id as well (GET /repos/keithvassallomt/blog-private/actions/oidc/customization/sub)
 const PRIVATE_REPO_SUBJECT = 'keithvassallomt@5295061/blog-private@1431894240';
@@ -200,6 +202,61 @@ export class BlogAdminStack extends Stack {
       description: 'Lets the blog admin\'s scheduled posts call its API Lambda',
     });
 
+    // ---- notifications ------------------------------------------------------------------
+    // Emails Keith and pushes to his devices when a job ends, from the table's change stream.
+    // The VAPID private key that signs the pushes is an SSM SecureString made by hand.
+    const notifier = new lambdaNode.NodejsFunction(this, 'Notifier', {
+      entry: path.join(HERE, '..', 'lambda', 'notifier', 'index.mjs'),
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.ARM_64,
+      memorySize: 256,
+      timeout: Duration.seconds(30),
+      bundling: {
+        format: lambdaNode.OutputFormat.ESM,
+        target: 'node22',
+        mainFields: ['module', 'main'],
+        minify: true,
+        externalModules: [],
+        banner: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+      },
+      environment: {
+        TABLE: table.tableName,
+        EMAIL: adminEmail,
+        SES_REGION: context('sesRegion'),
+        VAPID_PUBLIC_KEY: context('vapidPublicKey'),
+        VAPID_PARAMETER,
+      },
+      logGroup: new logs.LogGroup(this, 'NotifierLogs', { retention: logs.RetentionDays.ONE_MONTH, removalPolicy: RemovalPolicy.DESTROY }),
+    });
+    table.grantReadWriteData(notifier);
+    notifier.addEventSource(
+      new DynamoEventSource(table, {
+        startingPosition: lambda.StartingPosition.LATEST,
+        batchSize: 10,
+        retryAttempts: 2,
+        filters: [lambda.FilterCriteria.filter({ dynamodb: { NewImage: { pk: { S: lambda.FilterRule.isEqual('JOB') } } } })],
+      }),
+    );
+    notifier.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ses:SendEmail'],
+        resources: [`arn:aws:ses:${context('sesRegion')}:${this.account}:identity/${adminEmail}`],
+      }),
+    );
+    notifier.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [this.formatArn({ service: 'ssm', resource: 'parameter', resourceName: VAPID_PARAMETER.slice(1) })],
+      }),
+    );
+    notifier.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['kms:Decrypt'],
+        resources: ['*'],
+        conditions: { StringEquals: { 'kms:ViaService': `ssm.${this.region}.amazonaws.com` } },
+      }),
+    );
+
     // ---- the API ------------------------------------------------------------------------
     const api = new lambdaNode.NodejsFunction(this, 'Api', {
       entry: path.join(HERE, '..', 'lambda', 'api', 'index.mjs'),
@@ -232,6 +289,8 @@ export class BlogAdminStack extends Stack {
         GITHUB_TOKEN_PARAMETER,
         SCHEDULE_GROUP,
         SCHEDULER_ROLE_ARN: schedulerRole.roleArn,
+        NOTIFIER_FUNCTION: notifier.functionName,
+        VAPID_PUBLIC_KEY: context('vapidPublicKey'),
         NODE_OPTIONS: '--enable-source-maps',
       },
       logGroup: new logs.LogGroup(this, 'ApiLogs', {
@@ -242,6 +301,7 @@ export class BlogAdminStack extends Stack {
     table.grantReadWriteData(api);
     files.grantReadWrite(api);
     api.grantInvoke(schedulerRole);
+    notifier.grantInvoke(api);
 
     // The GitHub token Keith saves in Settings: a SecureString, so CloudFormation can't create
     // it, and the API writes it on first save. Encrypted with the account's aws/ssm key.
@@ -307,7 +367,8 @@ export class BlogAdminStack extends Stack {
         },
       }),
     });
-    aiRole.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'], resources: [table.tableArn] }));
+    // Query too: the weekly run looks at the month's spending and the other posts' slugs
+    aiRole.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Query'], resources: [table.tableArn] }));
     aiRole.addToPolicy(
       new iam.PolicyStatement({ actions: ['s3:ListBucket'], resources: [files.bucketArn], conditions: { StringLike: { 's3:prefix': ['posts/*', 'ai/*'] } } }),
     );
@@ -352,10 +413,16 @@ export class BlogAdminStack extends Stack {
       '/jobs/{id}': [HttpMethod.GET],
       '/jobs/{id}/cancel': [HttpMethod.POST],
       '/models': [HttpMethod.GET],
+      '/weekly': [HttpMethod.GET, HttpMethod.PUT],
+      '/weekly/run': [HttpMethod.POST],
       '/spend': [HttpMethod.GET],
       '/settings': [HttpMethod.GET],
       '/settings/github-token': [HttpMethod.PUT],
       '/settings/ai': [HttpMethod.PUT],
+      '/settings/notify': [HttpMethod.PUT],
+      '/push': [HttpMethod.POST],
+      '/push/{id}': [HttpMethod.DELETE],
+      '/push/test': [HttpMethod.POST],
     };
     for (const [routePath, methods] of Object.entries(routes)) http.addRoutes({ path: routePath, methods, integration });
 

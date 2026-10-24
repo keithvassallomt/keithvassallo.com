@@ -4,6 +4,8 @@
 import * as ai from './ai.mjs';
 import * as posts from './posts.mjs';
 import * as publishing from './publishing.mjs';
+import * as notify from './notify.mjs';
+import * as weekly from './weekly.mjs';
 import { HttpError } from './store.mjs';
 
 const ADMIN_GROUP = process.env.ADMIN_GROUP;
@@ -61,8 +63,15 @@ export const routes = {
   'GET /jobs/{id}': ({ id }) => publishing.getJob(id),
   'POST /jobs/{id}/cancel': ({ id }) => ai.cancelJob(id),
   'GET /models': () => ai.listModels(),
+  'GET /weekly': () => weekly.getWeekly(),
+  'PUT /weekly': ({ body }) => weekly.saveWeekly(body),
+  'POST /weekly/run': () => weekly.runWeekly(),
   'GET /spend': ({ query }) => ai.spend(query),
-  'GET /settings': async () => ({ ...(await publishing.getSettings()), ai: await ai.aiSettings() }),
+  'GET /settings': async () => ({ ...(await publishing.getSettings()), ai: await ai.aiSettings(), notify: await notify.notifySettings() }),
+  'PUT /settings/notify': ({ body }) => notify.saveNotifySettings(body),
+  'POST /push': ({ body }) => notify.addDevice(body),
+  'DELETE /push/{id}': ({ id }) => notify.removeDevice(id),
+  'POST /push/test': ({ body }) => notify.testNotification(body),
   'PUT /settings/github-token': ({ body }) => publishing.setGitHubToken(body),
   'PUT /settings/ai': ({ body }) => ai.saveAiSettings(body),
 };

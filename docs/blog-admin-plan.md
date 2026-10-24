@@ -334,6 +334,9 @@ Then the test post is deleted.
 - **Clean-up.** Delete the `SITE_REPO_TOKEN` secret (the old weekly workflow went in stage 5), and
   update `docs/blog-admin.md`.
 - **Turn the schedule on.**
+- **As built:** a week with no draft is recorded as a skipped run, so the Weekly page and the
+  email say why. The month's spending cap also skips the week. Email goes through SES in
+  `us-east-1`, where the contact form's identity is.
 
 **Done when:**
 

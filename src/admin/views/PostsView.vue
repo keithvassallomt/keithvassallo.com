@@ -30,13 +30,15 @@ const creating = ref(false);
 const filter = ref('all');
 const category = ref('');
 const search = ref('');
+const weekly = ref(null);
 
 const day = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 const bin = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
 
 onMounted(async () => {
   try {
-    const [site, drafts, settings] = await Promise.all([siteData(), api('/posts'), api('/settings').catch(() => ({}))]);
+    const [site, drafts, settings, week] = await Promise.all([siteData(), api('/posts'), api('/settings').catch(() => ({})), api('/weekly').catch(() => null)]);
+    weekly.value = week;
     categories.value = site.categories;
     const pin = settings.pin ?? site.pin ?? {};
     // A post on main that has been opened in the admin shows once, as the admin's copy
@@ -142,10 +144,14 @@ const linkFor = (post) => {
       </div>
     </div>
 
-    <div class="card banner">
+    <div v-if="weekly" class="card banner">
       <span style="color: var(--pink)"><Icon name="calendar" /></span>
-      <span>The weekly run is off while it moves into the admin.</span>
-      <RouterLink to="/weekly">Weekly run</RouterLink>
+      <span v-if="weekly.settings.enabled">
+        Next weekly draft <strong>{{ new Date(`${weekly.next}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }}, 09:00</strong>
+        <span class="muted">· {{ weekly.settings.model ?? weekly.defaultModel }} · {{ weekly.settings.topic ? 'a topic is queued' : 'no topic queued, the AI picks one' }}</span>
+      </span>
+      <span v-else>The weekly run is off.</span>
+      <RouterLink to="/weekly">Weekly settings</RouterLink>
     </div>
 
     <div class="filters">

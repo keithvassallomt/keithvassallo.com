@@ -11,15 +11,19 @@
   "dependencies": {
     "@astrojs/markdown-satteri": "0.4.2",
     "@aws-sdk/client-dynamodb": "^3.1156.0",
+    "@aws-sdk/client-lambda": "^3.1156.0",
     "@aws-sdk/client-s3": "^3.1156.0",
     "@aws-sdk/client-scheduler": "^3.1156.0",
+    "@aws-sdk/client-sesv2": "^3.1156.0",
     "@aws-sdk/client-ssm": "^3.1156.0",
     "@aws-sdk/lib-dynamodb": "^3.1156.0",
     "@aws-sdk/s3-request-presigner": "^3.1156.0",
+    "@aws-sdk/util-dynamodb": "^3.996.9",
     "aws-cdk-lib": "2.274.0",
     "constructs": "^10.4.2",
     "satteri": "0.10.5",
-    "shiki": "4.5.0"
+    "shiki": "4.5.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "aws-cdk": "2.1146.1",
