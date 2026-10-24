@@ -135,7 +135,7 @@ in blog-private, so AWS never holds the OpenAI key.
   for 30 days. Restores, AI runs and publishing take ones that are kept for good.
 - **Files** (S3, versioned):
   - the post's images and cover, under `posts/<id>/`
-  - `posts/<id>/ai/<job>.json`, the AI's notes from each run
+  - `ai/<id>/<job>.json`, the AI's notes from each run, kept apart so the site runner can't read them
 - **Jobs** (DynamoDB). Each job records:
   - kind, post, model, reasoning effort and image model
   - status and current stage
@@ -280,14 +280,17 @@ Then the test post is deleted.
 
 - **The AI runner.** `blog-ai.yml` in blog-private, started by the API with a job id. It signs in
   to AWS through OIDC.
-- **The scripts take their input from the job** instead of from pull requests:
+- **One script, `scripts/blog-admin/ai-job.mjs`,** takes its input from the job. The pull request
+  scripts (`draft.mjs`, `revise.mjs`) and the old weekly workflow are gone:
   - **Generate.** It handles the four combinations of notes and body. Facts in the notes count as
     yours, as the `topic` input does now.
   - **Revise.** It works from the highlighted passages and their notes, plus an overall request.
     Style lessons still go to `keith-feedback.md`.
   - **Cover.** It regenerates the cover, with an optional instruction.
-- **While a run works on a post,** the editor is read-only. It shows each stage (researching,
-  drafting, story edit, cover, checks) with a Cancel button.
+- **While a run works on a post,** the editor is read-only and the API refuses saves. It shows
+  each stage (researching, drafting, story edit, cover, checks) with a Cancel button.
+- **Notes on passages** come from selecting text in the preview. They're marked there, and kept on
+  the device until the revision succeeds.
 - **A revision opens as a diff,** in CodeMirror's merge view, with Keep and Undo.
 - **The AI notes panel** is collapsed by default and holds:
   - why this topic, and the shortlist
@@ -328,8 +331,8 @@ Then the test post is deleted.
   - The admin can be installed to your home screen. On Android, Chrome shows notifications even
     with the tab closed.
   - An open tab also shows a toast.
-- **Clean-up.** Delete the old `weekly-blog-draft.yml` and the `SITE_REPO_TOKEN` secret. Rewrite
-  the blog-private README and the docs here.
+- **Clean-up.** Delete the `SITE_REPO_TOKEN` secret (the old weekly workflow went in stage 5), and
+  update `docs/blog-admin.md`.
 - **Turn the schedule on.**
 
 **Done when:**

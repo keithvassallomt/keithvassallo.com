@@ -28,6 +28,9 @@ const SITE_REPO = 'keithvassallomt/keithvassallo.com';
 const PRIVATE_REPO = 'keithvassallomt/blog-private';
 const GITHUB_TOKEN_PARAMETER = '/blog-admin/github-token';
 const SCHEDULE_GROUP = 'blog-admin';
+// blog-private's OIDC tokens use GitHub's immutable subjects, which name the owner and the
+// repository by id as well (GET /repos/keithvassallomt/blog-private/actions/oidc/customization/sub)
+const PRIVATE_REPO_SUBJECT = 'keithvassallomt@5295061/blog-private@1431894240';
 
 export class BlogAdminStack extends Stack {
   constructor(scope, id, props) {
@@ -300,7 +303,7 @@ export class BlogAdminStack extends Stack {
       assumedBy: new iam.WebIdentityPrincipal(github.openIdConnectProviderArn, {
         StringEquals: {
           'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-          'token.actions.githubusercontent.com:sub': `repo:${PRIVATE_REPO}:ref:refs/heads/main`,
+          'token.actions.githubusercontent.com:sub': `repo:${PRIVATE_REPO_SUBJECT}:ref:refs/heads/main`,
         },
       }),
     });
