@@ -1,0 +1,38 @@
+# Passes Keith's "/revise" comments on blog draft pull requests to the private repository,
+# where the revision runs with his voice guide and writing samples (docs/weekly-blog-draft.md).
+# This workflow never sees that material: its token can only start workflows there.
+
+name: Blog draft revision request
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write # react to the comment
+  pull-requests: write
+
+jobs:
+  relay:
+    # Keith's comments only, so nobody else can spend his API credit
+    if: >-
+      github.event.issue.pull_request &&
+      github.event.comment.user.login == 'keithvassallomt' &&
+      startsWith(github.event.comment.body, '/revise')
+    runs-on: ubuntu-latest
+    steps:
+      # The dispatch API needs only Actions: write, unlike `gh workflow run`, which may read
+      # the workflow file
+      - name: Start the revision
+        env:
+          GH_TOKEN: ${{ secrets.BLOG_PRIVATE_ACTIONS_TOKEN }}
+          PR: ${{ github.event.issue.number }}
+        run: |
+          gh api repos/keithvassallomt/blog-private/actions/workflows/revise-blog-draft.yml/dispatches \
+            -f ref=main -f "inputs[pr]=$PR"
+
+      - name: Acknowledge the comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMENT: ${{ github.event.comment.id }}
+        run: gh api "repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT/reactions" -f content=eyes

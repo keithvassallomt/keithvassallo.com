@@ -3,7 +3,8 @@ import path from 'node:path';
 import yaml from 'js-yaml';
 
 // Reads blog post frontmatter when astro.config.mjs loads, before content collections
-// exist, so the sitemap can carry lastmod dates and old URLs can redirect. Mirrors the
+// exist, so the sitemap can carry lastmod dates and old URLs can redirect. The weekly draft
+// script (scripts/blog-draft) uses it too, as the catalogue of existing posts. Mirrors the
 // collection layout in src/content.config.ts: src/content/blog/<slug>/index.md.
 
 function toDate(value) {
@@ -14,7 +15,7 @@ function toDate(value) {
 
 /**
  * @param {string} [dir]
- * @returns {{ slug: string, draft: boolean, pubDate?: Date, updatedDate?: Date, redirectFrom: string[] }[]}
+ * @returns {{ slug: string, title: string, description: string, category: string, tags: string[], draft: boolean, pubDate?: Date, updatedDate?: Date, redirectFrom: string[] }[]}
  */
 export function readBlogFrontmatter(dir = 'src/content/blog') {
   if (!existsSync(dir)) return [];
@@ -28,6 +29,10 @@ export function readBlogFrontmatter(dir = 'src/content/blog') {
       return [
         {
           slug: entry.name,
+          title: String(data.title ?? ''),
+          description: String(data.description ?? ''),
+          category: String(data.category ?? ''),
+          tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
           draft: data.draft === true,
           pubDate: toDate(data.pubDate),
           updatedDate: toDate(data.updatedDate),
