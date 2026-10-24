@@ -3,6 +3,7 @@ import { getImage } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import yaml from 'js-yaml';
 import projectsYaml from '../../data/projects/projects.yaml?raw';
+import pin from '../../data/blog/pin.json';
 
 // Every post on main, drafts included, for the admin's post list, plus what the editor's
 // checks need to know about the site. Nothing here is private: it is all in the public
@@ -29,6 +30,7 @@ export const GET: APIRoute = async () => {
       posts: items,
       categories: categories.map(({ id, data }) => ({ id, name: data.name, color: data.color })),
       projectIds,
+      pin,
     }),
     { headers: { 'content-type': 'application/json' } },
   );

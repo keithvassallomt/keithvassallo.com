@@ -20,6 +20,14 @@ export const PALETTE = {
   red: '#ff7b72', indigo: '#a5a6ff', yellow: '#f2cc60', pink: '#f2a0d6', lime: '#b9e06f',
 };
 
+/** The last second of a day (YYYY-MM-DD) in the UK, as an ISO time, or null for no day. */
+export function ukEndOfDay(day) {
+  if (!day) return null;
+  const probe = new Date(`${day}T23:59:59Z`);
+  const offset = probe.toLocaleString('en-GB', { timeZone: 'Europe/London', timeZoneName: 'shortOffset' }).match(/GMT([+-]\d+)?/)?.[1] ?? '0';
+  return new Date(probe.getTime() - Number(offset) * 3600 * 1000).toISOString();
+}
+
 /** A post title as a slug: lowercase ASCII words joined by hyphens, six at most. */
 export const slugify = (title) =>
   title

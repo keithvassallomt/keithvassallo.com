@@ -3,8 +3,9 @@ import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
 import BlogShell from '../../layouts/BlogShell.astro';
 import ListingHeader from '../../components/blog/ListingHeader.astro';
 import Pagination from '../../components/blog/Pagination.astro';
+import PinnedCard from '../../components/blog/PinnedCard.astro';
 import PostGrid from '../../components/blog/PostGrid.astro';
-import { getActiveCategories, getCategoryMap, getPosts, POSTS_PER_PAGE } from '../../lib/blog';
+import { getActiveCategories, getCategoryMap, getPosts, pinnedPost, POSTS_PER_PAGE } from '../../lib/blog';
 import { siteCardAsset } from '../../lib/social';
 
 export const getStaticPaths = (async ({ paginate }) => {
@@ -20,6 +21,11 @@ const [categories, categoryMap] = await Promise.all([getActiveCategories(posts),
 const intro =
   'Write-ups on the things I build, break and teach. Mostly Linux, Android and self-hosting, with the occasional detour into the classroom.';
 const pageSuffix = page.currentPage > 1 ? `, page ${page.currentPage}` : '';
+
+// The pinned post leads the first page. When it is also the newest post, its card just says
+// so; otherwise it gets its own card above the grid, and its card in the grid stays hidden.
+const pin = page.currentPage === 1 ? pinnedPost(posts) : null;
+const pinIsFirst = pin?.post.id === page.data[0]?.id;
 ---
 
 <BlogShell
@@ -34,6 +40,23 @@ const pageSuffix = page.currentPage > 1 ? `, page ${page.currentPage}` : '';
   </Fragment>
 
   <ListingHeader path="blog" title="Notes from the workbench." intro={intro} categories={categories} current="all" />
-  <PostGrid posts={page.data} categories={categoryMap} featureFirst={page.currentPage === 1} />
+  {pin && !pinIsFirst && <PinnedCard post={pin.post} category={categoryMap.get(pin.post.data.category.id)!} />}
+  <PostGrid
+    posts={page.data}
+    categories={categoryMap}
+    featureFirst={page.currentPage === 1}
+    pin={pin ? { slug: pin.post.id, mode: pinIsFirst ? 'flag' : 'twin' } : null}
+  />
   <Pagination page={page} />
+  {
+    pin?.until && (
+      <script is:inline data-astro-rerun define:vars={{ until: pin.until }}>
+        // The pin's end date is checked here rather than by a rebuild
+        if (Date.now() >= Date.parse(until)) {
+          document.querySelectorAll('[data-pin-card], [data-pin-flag]').forEach((node) => node.remove());
+          document.querySelectorAll('[data-pin-twin]').forEach((node) => node.removeAttribute('data-pin-twin'));
+        }
+      </script>
+    )
+  }
 </BlogShell>

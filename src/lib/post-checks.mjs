@@ -12,11 +12,11 @@ export const STATIC_PAGES = ['/', '/about', '/cv', '/contact', '/projects', '/bl
 const STATIC = new Set(STATIC_PAGES);
 const ALLOWED_TAGS = new Set(['kbd', 'mark']);
 
-const DASHES = /[–—]/;
+const DASHES = /[\u2013\u2014]/;
 const SPACED_HYPHEN = /\S - \S/;
 // "And" opening a line or following sentence punctuation, allowing for list markers,
 // quotes and emphasis in between.
-const SENTENCE_AND = /(?:^|[.!?]["'’”)\]]*\s+)(?:[-*+>]\s+|\d+\.\s+)*[*_"'‘“(]*And\b/m;
+const SENTENCE_AND = /(?:^|[.!?]["'\u2019\u201d)\]]*\s+)(?:[-*+>]\s+|\d+\.\s+)*[*_"'\u2018\u201c(]*And\b/m;
 
 /** Splits Markdown into prose lines (inline code removed) and fenced code blocks, with line numbers. */
 function scan(body) {

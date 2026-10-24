@@ -7,9 +7,11 @@ interface Props {
   categories: Map<string, Category>;
   /** Show the first post as the large featured card. */
   featureFirst?: boolean;
+  /** The pinned post's card, and whether it is labelled Pinned or hidden behind a PinnedCard. */
+  pin?: { slug: string; mode: 'flag' | 'twin' } | null;
 }
 
-const { posts, categories, featureFirst = false } = Astro.props;
+const { posts, categories, featureFirst = false, pin = null } = Astro.props;
 ---
 
 <div class="post-grid-wrap">
@@ -21,6 +23,7 @@ const { posts, categories, featureFirst = false } = Astro.props;
             post={post}
             category={categories.get(post.data.category.id)!}
             variant={featureFirst && index === 0 ? 'featured' : 'standard'}
+            pin={pin?.slug === post.id ? pin.mode : undefined}
           />
         ))}
       </div>

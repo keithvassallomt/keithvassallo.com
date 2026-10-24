@@ -7,6 +7,8 @@ import { CfnOutput, Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNode from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
@@ -22,6 +24,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 /** Members of this group may use the API. Only Keith is in it. */
 export const ADMIN_GROUP = 'admins';
+const SITE_REPO = 'keithvassallomt/keithvassallo.com';
+const PRIVATE_REPO = 'keithvassallomt/blog-private';
+const GITHUB_TOKEN_PARAMETER = '/blog-admin/github-token';
+const SCHEDULE_GROUP = 'blog-admin';
 
 export class BlogAdminStack extends Stack {
   constructor(scope, id, props) {
@@ -180,6 +186,17 @@ export class BlogAdminStack extends Stack {
       removalPolicy: RemovalPolicy.RETAIN,
     });
 
+    // ---- scheduled posts ----------------------------------------------------------------
+    // Each scheduled post is a one-off schedule in this group, which calls the API's Lambda
+    // at its minute and then deletes itself
+    new scheduler.CfnScheduleGroup(this, 'Schedules', { name: SCHEDULE_GROUP });
+    const schedulerRole = new iam.Role(this, 'SchedulerRole', {
+      assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com', {
+        conditions: { StringEquals: { 'aws:SourceAccount': this.account } },
+      }),
+      description: 'Lets the blog admin\'s scheduled posts call its API Lambda',
+    });
+
     // ---- the API ------------------------------------------------------------------------
     const api = new lambdaNode.NodejsFunction(this, 'Api', {
       entry: path.join(HERE, '..', 'lambda', 'api', 'index.mjs'),
@@ -207,6 +224,11 @@ export class BlogAdminStack extends Stack {
         TABLE: table.tableName,
         BUCKET: files.bucketName,
         ADMIN_GROUP,
+        SITE_REPO,
+        PRIVATE_REPO,
+        GITHUB_TOKEN_PARAMETER,
+        SCHEDULE_GROUP,
+        SCHEDULER_ROLE_ARN: schedulerRole.roleArn,
         NODE_OPTIONS: '--enable-source-maps',
       },
       logGroup: new logs.LogGroup(this, 'ApiLogs', {
@@ -216,6 +238,57 @@ export class BlogAdminStack extends Stack {
     });
     table.grantReadWriteData(api);
     files.grantReadWrite(api);
+    api.grantInvoke(schedulerRole);
+
+    // The GitHub token Keith saves in Settings: a SecureString, so CloudFormation can't create
+    // it, and the API writes it on first save. Encrypted with the account's aws/ssm key.
+    const tokenArn = this.formatArn({ service: 'ssm', resource: 'parameter', resourceName: GITHUB_TOKEN_PARAMETER.slice(1) });
+    api.addToRolePolicy(new iam.PolicyStatement({ actions: ['ssm:GetParameter', 'ssm:PutParameter'], resources: [tokenArn] }));
+    api.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['kms:Encrypt', 'kms:Decrypt'],
+        resources: ['*'],
+        conditions: { StringEquals: { 'kms:ViaService': `ssm.${this.region}.amazonaws.com` } },
+      }),
+    );
+    api.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['scheduler:CreateSchedule', 'scheduler:DeleteSchedule', 'scheduler:GetSchedule'],
+        resources: [this.formatArn({ service: 'scheduler', resource: 'schedule', resourceName: `${SCHEDULE_GROUP}/*` })],
+      }),
+    );
+    api.addToRolePolicy(new iam.PolicyStatement({ actions: ['iam:PassRole'], resources: [schedulerRole.roleArn] }));
+
+    // ---- the site runner ----------------------------------------------------------------
+    // .github/workflows/blog-admin-site.yml on the site repo's main branch, and nothing else,
+    // may take this role: it reads the post it is publishing and reports back on the job
+    const github = iam.OpenIdConnectProvider.fromOpenIdConnectProviderArn(
+      this,
+      'GitHubOidc',
+      `arn:aws:iam::${this.account}:oidc-provider/token.actions.githubusercontent.com`,
+    );
+    const siteRole = new iam.Role(this, 'SiteRunnerRole', {
+      roleName: 'keithvassallo-com-blog-admin-site',
+      description: 'The blog admin\'s site jobs, run by keithvassallo.com\'s blog-admin-site.yml on main',
+      maxSessionDuration: Duration.hours(1),
+      assumedBy: new iam.WebIdentityPrincipal(github.openIdConnectProviderArn, {
+        StringEquals: {
+          'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+          'token.actions.githubusercontent.com:sub': `repo:${SITE_REPO}:ref:refs/heads/main`,
+        },
+      }),
+    });
+    siteRole.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'], resources: [table.tableArn] }));
+    siteRole.addToPolicy(
+      new iam.PolicyStatement({ actions: ['s3:ListBucket'], resources: [files.bucketArn], conditions: { StringLike: { 's3:prefix': 'posts/*' } } }),
+    );
+    siteRole.addToPolicy(new iam.PolicyStatement({ actions: ['s3:GetObject'], resources: [files.arnForObjects('posts/*')] }));
+    siteRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ['codepipeline:ListPipelineExecutions'],
+        resources: [this.formatArn({ service: 'codepipeline', resource: 'keithvassallo.com' })],
+      }),
+    );
 
     const http = new HttpApi(this, 'HttpApi', {
       apiName: 'keithvassallo-com-admin',
@@ -235,6 +308,7 @@ export class BlogAdminStack extends Stack {
     const routes = {
       '/me': [HttpMethod.GET],
       '/posts': [HttpMethod.GET, HttpMethod.POST],
+      '/posts/import': [HttpMethod.POST],
       '/posts/{id}': [HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE],
       '/posts/{id}/restore': [HttpMethod.POST],
       '/posts/{id}/versions': [HttpMethod.GET],
@@ -242,6 +316,15 @@ export class BlogAdminStack extends Stack {
       '/posts/{id}/versions/{version}/restore': [HttpMethod.POST],
       '/posts/{id}/images': [HttpMethod.POST],
       '/posts/{id}/preview': [HttpMethod.POST],
+      '/posts/{id}/publish': [HttpMethod.POST],
+      '/posts/{id}/schedule': [HttpMethod.DELETE],
+      '/posts/{id}/unpublish': [HttpMethod.POST],
+      '/posts/{id}/delete-live': [HttpMethod.POST],
+      '/posts/{id}/pin': [HttpMethod.POST, HttpMethod.DELETE],
+      '/posts/{id}/repo': [HttpMethod.POST],
+      '/jobs/{id}': [HttpMethod.GET],
+      '/settings': [HttpMethod.GET],
+      '/settings/github-token': [HttpMethod.PUT],
     };
     for (const [routePath, methods] of Object.entries(routes)) http.addRoutes({ path: routePath, methods, integration });
 
@@ -252,5 +335,7 @@ export class BlogAdminStack extends Stack {
     new CfnOutput(this, 'ApiUrl', { value: http.apiEndpoint });
     new CfnOutput(this, 'TableName', { value: table.tableName });
     new CfnOutput(this, 'BucketName', { value: files.bucketName });
+    // For the site repo's BLOG_ADMIN_SITE_ROLE_ARN variable
+    new CfnOutput(this, 'SiteRunnerRoleArn', { value: siteRole.roleArn });
   }
 }

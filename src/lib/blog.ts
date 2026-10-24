@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import pin from '../data/blog/pin.json';
 
 export type Post = CollectionEntry<'blog'>;
 export type Category = CollectionEntry<'categories'>;
@@ -21,6 +22,18 @@ export async function getPosts(): Promise<Post[]> {
 export async function getPublishedPosts(): Promise<Post[]> {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
   return posts.sort(byNewest);
+}
+
+/**
+ * The post pinned to the top of the blog listing (src/data/blog/pin.json, set from the admin),
+ * unless it has no live post or its end date has already passed. The listing's own script hides
+ * the pin once the date passes after the build.
+ */
+export function pinnedPost(posts: Post[]): { post: Post; until: string | null } | null {
+  const { slug, until } = pin as { slug?: string; until?: string };
+  const post = slug ? posts.find((entry) => entry.id === slug && !entry.data.draft) : undefined;
+  if (!post || (until && Date.parse(until) <= Date.now())) return null;
+  return { post, until: until ?? null };
 }
 
 export async function getCategoryMap(): Promise<Map<string, Category>> {

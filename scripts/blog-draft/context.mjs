@@ -104,13 +104,5 @@ export function loadSite(siteDir) {
 
 export const postFile = (siteDir, slug) => path.join(siteDir, 'src/content/blog', slug, 'index.md');
 
-// The core schema keeps dates as plain strings, so `pubDate: 2026-10-24` round-trips as written
-export function parsePost(text) {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(text);
-  if (!match) throw new Error('The post has no frontmatter');
-  return { data: yaml.load(match[1], { schema: yaml.CORE_SCHEMA }), body: match[2].trim() };
-}
-
-export function serialisePost(data, body) {
-  return `---\n${yaml.dump(data, { lineWidth: -1, schema: yaml.CORE_SCHEMA })}---\n\n${body.trim()}\n`;
-}
+// Reading and writing index.md lives in src/lib/post-file.mjs, shared with the blog admin
+export { parsePost, serialisePost } from '../../src/lib/post-file.mjs';

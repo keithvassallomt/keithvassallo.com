@@ -11,15 +11,21 @@ interface Props {
   category: Category;
   variant?: 'featured' | 'standard';
   headingLevel?: 2 | 3;
+  /**
+   * For the pinned post on the listing's first page: `flag` labels this card Pinned, and
+   * `twin` hides it while a PinnedCard shows it above the grid. The listing's script undoes
+   * either once the pin's end date passes.
+   */
+  pin?: 'flag' | 'twin';
 }
 
-const { post, category, variant = 'standard', headingLevel = 2 } = Astro.props;
+const { post, category, variant = 'standard', headingLevel = 2, pin } = Astro.props;
 const { title, description, cover, pubDate, draft } = post.data;
 const featured = variant === 'featured';
 const Heading = `h${headingLevel}` as 'h2' | 'h3';
 ---
 
-<article class:list={['card', variant]}>
+<article class:list={['card', variant]} data-pin-twin={pin === 'twin' ? '' : undefined}>
   {
     cover && (
       <div class="card-media">
@@ -37,6 +43,7 @@ const Heading = `h${headingLevel}` as 'h2' | 'h3';
   <div class="card-body">
     <div class="card-flags">
       <CategoryChip category={category} />
+      {pin === 'flag' && <span class="card-flag card-flag-pinned" data-pin-flag>Pinned</span>}
       {featured && <span class="card-flag">Latest</span>}
       {draft && <span class="card-flag card-flag-draft">Draft</span>}
     </div>
@@ -117,6 +124,14 @@ const Heading = `h${headingLevel}` as 'h2' | 'h3';
 
   .card-flag-draft {
     color: var(--c-orange);
+  }
+
+  .card-flag-pinned {
+    color: var(--c-green);
+  }
+
+  .card[data-pin-twin] {
+    display: none;
   }
 
   .card-title {

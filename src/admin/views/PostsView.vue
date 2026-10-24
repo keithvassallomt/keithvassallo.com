@@ -15,6 +15,7 @@ const STATUS = {
   bin: { label: 'In the bin', color: 'var(--red)' },
 };
 const SOURCES = { 'by-hand': 'By hand', weekly: 'Weekly', 'on-request': 'On request', repo: 'From the repo' };
+const JOBS = { publish: 'Publishing', unpublish: 'Unpublishing', delete: 'Deleting', pin: 'Pinning' };
 const FILTERS = [
   ['all', 'All'], ['draft', 'Drafts'], ['running', 'AI running'], ['scheduled', 'Scheduled'],
   ['live', 'Live'], ['pinned', 'Pinned'], ['bin', 'Bin'],
@@ -35,29 +36,43 @@ const bin = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
 
 onMounted(async () => {
   try {
-    const [site, drafts] = await Promise.all([siteData(), api('/posts')]);
+    const [site, drafts, settings] = await Promise.all([siteData(), api('/posts'), api('/settings').catch(() => ({}))]);
     categories.value = site.categories;
-    const fromRepo = site.posts.map((post) => ({
-      ...post,
-      key: post.draft ? 'draft' : 'live',
-      pinned: false,
-      source: 'repo',
-      sub: post.draft ? 'In the repo, not published' : `Published ${day.format(new Date(post.pubDate))}`,
-      date: day.format(new Date(post.updatedDate ?? post.pubDate)),
-      href: post.draft ? null : `/blog/${post.slug}`,
-    }));
-    const fromAdmin = drafts.posts.map((post) => ({
-      ...post,
-      key: post.status === 'bin' ? 'bin' : 'draft',
-      pinned: false,
-      cover: post.coverUrl,
-      sub:
-        post.status === 'bin'
-          ? `Deleted ${bin.format(new Date(post.deletedAt))}, gone after ${bin.format(new Date(Date.parse(post.deletedAt) + 30 * 864e5))}`
-          : 'Not published',
-      date: day.format(new Date(post.updated)),
-      to: `/posts/${post.id}`,
-    }));
+    const pin = settings.pin ?? site.pin ?? {};
+    // A post on main that has been opened in the admin shows once, as the admin's copy
+    const claimed = new Set(drafts.posts.filter((post) => post.status !== 'bin').flatMap((post) => [post.liveSlug, post.repoSlug]).filter(Boolean));
+    const fromRepo = site.posts
+      .filter((post) => !claimed.has(post.slug))
+      .map((post) => ({
+        ...post,
+        key: post.draft ? 'draft' : 'live',
+        pinned: !post.draft && pin.slug === post.slug,
+        source: 'repo',
+        sub: post.draft ? 'In the repo, not published' : `Published ${day.format(new Date(post.pubDate))}`,
+        date: day.format(new Date(post.updatedDate ?? post.pubDate)),
+        to: `/open/${post.slug}`,
+      }));
+    const fromAdmin = drafts.posts.map((post) => {
+      const key = post.status === 'bin' ? 'bin' : post.status === 'scheduled' ? 'scheduled' : post.liveSlug ? 'live' : 'draft';
+      const working = ['queued', 'running'].includes(post.job?.status) && Date.now() - Date.parse(post.job.at ?? 0) < 45 * 60 * 1000;
+      const sub = working
+        ? `${JOBS[post.job.kind] ?? 'Working'}: ${post.job.stage}`
+        : {
+            bin: () => `Deleted ${bin.format(new Date(post.deletedAt))}, gone after ${bin.format(new Date(Date.parse(post.deletedAt) + 30 * 864e5))}`,
+            scheduled: () => `Goes live ${post.scheduledFor?.replace('T', ', ')}`,
+            live: () => (post.version > post.publishedVersion ? 'Live, with unpublished changes' : 'Published'),
+            draft: () => 'Not published',
+          }[key]();
+      return {
+        ...post,
+        key,
+        pinned: !!post.liveSlug && pin.slug === post.liveSlug,
+        cover: post.coverUrl,
+        sub,
+        date: day.format(new Date(post.updated)),
+        to: `/posts/${post.id}`,
+      };
+    });
     posts.value = [...fromAdmin, ...fromRepo].sort((a, b) => (b.updated ?? b.pubDate).localeCompare(a.updated ?? a.pubDate));
   } catch (cause) {
     error.value = cause.message;
@@ -168,7 +183,7 @@ const linkFor = (post) => {
           </span>
           <span class="state">
             <span class="status" :style="{ color: STATUS[post.key].color }">{{ STATUS[post.key].label }}</span>
-            <span class="muted sub">{{ post.sub }}</span>
+            <span class="muted sub"><Icon v-if="post.pinned" name="pin" class="pin" />{{ post.pinned ? 'Pinned. ' : '' }}{{ post.sub }}</span>
             <button v-if="post.key === 'bin'" type="button" class="btn small" @click="unbin(post)"><Icon name="restore" />Restore</button>
           </span>
           <span><span class="chip" :style="categoryOf(post.category).style">{{ categoryOf(post.category).name }}</span></span>
@@ -355,6 +370,14 @@ const linkFor = (post) => {
 
 .sub {
   font-size: 13px;
+}
+
+.sub .pin {
+  width: 13px;
+  height: 13px;
+  color: var(--green);
+  vertical-align: -2px;
+  margin-right: 4px;
 }
 
 .btn.small {

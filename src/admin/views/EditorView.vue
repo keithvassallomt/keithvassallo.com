@@ -5,7 +5,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../api.js';
-import { siteData, slugify } from '../site.js';
+import { siteData, slugify, ukEndOfDay } from '../site.js';
 import { postProblems, slugFormatProblem } from '../../lib/post-checks.mjs';
 import { imageName, prepareImage, uploadImage } from '../editor/images.js';
 import MarkdownEditor from '../editor/MarkdownEditor.vue';
@@ -13,6 +13,9 @@ import PreviewFrame from '../editor/PreviewFrame.vue';
 import DetailsPanel from '../editor/DetailsPanel.vue';
 import ChecksPanel from '../editor/ChecksPanel.vue';
 import HistoryPanel from '../editor/HistoryPanel.vue';
+import JobBanner from '../editor/JobBanner.vue';
+import PublishDialog from '../editor/PublishDialog.vue';
+import Dialog from '../Dialog.vue';
 import Icon from '../Icon.vue';
 
 const props = defineProps({ id: { type: String, required: true } });
@@ -22,7 +25,7 @@ const FIELDS = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags
 const BACKUP = `kv-admin-draft-${props.id}`;
 
 const post = reactive({ title: '', slug: '', slugTouched: false, description: '', category: '', tags: [], cover: null, coverAlt: '', share: {}, notes: '', body: '' });
-const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null });
+const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false });
 const loaded = ref(false);
 const loadError = ref('');
 const site = ref(null);
@@ -48,14 +51,36 @@ const phone = ref(false);
 const editor = ref(null);
 const history = ref(null);
 const menuOpen = ref(false);
+const dialog = ref(null);
+const acting = ref(false);
+const actionError = ref('');
+const confirmTitle = ref('');
+const pinUntil = ref('');
+const pinned = ref(null);
+const dismissed = ref(null);
 
 const fields = () => JSON.stringify(Object.fromEntries(FIELDS.map((key) => [key, post[key]])));
 
 function apply(data) {
   // Copied through JSON: the conflicting copy arrives wrapped in Vue's proxies
   for (const key of FIELDS) post[key] = JSON.parse(JSON.stringify(data[key] ?? post[key]));
-  Object.assign(meta, { status: data.status, source: data.source, version: data.version, updated: data.updated });
+  meta.version = data.version;
+  meta.updated = data.updated;
+  applyStatus(data);
   lastSaved = fields();
+}
+
+/** Status only, leaving the text alone: a job finishing mustn't touch what's being typed. */
+function applyStatus(data) {
+  Object.assign(meta, {
+    status: data.status,
+    source: data.source,
+    liveSlug: data.liveSlug ?? null,
+    publishedVersion: data.publishedVersion ?? null,
+    scheduledFor: data.scheduledFor ?? null,
+    job: data.job ?? null,
+    repoChanged: !!data.repoChanged,
+  });
 }
 
 // ---- keeping a copy on this device ---------------------------------------------------
@@ -303,6 +328,87 @@ async function unbin() {
   apply(data);
 }
 
+// ---- publishing ------------------------------------------------------------------------
+const changed = computed(() => meta.liveSlug && meta.publishedVersion !== null && meta.version > meta.publishedVersion);
+const jobActive = computed(() => ['queued', 'running'].includes(meta.job?.status));
+const showJob = computed(() => meta.job && meta.job.id !== dismissed.value);
+const chip = computed(() => {
+  if (meta.status === 'bin') return { label: 'In the bin', style: 'color: var(--red); background: rgba(255,123,114,0.12)' };
+  if (meta.status === 'scheduled') return { label: 'Scheduled', style: 'color: var(--yellow); background: rgba(242,204,96,0.12)' };
+  if (meta.liveSlug) return { label: changed.value ? 'Live, with changes' : 'Live', style: 'color: var(--green); background: rgba(140,212,156,0.12)' };
+  return { label: 'Draft', style: 'color: var(--secondary); background: rgba(138,147,161,0.14)' };
+});
+const scheduledLabel = computed(() => {
+  if (!meta.scheduledFor) return '';
+  const [day, time] = meta.scheduledFor.split('T');
+  return `${new Date(`${day}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}, ${time}`;
+});
+
+/** Waits until every edit so far is saved. */
+async function settle() {
+  clearTimeout(timer);
+  for (let tries = 0; tries < 20 && saveState.value !== 'saved'; tries++) {
+    if (['conflict', 'error'].includes(saveState.value)) throw new Error('Save the post first: it has changes that didn\u2019t save.');
+    if (!saving) await save();
+    if (saving) await saving.catch(() => {});
+  }
+}
+
+async function act(run) {
+  acting.value = true;
+  actionError.value = '';
+  try {
+    await settle();
+    const result = await run();
+    if (result?.job) meta.job = result.job;
+    else if (result?.id) applyStatus(result);
+    dialog.value = null;
+    menuOpen.value = false;
+  } catch (error) {
+    actionError.value = error.message;
+  } finally {
+    acting.value = false;
+  }
+}
+
+const publish = (request) => act(() => api(`/posts/${props.id}/publish`, { method: 'POST', body: request }));
+const unpublish = () => act(() => api(`/posts/${props.id}/unpublish`, { method: 'POST' }));
+const deleteLive = () => act(() => api(`/posts/${props.id}/delete-live`, { method: 'POST', body: { title: confirmTitle.value } }));
+const pin = () => act(() => api(`/posts/${props.id}/pin`, { method: 'POST', body: { until: ukEndOfDay(pinUntil.value) } }));
+const unpin = () => act(() => api(`/posts/${props.id}/pin`, { method: 'DELETE' }));
+const cancelSchedule = () => act(() => api(`/posts/${props.id}/schedule`, { method: 'DELETE' }));
+
+function open(name) {
+  menuOpen.value = false;
+  actionError.value = '';
+  confirmTitle.value = '';
+  dialog.value = name;
+}
+
+async function jobFinished(job) {
+  const data = await api(`/posts/${props.id}`).catch(() => null);
+  if (data) applyStatus(data);
+  if (job.status === 'done' && job.kind === 'pin') pinned.value = (await api('/settings').catch(() => ({}))).pin ?? pinned.value;
+  if (job.status === 'done' && job.kind === 'delete') router.push('/');
+}
+
+async function repoChoice(use) {
+  try {
+    const data = await api(`/posts/${props.id}/repo`, { method: 'POST', body: { use } });
+    if (use === 'repo') {
+      apply(data);
+      images.value = data.images;
+      storage.clear();
+      renderPreview();
+    } else {
+      applyStatus(data);
+    }
+    meta.repoChanged = false;
+  } catch (error) {
+    actionError.value = error.message;
+  }
+}
+
 // ---- loading ---------------------------------------------------------------------------
 let media = null;
 const layout = () => (phone.value = media.matches);
@@ -315,7 +421,8 @@ onMounted(async () => {
   window.addEventListener('beforeunload', warn);
   window.addEventListener('online', save);
   try {
-    const [data, siteInfo, list] = await Promise.all([api(`/posts/${props.id}`), siteData(), api('/posts')]);
+    const [data, siteInfo, list, settings] = await Promise.all([api(`/posts/${props.id}`), siteData(), api('/posts'), api('/settings').catch(() => ({}))]);
+    pinned.value = settings.pin ?? (siteInfo.pin?.slug ? siteInfo.pin : null);
     apply(data);
     images.value = data.images;
     site.value = siteInfo;
@@ -369,17 +476,26 @@ function goToProblem(line) {
   <div v-else class="editor" :class="{ phone }">
     <header class="bar">
       <RouterLink to="/" class="btn back" aria-label="Back to posts"><Icon name="back" /><span class="wide">Posts</span></RouterLink>
-      <span class="chip" :style="meta.status === 'bin' ? 'color: var(--red); background: rgba(255,123,114,0.12)' : 'color: var(--secondary); background: rgba(138,147,161,0.14)'">
-        {{ meta.status === 'bin' ? 'In the bin' : 'Draft' }}
-      </span>
+      <span class="chip" :style="chip.style">{{ chip.label }}</span>
       <span class="state" :class="saveState" role="status">{{ loaded ? saveLabel : 'Loading' }}</span>
       <span class="grow"></span>
       <button type="button" class="btn ai" disabled title="Generate and Revise arrive in stage 5"><Icon name="sparkles" /><span class="wide">Generate</span></button>
-      <button type="button" class="btn btn-go" disabled title="Publishing arrives in stage 4">Publish</button>
+      <button v-if="meta.liveSlug" type="button" class="btn btn-go" :disabled="!changed || jobActive || meta.status === 'bin'" :title="changed ? '' : 'No changes since it went live'" @click="open('publish')">
+        <span class="wide">Update live post</span><span class="narrow">Update</span>
+      </button>
+      <button v-else type="button" class="btn btn-go" :disabled="jobActive || meta.status !== 'draft'" @click="open('publish')">Publish</button>
       <div class="menu-wrap">
         <button type="button" class="btn icon" aria-label="More actions" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><Icon name="more" /></button>
         <div v-if="menuOpen" class="card menu">
-          <button v-if="meta.status !== 'bin'" type="button" class="danger" @click="binIt"><Icon name="trash" />Move to the bin</button>
+          <template v-if="meta.liveSlug">
+            <button v-if="pinned?.slug === meta.liveSlug" type="button" :disabled="jobActive" @click="unpin"><Icon name="pin" />Unpin it</button>
+            <button v-else type="button" :disabled="jobActive" @click="open('pin')"><Icon name="pin" />Pin it to the top</button>
+            <a :href="`https://keithvassallo.com/blog/${meta.liveSlug}`" target="_blank" rel="noopener"><Icon name="external" />View it live</a>
+            <button type="button" :disabled="jobActive" @click="open('unpublish')"><Icon name="restore" />Unpublish, back to drafts</button>
+            <button type="button" class="danger" :disabled="jobActive" @click="open('delete')"><Icon name="trash" />Delete from the live site</button>
+          </template>
+          <button v-else-if="meta.status === 'scheduled'" type="button" @click="cancelSchedule"><Icon name="close" />Cancel the schedule</button>
+          <button v-else-if="meta.status !== 'bin'" type="button" class="danger" @click="binIt"><Icon name="trash" />Move to the bin</button>
           <button v-else type="button" @click="unbin"><Icon name="restore" />Restore from the bin</button>
         </div>
       </div>
@@ -403,6 +519,19 @@ function goToProblem(line) {
       <span><strong>This post is in the bin.</strong> Restore it to edit it again.</span>
       <span class="actions"><button type="button" class="btn btn-go" @click="unbin">Restore</button></span>
     </div>
+    <div v-if="meta.status === 'scheduled'" class="card banner">
+      <span><strong>Goes live {{ scheduledLabel }}.</strong> Edits until then go out with it.</span>
+      <span class="actions"><button type="button" class="btn" :disabled="acting" @click="cancelSchedule">Cancel the schedule</button></span>
+    </div>
+    <div v-if="meta.repoChanged" class="card banner warn" role="alert">
+      <span><strong>This post changed in the repo</strong> since the admin last wrote it, perhaps in VS Code.</span>
+      <span class="actions">
+        <button type="button" class="btn" @click="repoChoice('admin')">Keep this one</button>
+        <button type="button" class="btn btn-go" @click="repoChoice('repo')">Load the repo's version</button>
+      </span>
+    </div>
+    <p v-if="actionError && !dialog" class="card banner error-banner" role="alert">{{ actionError }}</p>
+    <JobBanner v-if="showJob" :job="meta.job" :slug="meta.liveSlug ?? post.slug" @finished="jobFinished" @dismiss="dismissed = meta.job.id" />
 
     <nav v-if="phone" class="panes" aria-label="Editor views">
       <button v-for="[name, label] in panes" :key="name" type="button" :class="{ on: pane === name }" :aria-pressed="pane === name" @click="pane = name">{{ label }}</button>
@@ -435,6 +564,46 @@ function goToProblem(line) {
         <HistoryPanel v-if="showPanel('history')" ref="history" :post-id="id" @restore="restore" />
       </aside>
     </div>
+
+    <PublishDialog
+      v-if="dialog === 'publish'"
+      :post="post"
+      :live="!!meta.liveSlug"
+      :pinned="pinned"
+      :problems="checked"
+      :cover-url="coverUrl"
+      :busy="acting"
+      :error="actionError"
+      @close="dialog = null"
+      @publish="publish"
+    />
+    <Dialog v-if="dialog === 'unpublish'" title="Unpublish this post?" @close="dialog = null">
+      <p>It comes off keithvassallo.com and goes back to your drafts, with everything in it kept. Links to it will stop working until you publish it again.</p>
+      <p v-if="actionError" class="dialog-error">{{ actionError }}</p>
+      <template #buttons>
+        <button type="button" class="btn" @click="dialog = null">Cancel</button>
+        <button type="button" class="btn btn-go" :disabled="acting" @click="unpublish">Unpublish</button>
+      </template>
+    </Dialog>
+    <Dialog v-if="dialog === 'delete'" title="Delete from the live site?" @close="dialog = null">
+      <p>It comes off keithvassallo.com and goes to the bin for 30 days. Links to it will break. Type the title to confirm.</p>
+      <input v-model="confirmTitle" class="inp" :placeholder="post.title" aria-label="The post's title" />
+      <p v-if="actionError" class="dialog-error">{{ actionError }}</p>
+      <template #buttons>
+        <button type="button" class="btn" @click="dialog = null">Cancel</button>
+        <button type="button" class="btn danger-btn" :disabled="acting || confirmTitle !== post.title" @click="deleteLive">Delete it</button>
+      </template>
+    </Dialog>
+    <Dialog v-if="dialog === 'pin'" title="Pin it to the top of the blog?" @close="dialog = null">
+      <p>It shows first on the blog's listing, labelled Pinned.{{ pinned?.slug ? ` It replaces the current pin, ${pinned.slug}.` : '' }}</p>
+      <label><span class="dialog-label">Pinned until (optional)</span><input v-model="pinUntil" class="inp" type="date" /></label>
+      <p class="muted dialog-note">On that date the page's own script drops the pin, with no rebuild.</p>
+      <p v-if="actionError" class="dialog-error">{{ actionError }}</p>
+      <template #buttons>
+        <button type="button" class="btn" @click="dialog = null">Cancel</button>
+        <button type="button" class="btn btn-go" :disabled="acting" @click="pin">Pin it</button>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -533,6 +702,57 @@ function goToProblem(line) {
 
 .menu .danger {
   color: var(--red);
+}
+
+.menu a {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--body);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.menu a:hover {
+  background: #1a2029;
+}
+
+.menu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.error-banner {
+  color: var(--red);
+}
+
+.danger-btn {
+  color: var(--red);
+  border-color: #5a2e2c;
+  background: #1a1214;
+}
+
+.dialog-error {
+  color: var(--red);
+}
+
+.dialog-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 6px;
+}
+
+.dialog-note {
+  font-size: 13px;
+}
+
+.narrow {
+  display: none;
 }
 
 .banner {
@@ -705,6 +925,10 @@ function goToProblem(line) {
 
 .phone .wide {
   display: none;
+}
+
+.phone .narrow {
+  display: inline;
 }
 
 .phone .btn.ai {

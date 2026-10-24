@@ -1,0 +1,74 @@
+# The blog admin's site jobs: publishing, updating, unpublishing and deleting posts, and the
+# pin. The admin's API records a job and starts this with its id; scripts/blog-admin/site-job.mjs
+# does the work, reports each stage back to the job, and finishes once the change is live.
+# See docs/blog-admin-plan.md, stage 4.
+#
+# The logs are public, like everything in this repository, so the job only ever handles the
+# post it is publishing, which is about to be public anyway.
+#
+# Needs these repository variables (set from the BlogAdmin stack's outputs):
+#   BLOG_ADMIN_SITE_ROLE_ARN   the role this workflow assumes through GitHub's OIDC
+#   BLOG_ADMIN_TABLE, BLOG_ADMIN_BUCKET
+
+name: Blog admin site job
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: The job's id in the admin's table
+        required: true
+      dry_run:
+        description: Check the production build, but commit nothing
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # commit the post to main
+  id-token: write # sign in to AWS
+
+# One at a time, so two jobs never push over each other
+concurrency:
+  group: blog-admin-site
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      # Before signing in to AWS, so install scripts never see the credentials
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sign in to AWS
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.BLOG_ADMIN_SITE_ROLE_ARN }}
+          aws-region: eu-west-1
+
+      - name: Run the job
+        env:
+          JOB: ${{ inputs.job }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          TABLE: ${{ vars.BLOG_ADMIN_TABLE }}
+          BUCKET: ${{ vars.BLOG_ADMIN_BUCKET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/blog-admin/site-job.mjs
+
+      - name: Mark the job failed
+        if: failure() || cancelled()
+        env:
+          JOB: ${{ inputs.job }}
+          TABLE: ${{ vars.BLOG_ADMIN_TABLE }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/blog-admin/site-job.mjs --failed
