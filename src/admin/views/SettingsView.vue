@@ -51,7 +51,7 @@ async function saveToken() {
 
     <section class="card section">
       <h2 class="hd">GitHub</h2>
-      <p class="sec">Publishing runs on GitHub Actions, and the admin starts it with a token of yours. It's stored encrypted in AWS and never shown again.</p>
+      <p class="sec">Publishing and the AI run on GitHub Actions. The admin starts them, and saves your ideas and style lessons, with a token of yours. It's stored encrypted in AWS and never shown again.</p>
       <div class="row">
         <div>
           <strong>Token</strong>

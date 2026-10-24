@@ -362,6 +362,12 @@ Then the test post is deleted.
 - a deleted lesson is missing from the next run's instructions
 - the month's total matches the runs
 
+**As built:** Draft this on an idea opens a new post with the idea as its notes, rather than
+generating straight away, so you choose the model as usual. The research names the idea it drew
+on, and the job marks it. The job now saves lessons and idea marks through GitHub's API as it
+goes, so they can't clash with an edit made in the admin at the same time. The token warning
+emails at 14 days, at 3 days and on expiry, and every screen shows a banner from 14 days out.
+
 ### Stage 8 (optional): posts from the IDE
 
 - Posts on `main` with `draft: true` appear in the list marked From the repo.

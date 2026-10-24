@@ -1,9 +1,10 @@
 // Tells Keith when a job ends: a draft is ready, a post is live, something failed, or the week
 // had no draft. It runs on the table's change stream, filtered to job records, and sends an
 // email through SES and a Web Push notification to each device he has allowed, as his
-// notification settings say. Cancelled jobs, dry runs and pin changes stay quiet.
+// notification settings say. Cancelled jobs, dry runs and pin changes stay quiet. A daily
+// rule also runs it to warn him before the GitHub token in Settings expires.
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DeleteCommand, DynamoDBDocumentClient, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
@@ -101,6 +102,29 @@ export async function send(note, channels = { email: true, push: true }) {
   if (channels.push) await push(note);
 }
 
+/** Warns 14 days and 3 days before the GitHub token expires, and once it has: each once per token. */
+async function checkToken(prefs) {
+  const github = await setting('github');
+  if (!github?.expires || Number.isNaN(Date.parse(github.expires))) return { warned: null };
+  const days = Math.ceil((Date.parse(github.expires) - Date.now()) / 864e5);
+  const step = days <= 0 ? 'expired' : days <= 3 ? '3' : days <= 14 ? '14' : null;
+  const record = await setting('token-warnings');
+  const sent = record?.expires === github.expires ? record.sent : [];
+  if (!step || sent.includes(step)) return { warned: null, days };
+  const when = days <= 0 ? 'has expired' : `expires in ${days} ${days === 1 ? 'day' : 'days'}`;
+  await send(
+    {
+      subject: `The blog admin's GitHub token ${when}`,
+      text: `The token ${github.login ? `(${github.login}'s) ` : ''}${when}. Without it, the admin can't publish, start AI jobs or save ideas and style lessons; the weekly run carries on. Make a new fine-grained token on GitHub and paste it in Settings.`,
+      link: `${ADMIN}#/settings`,
+    },
+    { email: prefs.email, push: prefs.push },
+  );
+  await db.send(new PutCommand({ TableName: TABLE, Item: { pk: 'SETTING', sk: 'token-warnings', value: { expires: github.expires, sent: [...sent, step] } } }));
+  console.log(`Warned that the GitHub token ${when}`);
+  return { warned: step, days };
+}
+
 export async function handler(event) {
   // A direct call from the API, for a test
   if (event.test) {
@@ -108,6 +132,7 @@ export async function handler(event) {
     return { sent: true };
   }
   const prefs = { email: true, push: true, ...((await setting('notify')) ?? {}) };
+  if (event.check === 'token') return checkToken(prefs);
   const events = { ...EVENT_DEFAULTS, ...(prefs.events ?? {}) };
   for (const record of event.Records ?? []) {
     const job = record.dynamodb?.NewImage ? unmarshall(record.dynamodb.NewImage) : null;

@@ -17,6 +17,7 @@ is the plan it was built from, stage by stage; this page is how it fits together
 | `scripts/blog-draft/` | The AI's building blocks: the prompts, the OpenAI client, the write and check loop, the cover, and the research tools |
 | `src/lib/post-checks.mjs` | The writing guide's rules, shared by the editor and the AI jobs |
 | `src/lib/post-file.mjs` | Reading and writing a post's `index.md` |
+| `src/lib/private-notes.mjs` | The format of the ideas and style lessons files in blog-private, and saving them on GitHub |
 
 Drafts live in the admin's table and bucket, not in the repo; `main` holds only what's live, plus
 any post committed by hand with `draft: true`. Posts on `main` open in the admin by copying them in.
@@ -42,6 +43,23 @@ its repository's `main` branch can take.
   Otherwise it creates a post, with any queued topic as its notes, and a generate job, which the
   next step runs like any other. Run it now on the Weekly page does the same through the API.
 
+## Ideas and style lessons
+
+The Ideas page is `notes/ideas.md` in blog-private and the Style lessons page is
+`instructions/keith-feedback.md`, read and saved through GitHub's Contents API with the token in
+Settings, so each change is a commit there. Each save reads the file and writes it back against
+its sha, and does it again if something else saved in between, so an edit on the phone and a job
+finishing at the same moment both land.
+
+- Each idea is a `## ` heading with a comment holding its id and dates. Draft this opens a new post
+  with the idea as its notes for the AI, and marks the idea with it. When research picks a topic
+  from an idea by itself, the brief names it (`idea_id`) and the job marks it the same way.
+- Lessons are bullets under dated headings. Revisions add a section named after the post; lessons
+  added by hand go under "added by Keith". An edit changes only that lesson's lines.
+
+The AI job saves its lessons and idea marks the same way, with the workflow's own token, as it
+goes; the workflow commits only the brief at the end.
+
 ## Notifications
 
 The notifier Lambda reads the table's change stream, filtered to jobs. When a job ends, it sends
@@ -50,6 +68,9 @@ allowed in Settings, for the events chosen there. Cancelled jobs, dry runs and p
 quiet. Push needs a VAPID key pair: the public key is in `cdk.json`, the private key in the SSM
 parameter `/blog-admin/vapid-private-key`. An open admin tab shows the notification as a toast as
 well. On an iPhone, notifications only work once the admin is added to the home screen.
+
+A daily rule (08:00 UTC) also runs the notifier to check the GitHub token: it warns 14 days and 3
+days before the token expires, and once it has. Every screen shows a banner from 14 days out.
 
 The API starts workflows with the GitHub token saved in Settings: a fine-grained token with
 Actions and Contents read and write on this repository and blog-private.

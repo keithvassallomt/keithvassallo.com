@@ -4,9 +4,10 @@
 import * as ai from './ai.mjs';
 import * as posts from './posts.mjs';
 import * as publishing from './publishing.mjs';
+import * as notes from './notes.mjs';
 import * as notify from './notify.mjs';
 import * as weekly from './weekly.mjs';
-import { HttpError } from './store.mjs';
+import { HttpError, setting } from './store.mjs';
 
 const ADMIN_GROUP = process.env.ADMIN_GROUP;
 
@@ -36,7 +37,11 @@ function input(event) {
 
 // Each route's key matches its route in lib/blog-admin-stack.js
 export const routes = {
-  'GET /me': ({ claims }) => ({ sub: claims.sub, username: claims.username }),
+  // With the GitHub token's state, so every screen can warn when it's missing or about to expire
+  'GET /me': async ({ claims }) => {
+    const github = await setting('github');
+    return { sub: claims.sub, username: claims.username, github: { saved: !!github, expires: github?.expires ?? null } };
+  },
   'GET /posts': () => posts.listPosts(),
   'POST /posts': ({ body }) => posts.createPost(body),
   'POST /posts/import': ({ body }) => publishing.importPost(body),
@@ -67,6 +72,15 @@ export const routes = {
   'PUT /weekly': ({ body }) => weekly.saveWeekly(body),
   'POST /weekly/run': () => weekly.runWeekly(),
   'GET /spend': ({ query }) => ai.spend(query),
+  'GET /ideas': () => notes.getIdeas(),
+  'POST /ideas': ({ body }) => notes.addIdea(body),
+  'PUT /ideas/{id}': ({ id, body }) => notes.saveIdea(id, body),
+  'DELETE /ideas/{id}': ({ id }) => notes.deleteIdea(id),
+  'POST /ideas/{id}/draft': ({ id }) => notes.draftIdea(id),
+  'GET /lessons': () => notes.getLessons(),
+  'POST /lessons': ({ body }) => notes.addLesson(body),
+  'PUT /lessons/{id}': ({ id, body }) => notes.saveLesson(id, body),
+  'DELETE /lessons/{id}': ({ id }) => notes.deleteLesson(id),
   'GET /settings': async () => ({ ...(await publishing.getSettings()), ai: await ai.aiSettings(), notify: await notify.notifySettings() }),
   'PUT /settings/notify': ({ body }) => notify.saveNotifySettings(body),
   'POST /push': ({ body }) => notify.addDevice(body),

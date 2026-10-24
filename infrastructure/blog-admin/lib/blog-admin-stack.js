@@ -7,6 +7,8 @@ import { CfnOutput, Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as eventTargets from 'aws-cdk-lib/aws-events-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -237,6 +239,12 @@ export class BlogAdminStack extends Stack {
         filters: [lambda.FilterCriteria.filter({ dynamodb: { NewImage: { pk: { S: lambda.FilterRule.isEqual('JOB') } } } })],
       }),
     );
+    // Every morning, a check on the GitHub token's expiry
+    new events.Rule(this, 'TokenCheck', {
+      description: "Warns Keith before the blog admin's GitHub token expires",
+      schedule: events.Schedule.cron({ minute: '0', hour: '8' }),
+      targets: [new eventTargets.LambdaFunction(notifier, { event: events.RuleTargetInput.fromObject({ check: 'token' }), retryAttempts: 2 })],
+    });
     notifier.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['ses:SendEmail'],
@@ -416,6 +424,11 @@ export class BlogAdminStack extends Stack {
       '/weekly': [HttpMethod.GET, HttpMethod.PUT],
       '/weekly/run': [HttpMethod.POST],
       '/spend': [HttpMethod.GET],
+      '/ideas': [HttpMethod.GET, HttpMethod.POST],
+      '/ideas/{id}': [HttpMethod.PUT, HttpMethod.DELETE],
+      '/ideas/{id}/draft': [HttpMethod.POST],
+      '/lessons': [HttpMethod.GET, HttpMethod.POST],
+      '/lessons/{id}': [HttpMethod.PUT, HttpMethod.DELETE],
       '/settings': [HttpMethod.GET],
       '/settings/github-token': [HttpMethod.PUT],
       '/settings/ai': [HttpMethod.PUT],

@@ -1,7 +1,7 @@
 <script setup>
 // The admin's frame: sign-in, then the navigation and whichever screen the address names.
 // Mounted by src/pages/admin/index.astro.
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 import { session, signIn, startSession } from './auth.js';
 import { api } from './api.js';
@@ -12,6 +12,24 @@ import './admin.css';
 const admin = ref(null);
 // The editor takes the whole screen, without the navigation
 const route = useRoute();
+// A missing GitHub token, or one about to expire, stops publishing and the AI jobs
+const tokenWarning = ref(null);
+
+function checkToken(github) {
+  const days = github?.expires ? Math.ceil((Date.parse(github.expires) - Date.now()) / 864e5) : null;
+  if (!github?.saved) tokenWarning.value = { text: 'The admin has no GitHub token yet, so it can’t publish or run the AI.', action: 'Add one in Settings' };
+  else if (days !== null && days <= 0) tokenWarning.value = { text: 'The GitHub token has expired, so the admin can’t publish or run the AI.', action: 'Replace it in Settings' };
+  else if (days !== null && days <= 14) tokenWarning.value = { text: `The GitHub token expires in ${days} ${days === 1 ? 'day' : 'days'}.`, action: 'Replace it in Settings' };
+  else tokenWarning.value = null;
+}
+
+// After a visit to Settings, where a new token may have been saved
+watch(
+  () => route.path,
+  async (path, before) => {
+    if (before === '/settings' && tokenWarning.value) checkToken((await api('/me').catch(() => ({}))).github);
+  },
+);
 
 // A notification that arrives while the admin is open, passed on by public/admin-sw.js
 const toast = ref(null);
@@ -34,8 +52,9 @@ onMounted(async () => {
   await startSession();
   if (session.status !== 'signed-in') return;
   try {
-    await api('/me');
+    const me = await api('/me');
     admin.value = true;
+    checkToken(me.github);
   } catch (error) {
     admin.value = false;
     session.error = error.status === 403 ? "This account is signed in, but it isn't an admin." : error.message;
@@ -75,6 +94,9 @@ const nav = [
         <div class="side-foot muted">Signed in as {{ session.email }}</div>
       </nav>
       <main class="content">
+        <div v-if="tokenWarning && !route.meta.full && route.path !== '/settings'" class="token-warning" role="status">
+          <Icon name="alert" /><span>{{ tokenWarning.text }}</span><RouterLink to="/settings">{{ tokenWarning.action }}</RouterLink>
+        </div>
         <RouterView />
       </main>
       <nav v-if="!route.meta.full" class="tabbar" aria-label="Admin">
@@ -185,6 +207,24 @@ const nav = [
   display: none;
 }
 
+.token-warning {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin: 16px 40px 0;
+  padding: 12px 16px;
+  border: 1px solid #5c4a1f;
+  border-radius: 12px;
+  background: #1d1a10;
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+.token-warning a {
+  margin-left: auto;
+}
+
 .toast {
   position: fixed;
   right: 20px;
@@ -225,6 +265,10 @@ const nav = [
 }
 
 @media (max-width: 760px) {
+  .token-warning {
+    margin: 12px 16px 0;
+  }
+
   .toast {
     left: 16px;
     right: 16px;
