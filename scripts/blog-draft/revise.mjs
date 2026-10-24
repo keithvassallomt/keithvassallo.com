@@ -177,7 +177,7 @@ if (!count) {
     request: {
       model,
       reasoning,
-      instructions: prompts.draftingInstructions({ instructions, siteGuide, revision: true }),
+      instructions: prompts.draftingInstructions({ instructions, siteGuide }),
       input: [
         {
           role: 'user',

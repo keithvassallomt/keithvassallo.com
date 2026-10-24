@@ -173,7 +173,9 @@ The page is designed for a mix of elements. A post that is only paragraphs reads
   anything the reader might type or copy, a list for steps or options, a table for comparisons, an
   image or screenshot for anything visual, a callout for a warning or tip.
 - Use these where they genuinely help. Never add one purely as decoration.
-- Aim for at least one non-paragraph element per `##` section.
+- In a tutorial or reference post, aim for at least one non-paragraph element per `##` section. A
+  story-led post needs fewer: one good code excerpt or screenshot can carry it, and short
+  paragraphs keep it readable.
 
 ## Formatting reference
 

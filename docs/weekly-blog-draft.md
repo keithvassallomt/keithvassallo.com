@@ -2,8 +2,10 @@
 
 Every Saturday at 09:00 UK time, a workflow drafts one post with the OpenAI API and opens a pull
 request here from a `blog-draft/<slug>` branch. The post follows
-[writing-a-blog-post.md](writing-a-blog-post.md) and always has `draft: true`. Review it, add
-images, remove `draft: true` and merge to publish.
+[writing-a-blog-post.md](writing-a-blog-post.md) and always has `draft: true`. It is written in
+two passes, a facts-first draft and then an edit that turns it into a story, and comes with a
+generated cover illustration. Review it, swap in screenshots where they help, remove
+`draft: true` and merge to publish.
 
 The workflows run in a separate private repository, which holds the editorial instructions,
 voice guide and writing samples. They never come into this repository, and neither do the run
@@ -15,6 +17,7 @@ logs. Only the scripts live here, in `scripts/blog-draft/`:
 | `revise.mjs` | Revises a draft from Keith's comments on its pull request |
 | `prompts.mjs` | The prompts and output schemas |
 | `writer.mjs` | The write, check, build and repair loop both share |
+| `cover.mjs` | The cover illustration, in one house style |
 | `checks.mjs` | Checks against the writing guide, the private-material check and the build |
 | `context.mjs` | Loads the private material and the site's data |
 | `github.mjs` | Read-only research tools over Keith's public repositories, and PR feedback |

@@ -26,8 +26,9 @@ const thousands = (n) => `${Math.round(n / 1000)}k`;
 /** One line on the model, requests and tokens used so far, for logs and reports. */
 export function runSummary(attempts = 0) {
   const writing = attempts ? `, ${attempts} writing attempt${attempts === 1 ? '' : 's'}` : '';
+  const images = usage.images ? `, ${usage.images} image${usage.images === 1 ? '' : 's'}` : '';
   return (
-    `Model ${model} (${reasoning.effort} reasoning), ${usage.requests} requests, ${usage.webSearches} web searches${writing}. ` +
+    `Model ${model} (${reasoning.effort} reasoning), ${usage.requests} requests, ${usage.webSearches} web searches${writing}${images}. ` +
     `Tokens: ${thousands(usage.inputTokens)} in (${thousands(usage.cachedTokens)} cached), ${thousands(usage.outputTokens)} out.`
   );
 }

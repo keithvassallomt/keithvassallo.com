@@ -1,33 +1,31 @@
-// A small client for the OpenAI Responses API. Every call is stateless (`store: false`): the
-// caller replays the whole conversation each turn, so the private writing samples and
-// instructions are never kept on OpenAI's side between requests.
+// A small client for the OpenAI Responses and Images APIs. Responses calls are stateless
+// (`store: false`): the caller replays the whole conversation each turn, so the private
+// writing samples and instructions are never kept on OpenAI's side between requests.
 
-const ENDPOINT = `${process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'}/responses`;
+const BASE = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 const ATTEMPTS = 3;
 const TIMEOUT_MS = 15 * 60_000;
 
 /** Running totals for the run summary. */
-export const usage = { requests: 0, inputTokens: 0, cachedTokens: 0, outputTokens: 0, webSearches: 0 };
+export const usage = { requests: 0, inputTokens: 0, cachedTokens: 0, outputTokens: 0, webSearches: 0, images: 0 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Creates a response, retrying rate limits, server errors and dropped connections. */
-export async function respond(body) {
+/** POSTs to the API, retrying rate limits, server errors and dropped connections. */
+async function post(path, body) {
   for (let attempt = 1; ; attempt++) {
     let failure;
     try {
-      const res = await fetch(ENDPOINT, {
+      const res = await fetch(`${BASE}${path}`, {
         method: 'POST',
         headers: {
           authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           'content-type': 'application/json',
         },
-        // Encrypted reasoning lets a stateless conversation keep the model's reasoning
-        // across tool calls. Newer models include it anyway; older ones need asking.
-        body: JSON.stringify({ store: false, include: ['reasoning.encrypted_content'], ...body }),
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-      if (res.ok) return record(await res.json());
+      if (res.ok) return res.json();
       const detail = (await res.text()).slice(0, 500);
       if (res.status !== 429 && res.status < 500) throw new Error(`OpenAI API ${res.status}: ${detail}`);
       failure = `OpenAI API ${res.status}: ${detail}`;
@@ -36,12 +34,18 @@ export async function respond(body) {
       failure = `OpenAI request failed: ${error.message}`;
     }
     if (attempt >= ATTEMPTS) throw new Error(failure);
-    console.log(`${failure}. Retrying in ${attempt * 30} seconds.`);
-    await sleep(attempt * 30_000);
+    // Back off from rate limits and server errors; a dropped connection only needs a retry
+    const seconds = attempt * (failure.startsWith('OpenAI API') ? 30 : 5);
+    console.log(`${failure}. Retrying in ${seconds} seconds.`);
+    await sleep(seconds * 1000);
   }
 }
 
-function record(response) {
+/** Creates a response. */
+export async function respond(body) {
+  // Encrypted reasoning lets a stateless conversation keep the model's reasoning across
+  // tool calls. Newer models include it anyway; older ones need asking.
+  const response = await post('/responses', { store: false, include: ['reasoning.encrypted_content'], ...body });
   usage.requests += 1;
   usage.inputTokens += response.usage?.input_tokens ?? 0;
   usage.cachedTokens += response.usage?.input_tokens_details?.cached_tokens ?? 0;
@@ -62,4 +66,13 @@ export function outputText(response) {
     .filter((part) => part.type === 'output_text')
     .map((part) => part.text)
     .join('');
+}
+
+/** Generates one image and returns its bytes. */
+export async function generateImage(body) {
+  const result = await post('/images/generations', { n: 1, ...body });
+  usage.images += 1;
+  const data = result.data?.[0]?.b64_json;
+  if (!data) throw new Error('The Images API returned no image');
+  return Buffer.from(data, 'base64');
 }

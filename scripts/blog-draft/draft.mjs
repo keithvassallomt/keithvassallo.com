@@ -24,11 +24,11 @@
 // the bar) or "failed" (the draft kept repeating private material, or never had a usable
 // slug, so nothing was kept).
 
-import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { checkPost, checkSlug, shingles } from './checks.mjs';
+import { buildSite, checkPost, checkSlug, shingles } from './checks.mjs';
 import {
   BRANCH_PREFIX,
   SITE_REPO,
@@ -42,6 +42,7 @@ import {
   runSummary,
   serialisePost,
 } from './context.mjs';
+import { COVER_FILE, generateCover } from './cover.mjs';
 import { createGitHubTools, openDraftPullRequests } from './github.mjs';
 import { respond } from './openai.mjs';
 import * as prompts from './prompts.mjs';
@@ -122,12 +123,13 @@ async function research() {
 // The post folder this run created, so a retry with a new slug never touches anyone else's
 let writtenDir = null;
 
-function writePost(post) {
+function writePost(post, { cover = false } = {}) {
   removePost();
   writtenDir = path.dirname(postFile(siteDir, post.slug));
   mkdirSync(writtenDir);
   const { title, description, category, tags, share } = post;
-  const data = { title, description, pubDate: today.iso, category, tags, share, draft: true };
+  const coverFields = cover ? { cover: `./${COVER_FILE}`, coverAlt: post.cover_alt } : {};
+  const data = { title, description, pubDate: today.iso, category, tags, ...coverFields, share, draft: true };
   writeFileSync(path.join(writtenDir, 'index.md'), serialisePost(data, post.body));
 }
 
@@ -136,42 +138,80 @@ function removePost() {
   writtenDir = null;
 }
 
+/**
+ * Writes the post in two passes: a facts-first draft from the brief, then an edit that
+ * turns it into a story without changing the facts. Each pass must pass every check and
+ * the build; if the edit can't, the facts-first draft stands.
+ */
 async function draft(brief) {
-  // The shortlist and the reasons for choosing stay out of the drafting stage: it only
-  // needs the topic and the evidence, and anything it sees could end up in public notes
+  // The shortlist and the reasons for choosing stay out of the writing stages: they only
+  // need the topic and the evidence, and anything they see could end up in public notes
   const { chosen, evidence, questions_for_keith } = brief;
-  const result = await writeUntilClean({
-    request: {
-      model,
-      reasoning,
-      instructions: prompts.draftingInstructions({ instructions, siteGuide }),
-      input: [
-        {
-          role: 'user',
-          content: prompts.draftingInput({ today, catalogue, categories, brief: { chosen, evidence, questions_for_keith }, projects, samples }),
-        },
-      ],
-      text: { format: prompts.postFormat(categoryIds) },
-      max_output_tokens: 64_000,
-    },
-    check: (post) => checkPost(post, site),
-    publicText: (post) =>
-      [post.title, post.description, ...Object.values(post.share), post.body, prBody(brief, post, [], 1)].join('\n'),
-    privateShingles,
-    publicShingles: shingles(publicTexts),
-    save: writePost,
-    discard: removePost,
-    siteDir,
-  });
-  // Keep a draft that only fails style or build checks, for Keith to fix by hand
-  if (result.problems.length && !result.leaks.length && !checkSlug(result.post.slug, site)) writePost(result.post);
-  return result;
+  const context = { today, catalogue, categories, brief: { chosen, evidence, questions_for_keith }, projects, samples };
+  const pass = (content) =>
+    writeUntilClean({
+      request: {
+        model,
+        reasoning,
+        instructions: prompts.draftingInstructions({ instructions, siteGuide }),
+        input: [{ role: 'user', content }],
+        text: { format: prompts.postFormat(categoryIds) },
+        max_output_tokens: 64_000,
+      },
+      check: (post) => checkPost(post, site),
+      publicText: (post) =>
+        [post.title, post.description, post.cover_alt, ...Object.values(post.share), post.body, prBody(brief, post, [], 1)].join('\n'),
+      privateShingles,
+      publicShingles: shingles(publicTexts),
+      save: writePost,
+      discard: removePost,
+      siteDir,
+    });
+  const clean = (result) => !result.problems.length && !result.leaks.length;
+
+  console.log('Facts-first draft');
+  const facts = await pass(prompts.draftingInput(context));
+  if (!clean(facts)) {
+    // Keep a draft that only fails style or build checks, for Keith to fix by hand
+    if (!facts.leaks.length && !checkSlug(facts.post.slug, site)) writePost(facts.post);
+    return { ...facts, notes: [] };
+  }
+
+  console.log('Story edit');
+  const edited = await pass(prompts.editInput({ ...context, draft: facts.post }));
+  if (clean(edited)) return { ...edited, attempts: facts.attempts + edited.attempts, notes: [] };
+  writePost(facts.post);
+  return {
+    ...facts,
+    attempts: facts.attempts + edited.attempts,
+    notes: ["The story edit couldn't pass the checks, so this is the plainer facts-first draft."],
+  };
+}
+
+/** Adds a generated cover to the written post, or explains why there isn't one. */
+async function addCover(post) {
+  try {
+    const image = await generateCover({
+      siteDir,
+      title: post.title,
+      idea: post.cover_idea,
+      color: categories.find((category) => category.id === post.category)?.color ?? 'green',
+    });
+    writePost(post, { cover: true });
+    writeFileSync(path.join(writtenDir, COVER_FILE), image);
+  } catch (error) {
+    return `No cover: generating it failed (${error.message.slice(0, 200)}).`;
+  }
+  const buildFailure = buildSite(siteDir);
+  if (!buildFailure) return null;
+  writePost(post);
+  return 'No cover: the site would not build with the generated image, so it was left out.';
 }
 
 // --- Reports ----------------------------------------------------------------------------
 
 /** The pull request description. It is public, so it carries nothing from the private brief. */
-function prBody(brief, post, problems, attempts) {
+function prBody(brief, post, problems, attempts, notes = []) {
   const words = post.body.split(/\s+/).filter(Boolean).length;
   const sources = brief.evidence.filter((item) => /^https?:\/\//.test(item.source));
   const fromKeith = brief.evidence.length - sources.length;
@@ -181,11 +221,12 @@ function prBody(brief, post, problems, attempts) {
 > ${post.description}
 
 Category \`${post.category}\` · tags ${post.tags.join(', ')} · about ${words.toLocaleString('en-GB')} words
-
+${notes.length ? `\n${notes.map((note) => `**${note}**`).join('\n\n')}\n` : ''}
 ## Before publishing
 
 - [ ] Every claim is right, and it sounds like you
-- [ ] Images added (ideas below), or none needed
+- [ ] The cover illustration works, or is replaced (\`${COVER_FILE}\` in the post folder)
+- [ ] Screenshots added where suggested below, or not needed
 - [ ] \`draft: true\` removed and \`pubDate\` updated
 
 To ask for changes, comment on the lines in question, then add a comment starting with \`/revise\`, followed by any overall request.
@@ -289,15 +330,21 @@ if (brief.decision === 'skip' || !brief.chosen) {
   finish({ outcome: 'skip', title: '', slug: '', reason: 'No topic met the editorial bar this week' }, brief);
 } else {
   console.log(`Chosen: ${brief.chosen.working_title} (${brief.evidence.length} pieces of evidence)`);
-  const { post, problems, leaks, attempts } = await draft(brief);
+  const { post, problems, leaks, attempts, notes } = await draft(brief);
+  if (writtenDir && !problems.length) {
+    console.log('Cover');
+    const coverNote = await addCover(post);
+    if (coverNote) notes.push(coverNote);
+  }
   if (!writtenDir) {
     const reason = leaks.length
       ? `${leaks.length} passages still repeated the private material after ${attempts} attempts, so the draft was discarded.`
       : `The draft never had a usable slug: ${checkSlug(post.slug, site)}`;
     finish({ outcome: 'failed', title: post.title, slug: '', reason, attempts }, brief, null, [reason, ...problems]);
   } else {
-    writeFileSync(path.join(outDir, 'pr-body.md'), prBody(brief, post, problems, attempts));
+    writeFileSync(path.join(outDir, 'pr-body.md'), prBody(brief, post, problems, attempts, notes));
     writeFileSync(path.join(outDir, 'post.md'), readFileSync(path.join(writtenDir, 'index.md')));
+    if (existsSync(path.join(writtenDir, COVER_FILE))) copyFileSync(path.join(writtenDir, COVER_FILE), path.join(outDir, COVER_FILE));
     finish({ outcome: 'draft', title: post.title, slug: post.slug, reason: '', attempts }, brief, post, problems);
   }
 }
