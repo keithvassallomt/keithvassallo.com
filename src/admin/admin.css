@@ -1,0 +1,218 @@
+/* The blog admin's look: the blog's "Field Notes" palette and type (BlogShell.astro), tuned
+   for a denser working screen. The canvas prototype is the reference for every screen. */
+
+:root {
+  --ground: #0b0d12;
+  --surface: #12161d;
+  --surface-raised: #151a22;
+  --surface-hover: #161b24;
+  --line: #262c37;
+  --line-soft: #1c212a;
+  --line-strong: #333b48;
+  --text: #eef1f5;
+  --body: #d5dae1;
+  --secondary: #a3acb9;
+  --muted: #8a93a1;
+  --green: #8cd49c;
+  --pink: #f2a0d6;
+  --yellow: #f2cc60;
+  --orange: #ffa657;
+  --red: #ff7b72;
+  --blue: #79c0ff;
+  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-body: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+}
+
+.adm {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--body);
+  background: var(--ground);
+  min-height: 100vh;
+}
+
+.adm *,
+.adm *::before,
+.adm *::after {
+  box-sizing: border-box;
+}
+
+.adm a {
+  color: var(--green);
+}
+
+.adm a:hover {
+  color: #b5e6bf;
+}
+
+.hd {
+  font-family: var(--font-display);
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.sec {
+  color: var(--secondary);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.adm a.btn {
+  color: var(--text);
+}
+
+.btn:hover {
+  border-color: #3a4352;
+}
+
+.adm .btn-go,
+.btn-go {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--ground);
+}
+
+.adm .btn-go:hover {
+  background: #a3deb0;
+  color: var(--ground);
+}
+
+.adm .btn-ai,
+.btn-ai {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--ground);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 26px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.inp {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--ground);
+  color: var(--text);
+  font: inherit;
+}
+
+.inp:focus-visible,
+.btn:focus-visible,
+.adm a:focus-visible,
+.adm button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.ic {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-head h1 {
+  font-size: 36px;
+}
+
+.page-head p {
+  margin: 6px 0 0;
+  color: var(--secondary);
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 20px 16px 96px;
+    gap: 18px;
+  }
+
+  .page-head h1 {
+    font-size: 30px;
+  }
+}

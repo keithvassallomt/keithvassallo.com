@@ -188,18 +188,14 @@ smoke test of each flow. You check how it looks and feels on your phone and lapt
   - managed login on `auth.keithvassallo.com`, with its certificate and Route 53 record
   - the HTTP API and its Lambda
   - the DynamoDB table and the S3 bucket
-  - an SSM parameter for the GitHub token
-- A fine-grained GitHub token for the API, with:
-  - Actions read and write on both repos
-  - Contents read and write on blog-private, for ideas and style lessons in stage 7
 - The `/admin` page, built with `@astrojs/vue`:
-  - sign-in and sign-out
+  - sign-in and sign-out, and Add a passkey in Settings
   - navigation: Posts, Weekly, Ideas, Style lessons, Spend, Settings
   - kept out of search engines: `noindex`, left out of the sitemap, disallowed in `robots.txt`
-- The CloudFront viewer-request function serves `/admin/index.html` for every `/admin/...` path,
-  so a link in an email opens the right post.
-- The posts list shows the live posts, read from `main`, with search and filters for status,
-  category and source.
+- Screens have hash addresses (`/admin#/weekly`), so every screen is the one static page. A link
+  in an email still opens the right post, and the live CloudFront function stays untouched.
+- The posts list shows the posts on `main` from `/admin/posts.json`, which each site build
+  writes, with search and filters for status and category.
 
 **Done when:**
 
@@ -240,6 +236,9 @@ smoke test of each flow. You check how it looks and feels on your phone and lapt
 
 ### Stage 4: publishing
 
+- **The GitHub token.** A fine-grained token for the API, kept as an SSM parameter, with:
+  - Actions read and write on both repos, to start and cancel runs
+  - Contents read and write on blog-private, for ideas and style lessons in stage 7
 - **The site runner.** `blog-site.yml` in the site repo, started by the API. It signs in to AWS
   through OIDC, to a role that can only read posts and update jobs.
 - **Publishing actions.**

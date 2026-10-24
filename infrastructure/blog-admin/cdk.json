@@ -1,0 +1,12 @@
+{
+  "app": "node bin/blog-admin.js",
+  "context": {
+    "siteUrl": "https://keithvassallo.com",
+    "devUrl": "http://localhost:4321",
+    "authDomain": "auth.keithvassallo.com",
+    "certificateArn": "arn:aws:acm:us-east-1:781345700122:certificate/73760abb-934d-476b-9dbb-c2e949276894",
+    "hostedZoneId": "ZDXNG14HB1YN5",
+    "zoneName": "keithvassallo.com",
+    "adminEmail": "keith@vassallo.cloud"
+  }
+}

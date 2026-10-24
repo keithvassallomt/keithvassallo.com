@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import icon from 'astro-icon';
 import sitemap from '@astrojs/sitemap';
+import vue from '@astrojs/vue';
 import { satteri } from '@astrojs/markdown-satteri';
 import { readBlogFrontmatter } from './src/lib/blog-frontmatter.mjs';
 import { callouts, codeBlockChrome, figures, scrollableTables } from './src/lib/markdown.mjs';
@@ -22,8 +23,10 @@ const redirects = Object.fromEntries(
 export default defineConfig({
   integrations: [
     icon(),
+    // Only the blog admin (src/admin) uses Vue
+    vue({ appEntrypoint: '/src/admin/app-setup.js' }),
     sitemap({
-      filter: (page) => !draftUrls.has(page.replace(/\/$/, '')),
+      filter: (page) => !draftUrls.has(page.replace(/\/$/, '')) && !new URL(page).pathname.startsWith('/admin'),
       serialize(item) {
         const date = lastModified.get(item.url.replace(/\/$/, ''));
         if (date) item.lastmod = date.toISOString();
