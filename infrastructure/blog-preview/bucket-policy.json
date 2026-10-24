@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PreviewDistributionReads",
+    "Effect": "Allow",
+    "Principal": { "Service": "cloudfront.amazonaws.com" },
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::keithvassallo.com-preview/*",
+    "Condition": { "StringEquals": { "AWS:SourceArn": "arn:aws:cloudfront::781345700122:distribution/E2M0FH8HMTSME4" } }
+  }]
+}

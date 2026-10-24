@@ -210,14 +210,30 @@ async function addCover(post) {
 
 // --- Reports ----------------------------------------------------------------------------
 
-/** The pull request description. It is public, so it carries nothing from the private brief. */
-function prBody(brief, post, problems, attempts, notes = []) {
+// weekly-blog-draft.yml swaps in the commit once it exists, so the image outlives the branch
+const COMMIT_PLACEHOLDER = '{{COMMIT}}';
+
+/**
+ * The pull request description. It is public, so it carries nothing from the private brief.
+ * The preview link points at PREVIEW_URL when the preview site is set up, and at the post on
+ * its branch otherwise.
+ */
+function prBody(brief, post, problems, attempts, notes = [], { cover = false } = {}) {
   const words = post.body.split(/\s+/).filter(Boolean).length;
   const sources = brief.evidence.filter((item) => /^https?:\/\//.test(item.source));
   const fromKeith = brief.evidence.length - sources.length;
   const questions = [...brief.questions_for_keith, ...post.notes_for_keith];
-  return `A draft from the weekly blog workflow, ${today.long}. Nothing is published until \`draft: true\` is removed and this is merged.
+  const folder = `src/content/blog/${post.slug}`;
+  const preview = process.env.PREVIEW_URL
+    ? `${process.env.PREVIEW_URL}/blog/${post.slug}`
+    : `https://github.com/${SITE_REPO}/blob/${BRANCH_PREFIX}${post.slug}/${folder}/index.md`;
+  const image = cover
+    ? `\n![${post.cover_alt}](https://raw.githubusercontent.com/${SITE_REPO}/${COMMIT_PLACEHOLDER}/${folder}/${COVER_FILE})\n`
+    : '';
+  return `### [Preview the post](${preview})
 
+A draft from the weekly blog workflow, ${today.long}. It isn't live until you comment \`/publish\`.
+${image}
 > ${post.description}
 
 Category \`${post.category}\` · tags ${post.tags.join(', ')} · about ${words.toLocaleString('en-GB')} words
@@ -225,11 +241,8 @@ ${notes.length ? `\n${notes.map((note) => `**${note}**`).join('\n\n')}\n` : ''}
 ## Before publishing
 
 - [ ] Every claim is right, and it sounds like you
-- [ ] The cover illustration works, or is replaced (\`${COVER_FILE}\` in the post folder)
+- [ ] The cover works, or is replaced (\`${COVER_FILE}\` in the post folder)
 - [ ] Screenshots added where suggested below, or not needed
-- [ ] \`draft: true\` removed and \`pubDate\` updated
-
-To ask for changes, comment on the lines in question, then add a comment starting with \`/revise\`, followed by any overall request.
 
 ## Questions and things to confirm
 
@@ -242,6 +255,13 @@ ${fromKeith ? `\nPlus ${fromKeith} point${fromKeith === 1 ? '' : 's'} taken from
 ---
 
 ${runSummary(attempts)} The editorial brief is in the private repository.
+
+## Commands
+
+Comment on this pull request:
+
+- \`/revise\`, followed by any overall request, once you've commented on the lines you want changed. The revision arrives as a new commit, with a reply listing what changed, and the preview updates.
+- \`/publish\` to put it live. It dates the post today, removes \`draft: true\`, checks the build, merges and replies here with the link.
 `;
 }
 
@@ -342,9 +362,10 @@ if (brief.decision === 'skip' || !brief.chosen) {
       : `The draft never had a usable slug: ${checkSlug(post.slug, site)}`;
     finish({ outcome: 'failed', title: post.title, slug: '', reason, attempts }, brief, null, [reason, ...problems]);
   } else {
-    writeFileSync(path.join(outDir, 'pr-body.md'), prBody(brief, post, problems, attempts, notes));
+    const cover = existsSync(path.join(writtenDir, COVER_FILE));
+    writeFileSync(path.join(outDir, 'pr-body.md'), prBody(brief, post, problems, attempts, notes, { cover }));
     writeFileSync(path.join(outDir, 'post.md'), readFileSync(path.join(writtenDir, 'index.md')));
-    if (existsSync(path.join(writtenDir, COVER_FILE))) copyFileSync(path.join(writtenDir, COVER_FILE), path.join(outDir, COVER_FILE));
+    if (cover) copyFileSync(path.join(writtenDir, COVER_FILE), path.join(outDir, COVER_FILE));
     finish({ outcome: 'draft', title: post.title, slug: post.slug, reason: '', attempts }, brief, post, problems);
   }
 }
