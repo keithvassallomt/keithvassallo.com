@@ -26,7 +26,6 @@ share:
 
     #Python #SoftwareEngineering #PerformanceTesting
   facebook: Python 3.15 lets you delay loading dependencies until they're needed. That sounds simple, until a small refactor brings the work straight back into startup. Here's how to choose what to defer and check whether it helps.
-draft: true
 ---
 
 Imagine a command-line tool with two commands: one checks its status, the other generates a report. You ask for the status, but before answering, it loads the entire reporting subsystem. You wanted a quick answer. Apparently, that requires convening the reporting department.
