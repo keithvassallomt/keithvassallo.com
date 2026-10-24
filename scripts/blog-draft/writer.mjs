@@ -29,7 +29,8 @@ export async function writeUntilClean({ request, check, publicText, privateShing
       problems = [buildFailure];
       discard();
     }
-    console.log(`  ${problems.length} problems, ${leaks.length} passages matching private material`);
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    console.log(`  ${plural(problems.length, 'problem')}, ${plural(leaks.length, 'passage')} matching private material`);
     if (attempt === ATTEMPTS) return { post, problems, leaks, attempts: attempt };
     input.push({ role: 'user', content: repairRequest(problems, leaks) });
   }

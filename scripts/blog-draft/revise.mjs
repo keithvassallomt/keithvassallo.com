@@ -160,7 +160,7 @@ if (!count) {
     `${NOTE}\nNothing to revise: there are no comments from you since the last revision. Comment on the lines you want changed, or add a request after \`/revise\`.`,
   );
 } else {
-  console.log(`Revising ${branch} from ${count} pieces of feedback`);
+  console.log(`Revising ${branch} from ${count} piece${count === 1 ? '' : 's'} of feedback`);
   const merged = (post) => ({
     ...current.data,
     title: post.title,
