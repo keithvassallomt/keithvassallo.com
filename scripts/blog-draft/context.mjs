@@ -12,7 +12,7 @@ export const SITE_REPO = 'keithvassallomt/keithvassallo.com';
 export const BRANCH_PREFIX = 'blog-draft/';
 const MAX_PRIVATE_CHARACTERS = 600_000;
 
-export const model = process.env.OPENAI_MODEL || 'gpt-6-astra';
+export const model = process.env.OPENAI_MODEL || 'gpt-6.1-sol';
 export const reasoning = { effort: process.env.OPENAI_REASONING_EFFORT || 'high' };
 
 export function requireEnv(...names) {

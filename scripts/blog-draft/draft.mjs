@@ -213,26 +213,19 @@ async function addCover(post) {
 // weekly-blog-draft.yml swaps in the commit once it exists, so the image outlives the branch
 const COMMIT_PLACEHOLDER = '{{COMMIT}}';
 
-/**
- * The pull request description. It is public, so it carries nothing from the private brief.
- * The preview link points at PREVIEW_URL when the preview site is set up, and at the post on
- * its branch otherwise.
- */
+/** The pull request description. It is public, so it carries nothing from the private brief. */
 function prBody(brief, post, problems, attempts, notes = [], { cover = false } = {}) {
   const words = post.body.split(/\s+/).filter(Boolean).length;
   const sources = brief.evidence.filter((item) => /^https?:\/\//.test(item.source));
   const fromKeith = brief.evidence.length - sources.length;
   const questions = [...brief.questions_for_keith, ...post.notes_for_keith];
   const folder = `src/content/blog/${post.slug}`;
-  const preview = process.env.PREVIEW_URL
-    ? `${process.env.PREVIEW_URL}/blog/${post.slug}`
-    : `https://github.com/${SITE_REPO}/blob/${BRANCH_PREFIX}${post.slug}/${folder}/index.md`;
   const image = cover
     ? `\n![${post.cover_alt}](https://raw.githubusercontent.com/${SITE_REPO}/${COMMIT_PLACEHOLDER}/${folder}/${COVER_FILE})\n`
     : '';
-  return `### [Preview the post](${preview})
+  return `### [Read the post](https://github.com/${SITE_REPO}/blob/${BRANCH_PREFIX}${post.slug}/${folder}/index.md)
 
-A draft from the weekly blog workflow, ${today.long}. It isn't live until you comment \`/publish\`.
+A draft from the weekly blog workflow, ${today.long}. It isn't live until \`draft: true\` is removed and this is merged.
 ${image}
 > ${post.description}
 
@@ -255,13 +248,6 @@ ${fromKeith ? `\nPlus ${fromKeith} point${fromKeith === 1 ? '' : 's'} taken from
 ---
 
 ${runSummary(attempts)} The editorial brief is in the private repository.
-
-## Commands
-
-Comment on this pull request:
-
-- \`/revise\`, followed by any overall request, once you've commented on the lines you want changed. The revision arrives as a new commit, with a reply listing what changed, and the preview updates.
-- \`/publish\` to put it live. It dates the post today, removes \`draft: true\`, checks the build, merges and replies here with the link.
 `;
 }
 
