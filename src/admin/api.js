@@ -13,7 +13,8 @@ export async function api(path, { method = 'GET', body } = {}) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw Object.assign(new Error(data.error || `The admin API answered ${response.status}`), { status: response.status });
+    // `data` carries extras, such as the server's copy of a post after a conflicting save
+    throw Object.assign(new Error(data.error || `The admin API answered ${response.status}`), { status: response.status, data });
   }
   return data;
 }

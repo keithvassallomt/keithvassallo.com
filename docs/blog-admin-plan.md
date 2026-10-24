@@ -120,8 +120,8 @@ in blog-private, so AWS never holds the OpenAI key.
 
 ## Data
 
-- **Posts** (DynamoDB). Each post record holds:
-  - id, slug and title
+- **Posts** (DynamoDB, one item each, text included). Each post holds:
+  - id, slug and title, and the body
   - status: draft, scheduled, live, live with unpublished changes, or in the bin
   - category, tags, description and share blurbs
   - cover and alt text
@@ -129,13 +129,13 @@ in blog-private, so AWS never holds the OpenAI key.
   - source: weekly, on request, by hand, or from the repo
   - dates: created, updated, published and scheduled
   - the commit it was last published in, its current version, and any running job
-- **Files** (S3, versioned):
-  - `posts/<id>/index.md`
-  - the post's images, beside it
-  - `posts/<id>/ai/<job>.json`, the AI's notes from each run
 
-  Every save becomes an S3 version. Versions that matter (generated, revised, published,
-  restored) are labelled in DynamoDB, so History can show them by name.
+  A save says which version it started from, so one device can't overwrite another's work.
+- **History** (DynamoDB). Snapshots of a post, by name. Saving takes one every ten minutes, kept
+  for 30 days. Restores, AI runs and publishing take ones that are kept for good.
+- **Files** (S3, versioned):
+  - the post's images and cover, under `posts/<id>/`
+  - `posts/<id>/ai/<job>.json`, the AI's notes from each run
 - **Jobs** (DynamoDB). Each job records:
   - kind, post, model, reasoning effort and image model
   - status and current stage
@@ -227,8 +227,8 @@ smoke test of each flow. You check how it looks and feels on your phone and lapt
   - It saves two seconds after you stop typing, to the browser first, so a dropped connection
     loses nothing.
   - If another device saved in between, you get a conflict warning instead of an overwrite.
-- **History and the bin.** History lists every labelled version, and any of them can be
-  restored. Deleted drafts stay in the bin for 30 days.
+- **History and the bin.** History lists the saved versions, and any of them can be restored;
+  the one it replaces is kept too. Deleted drafts stay in the bin for 30 days.
 
 **Done when:**
 

@@ -2,7 +2,7 @@
 // The admin's frame: sign-in, then the navigation and whichever screen the address names.
 // Mounted by src/pages/admin/index.astro.
 import { onMounted, ref } from 'vue';
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterLink, RouterView, useRoute } from 'vue-router';
 import { session, signIn, startSession } from './auth.js';
 import { api } from './api.js';
 import Icon from './Icon.vue';
@@ -10,6 +10,8 @@ import './admin.css';
 
 // Checked against the API, not just Cognito: only members of the admins group get in
 const admin = ref(null);
+// The editor takes the whole screen, without the navigation
+const route = useRoute();
 
 onMounted(async () => {
   await startSession();
@@ -50,7 +52,7 @@ const nav = [
     </div>
 
     <div v-else class="shell">
-      <nav class="side" aria-label="Admin">
+      <nav v-if="!route.meta.full" class="side" aria-label="Admin">
         <RouterLink to="/" class="brand mono">~/admin</RouterLink>
         <RouterLink v-for="item in nav" :key="item.to" :to="item.to" class="side-link"><Icon :name="item.icon" />{{ item.label }}</RouterLink>
         <div class="side-foot muted">Signed in as {{ session.email }}</div>
@@ -58,7 +60,7 @@ const nav = [
       <main class="content">
         <RouterView />
       </main>
-      <nav class="tabbar" aria-label="Admin">
+      <nav v-if="!route.meta.full" class="tabbar" aria-label="Admin">
         <RouterLink v-for="item in nav.filter((entry) => entry.phone)" :key="item.to" :to="item.to"><Icon :name="item.icon" />{{ item.label }}</RouterLink>
         <RouterLink to="/more"><Icon name="menu" />More</RouterLink>
       </nav>

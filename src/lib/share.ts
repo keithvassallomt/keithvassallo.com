@@ -9,15 +9,9 @@ const characters = (text: string) => [...segmenter.segment(text)].length;
 // with the link as written, which errs on the safe side.
 const LINK_LENGTH = 23;
 
-/**
- * Suggested share text for each network: the post's `share` blurb, else its description,
- * else its title when the description is too long for that network. A blurb set in
- * frontmatter that does not fit fails the build instead of being silently swapped.
- */
-export function shareTexts(post: Post, url: string): Record<SharePlatform, string> {
-  const { share, description, title } = post.data;
-
-  const rules: Record<SharePlatform, { limit: number; length: (text: string) => number }> = {
+/** Each network's limit, and how it counts a post with its link. */
+export function shareRules(url: string): Record<SharePlatform, { limit: number; length: (text: string) => number }> {
+  return {
     x: { limit: 280, length: (text) => characters(text) + 1 + LINK_LENGTH },
     bluesky: { limit: 300, length: (text) => characters(`${text}\n\n${url}`) },
     threads: { limit: 500, length: (text) => characters(`${text} ${url}`) },
@@ -25,6 +19,16 @@ export function shareTexts(post: Post, url: string): Record<SharePlatform, strin
     linkedin: { limit: 3000, length: (text) => characters(`${text}\n\n${url}`) },
     facebook: { limit: 5000, length: characters },
   };
+}
+
+/**
+ * Suggested share text for each network: the post's `share` blurb, else its description,
+ * else its title when the description is too long for that network. A blurb set in
+ * frontmatter that does not fit fails the build instead of being silently swapped.
+ */
+export function shareTexts(post: Post, url: string): Record<SharePlatform, string> {
+  const { share, description, title } = post.data;
+  const rules = shareRules(url);
 
   const texts = {} as Record<SharePlatform, string>;
   for (const [platform, rule] of Object.entries(rules) as [SharePlatform, (typeof rules)[SharePlatform]][]) {

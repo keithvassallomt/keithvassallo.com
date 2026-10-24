@@ -1,51 +1,64 @@
 <script setup>
-// Every post, live or not. Posts on main come from /admin/posts.json, which each site build
-// writes; drafts kept in the admin join the list in stage 3.
+// Every post, live or not: drafts from the admin's store, and the posts on main from
+// /admin/posts.json, which each site build writes.
 import { computed, onMounted, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
+import { api } from '../api.js';
+import { PALETTE, siteData } from '../site.js';
 import Icon from '../Icon.vue';
 
-// The site palette, as in BlogShell.astro's --c-* tokens
-const PALETTE = {
-  green: '#8cd49c', orange: '#ffa657', cyan: '#56d4dd', purple: '#d2a8ff', blue: '#79c0ff',
-  red: '#ff7b72', indigo: '#a5a6ff', yellow: '#f2cc60', pink: '#f2a0d6', lime: '#b9e06f',
-};
 const STATUS = {
   draft: { label: 'Draft', color: 'var(--secondary)' },
   running: { label: 'AI running', color: 'var(--pink)' },
   scheduled: { label: 'Scheduled', color: 'var(--yellow)' },
   live: { label: 'Live', color: 'var(--green)' },
+  bin: { label: 'In the bin', color: 'var(--red)' },
 };
+const SOURCES = { 'by-hand': 'By hand', weekly: 'Weekly', 'on-request': 'On request', repo: 'From the repo' };
 const FILTERS = [
   ['all', 'All'], ['draft', 'Drafts'], ['running', 'AI running'], ['scheduled', 'Scheduled'],
   ['live', 'Live'], ['pinned', 'Pinned'], ['bin', 'Bin'],
 ];
 
+const router = useRouter();
 const posts = ref([]);
 const categories = ref([]);
 const error = ref('');
 const loading = ref(true);
+const creating = ref(false);
 const filter = ref('all');
 const category = ref('');
 const search = ref('');
 
 const day = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const bin = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
 
 onMounted(async () => {
   try {
-    // no-cache revalidates against CloudFront, so a fresh deploy shows straight away
-    const response = await fetch('/admin/posts.json', { cache: 'no-cache' });
-    if (!response.ok) throw new Error(`The post list didn't load (${response.status})`);
-    const data = await response.json();
-    categories.value = data.categories;
-    posts.value = data.posts.map((post) => ({
+    const [site, drafts] = await Promise.all([siteData(), api('/posts')]);
+    categories.value = site.categories;
+    const fromRepo = site.posts.map((post) => ({
       ...post,
       key: post.draft ? 'draft' : 'live',
       pinned: false,
-      source: 'From the repo',
+      source: 'repo',
       sub: post.draft ? 'In the repo, not published' : `Published ${day.format(new Date(post.pubDate))}`,
       date: day.format(new Date(post.updatedDate ?? post.pubDate)),
+      href: post.draft ? null : `/blog/${post.slug}`,
     }));
+    const fromAdmin = drafts.posts.map((post) => ({
+      ...post,
+      key: post.status === 'bin' ? 'bin' : 'draft',
+      pinned: false,
+      cover: post.coverUrl,
+      sub:
+        post.status === 'bin'
+          ? `Deleted ${bin.format(new Date(post.deletedAt))}, gone after ${bin.format(new Date(Date.parse(post.deletedAt) + 30 * 864e5))}`
+          : 'Not published',
+      date: day.format(new Date(post.updated)),
+      to: `/posts/${post.id}`,
+    }));
+    posts.value = [...fromAdmin, ...fromRepo].sort((a, b) => (b.updated ?? b.pubDate).localeCompare(a.updated ?? a.pubDate));
   } catch (cause) {
     error.value = cause.message;
   } finally {
@@ -53,13 +66,30 @@ onMounted(async () => {
   }
 });
 
+async function newPost() {
+  creating.value = true;
+  try {
+    const post = await api('/posts', { method: 'POST', body: {} });
+    router.push(`/posts/${post.id}`);
+  } catch (cause) {
+    error.value = cause.message;
+    creating.value = false;
+  }
+}
+
+async function unbin(post) {
+  await api(`/posts/${post.id}/restore`, { method: 'POST' });
+  router.push(`/posts/${post.id}`);
+}
+
 const categoryOf = (id) => {
   const found = categories.value.find((entry) => entry.id === id);
   const color = PALETTE[found?.color] ?? '#a3acb9';
-  return { name: found?.name ?? id, style: { color, background: `color-mix(in srgb, ${color} 12%, transparent)` } };
+  return { name: found?.name ?? 'No category', style: { color, background: `color-mix(in srgb, ${color} 12%, transparent)` } };
 };
 
-const matches = (post, id) => id === 'all' || (id === 'pinned' ? post.pinned : post.key === id);
+// The bin only shows under its own filter
+const matches = (post, id) => (id === 'bin' ? post.key === 'bin' : post.key !== 'bin' && (id === 'all' || (id === 'pinned' ? post.pinned : post.key === id)));
 
 const counts = computed(() => Object.fromEntries(FILTERS.map(([id]) => [id, posts.value.filter((post) => matches(post, id)).length])));
 
@@ -72,6 +102,13 @@ const shown = computed(() => {
       (!words || `${post.title} ${post.description}`.toLowerCase().includes(words)),
   );
 });
+
+const linkFor = (post) => {
+  if (post.key === 'bin') return { is: 'div' };
+  if (post.to) return { is: RouterLink, to: post.to };
+  if (post.href) return { is: 'a', href: post.href, target: '_blank', rel: 'noopener' };
+  return { is: 'div' };
+};
 </script>
 
 <template>
@@ -86,7 +123,7 @@ const shown = computed(() => {
           <Icon name="search" />
           <input v-model="search" class="inp" type="search" aria-label="Search posts" placeholder="Search titles and descriptions" />
         </label>
-        <RouterLink class="btn btn-go" to="/new"><Icon name="plus" />New post</RouterLink>
+        <button type="button" class="btn btn-go" :disabled="creating" @click="newPost"><Icon name="plus" />New post</button>
       </div>
     </div>
 
@@ -122,25 +159,20 @@ const shown = computed(() => {
       </div>
       <p v-if="loading" class="empty muted">Loading</p>
       <template v-else>
-        <component
-          :is="post.key === 'live' ? 'a' : 'div'"
-          v-for="post in shown"
-          :key="post.slug"
-          class="row post"
-          v-bind="post.key === 'live' ? { href: `/blog/${post.slug}`, target: '_blank', rel: 'noopener' } : {}"
-        >
+        <component :is="linkFor(post).is" v-for="post in shown" :key="post.id ?? post.slug" class="row post" v-bind="{ ...linkFor(post), is: undefined }">
           <img v-if="post.cover" :src="post.cover" alt="" class="thumb" loading="lazy" />
           <span v-else class="thumb none"></span>
           <span class="main">
-            <span class="hd title">{{ post.title }}</span>
-            <span class="muted desc">{{ post.description }}</span>
+            <span class="hd title">{{ post.title || 'Untitled' }}</span>
+            <span class="muted desc">{{ post.description || 'No description yet' }}</span>
           </span>
           <span class="state">
             <span class="status" :style="{ color: STATUS[post.key].color }">{{ STATUS[post.key].label }}</span>
             <span class="muted sub">{{ post.sub }}</span>
+            <button v-if="post.key === 'bin'" type="button" class="btn small" @click="unbin(post)"><Icon name="restore" />Restore</button>
           </span>
           <span><span class="chip" :style="categoryOf(post.category).style">{{ categoryOf(post.category).name }}</span></span>
-          <span class="sec small source">{{ post.source }}</span>
+          <span class="sec small source">{{ SOURCES[post.source] ?? post.source }}</span>
           <span class="sec small date">{{ post.date }}</span>
         </component>
         <div v-if="!shown.length" class="empty">
@@ -313,15 +345,22 @@ const shown = computed(() => {
 .state {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
-.sub,
 .small {
   font-size: 14px;
 }
 
 .sub {
   font-size: 13px;
+}
+
+.btn.small {
+  min-height: 36px;
+  padding: 0 12px;
+  margin-top: 4px;
 }
 
 .empty {

@@ -12,7 +12,8 @@ export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', component: PostsView },
-    coming('/new', 'New post', 3, 'Writing posts by hand: the markdown editor with its live preview, details, checks as you type, images, autosave and history.'),
+    // Loaded when first opened: CodeMirror is most of the admin's weight
+    { path: '/posts/:id', component: () => import('./views/EditorView.vue'), props: true, meta: { full: true } },
     coming('/weekly', 'Weekly run', 6, 'The Saturday draft lands here instead of in a pull request, with on and off, skip, a queued topic and past runs.'),
     coming('/ideas', 'Ideas', 7, 'A quick place to drop ideas from your phone. The weekly run and Generate both read them.'),
     coming('/lessons', 'Style lessons', 7, 'The lessons revisions have learned about your voice, to read, edit and delete.'),

@@ -1,10 +1,14 @@
 import type { APIRoute } from 'astro';
 import { getImage } from 'astro:assets';
 import { getCollection } from 'astro:content';
+import yaml from 'js-yaml';
+import projectsYaml from '../../data/projects/projects.yaml?raw';
 
-// Every post on main, drafts included, for the admin's post list. Nothing here is private:
-// it is all in the public repository already. Rebuilt with each deploy.
+// Every post on main, drafts included, for the admin's post list, plus what the editor's
+// checks need to know about the site. Nothing here is private: it is all in the public
+// repository already. Rebuilt with each deploy.
 export const GET: APIRoute = async () => {
+  const projectIds = (yaml.load(projectsYaml) as { projects: { id: string }[] }).projects.map((project) => project.id);
   const [posts, categories] = await Promise.all([getCollection('blog'), getCollection('categories')]);
   const items = await Promise.all(
     posts.map(async (post) => ({
@@ -24,6 +28,7 @@ export const GET: APIRoute = async () => {
     JSON.stringify({
       posts: items,
       categories: categories.map(({ id, data }) => ({ id, name: data.name, color: data.color })),
+      projectIds,
     }),
     { headers: { 'content-type': 'application/json' } },
   );

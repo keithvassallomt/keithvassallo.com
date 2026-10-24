@@ -152,6 +152,8 @@ export class BlogAdminStack extends Stack {
       sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
       billing: dynamodb.Billing.onDemand(),
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      // Autosave snapshots in History expire on their own
+      timeToLiveAttribute: 'expiresAt',
       dynamoStream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
       deletionProtection: true,
       removalPolicy: RemovalPolicy.RETAIN,
@@ -182,10 +184,25 @@ export class BlogAdminStack extends Stack {
     const api = new lambdaNode.NodejsFunction(this, 'Api', {
       entry: path.join(HERE, '..', 'lambda', 'api', 'index.mjs'),
       runtime: lambda.Runtime.NODEJS_22_X,
-      architecture: lambda.Architecture.ARM_64,
-      memorySize: 512,
-      timeout: Duration.seconds(15),
-      bundling: { format: lambdaNode.OutputFormat.ESM, target: 'node22', minify: true, sourceMap: true },
+      // x86_64 because the preview's Markdown processor, Sätteri, is a native module, and it is
+      // installed on the (x86_64 Linux) machine that deploys
+      architecture: lambda.Architecture.X86_64,
+      memorySize: 1024,
+      timeout: Duration.seconds(20),
+      bundling: {
+        format: lambdaNode.OutputFormat.ESM,
+        target: 'node22',
+        mainFields: ['module', 'main'],
+        minify: true,
+        sourceMap: true,
+        // The AWS SDK is bundled rather than taken from the runtime, which lacks the presigner
+        externalModules: [],
+        // Installed beside the bundle: Sätteri loads a native binary, and Shiki loads its
+        // grammars and themes at run time
+        nodeModules: ['@astrojs/markdown-satteri', 'satteri', 'shiki'],
+        // Bundled CommonJS dependencies call require(), which ESM output lacks
+        banner: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+      },
       environment: {
         TABLE: table.tableName,
         BUCKET: files.bucketName,
@@ -213,11 +230,20 @@ export class BlogAdminStack extends Stack {
         jwtAudience: [client.userPoolClientId],
       }),
     });
-    http.addRoutes({
-      path: '/me',
-      methods: [HttpMethod.GET],
-      integration: new HttpLambdaIntegration('ApiIntegration', api),
-    });
+    // Every route goes to the one Lambda, which matches on the route key (lambda/api/index.mjs)
+    const integration = new HttpLambdaIntegration('ApiIntegration', api);
+    const routes = {
+      '/me': [HttpMethod.GET],
+      '/posts': [HttpMethod.GET, HttpMethod.POST],
+      '/posts/{id}': [HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE],
+      '/posts/{id}/restore': [HttpMethod.POST],
+      '/posts/{id}/versions': [HttpMethod.GET],
+      '/posts/{id}/versions/{version}': [HttpMethod.GET],
+      '/posts/{id}/versions/{version}/restore': [HttpMethod.POST],
+      '/posts/{id}/images': [HttpMethod.POST],
+      '/posts/{id}/preview': [HttpMethod.POST],
+    };
+    for (const [routePath, methods] of Object.entries(routes)) http.addRoutes({ path: routePath, methods, integration });
 
     // ---- what src/admin/config.js needs -------------------------------------------------
     new CfnOutput(this, 'UserPoolId', { value: users.userPoolId });
