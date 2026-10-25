@@ -51,6 +51,8 @@ const networks = [
   },
 ];
 const displayUrl = url.replace(/^https:\/\//, '');
+// For anywhere a post can't be prefilled: the long-form blurb, with the link under it
+const blurb = `${texts.linkedin}\n\n${url}`;
 ---
 
 <section class="share" aria-labelledby="share-heading">
@@ -60,6 +62,10 @@ const displayUrl = url.replace(/^https:\/\//, '');
     <button type="button" class="share-button" data-copy-link={url} hidden>
       <Icon name="lucide:link" aria-hidden="true" />
       <span>Copy link</span>
+    </button>
+    <button type="button" class="share-button" data-copy-blurb={blurb} hidden>
+      <Icon name="lucide:text-quote" aria-hidden="true" />
+      <span>Copy blurb</span>
     </button>
     <button type="button" class="share-button" data-native-share={url} data-share-title={title} hidden>
       <Icon name="lucide:share-2" aria-hidden="true" />
@@ -95,16 +101,17 @@ const displayUrl = url.replace(/^https:\/\//, '');
       if (status) status.textContent = message;
     };
 
-    document.querySelectorAll<HTMLButtonElement>('[data-copy-link]').forEach((button) => {
+    document.querySelectorAll<HTMLButtonElement>('[data-copy-link], [data-copy-blurb]').forEach((button) => {
       if (!navigator.clipboard || button.dataset.ready) return;
       button.dataset.ready = 'true';
       button.hidden = false;
+      const { copyBlurb } = button.dataset;
       button.addEventListener('click', async () => {
         try {
-          await navigator.clipboard.writeText(button.dataset.copyLink ?? location.href);
-          announce('Link copied to clipboard.');
+          await navigator.clipboard.writeText(copyBlurb ?? button.dataset.copyLink ?? location.href);
+          announce(copyBlurb ? 'Blurb and link copied. Paste them wherever you’re sharing.' : 'Link copied to clipboard.');
         } catch {
-          announce('Could not copy the link. Use the permalink below instead.');
+          announce(`Could not copy the ${copyBlurb ? 'blurb' : 'link'}. Use the permalink below instead.`);
         }
       });
     });
