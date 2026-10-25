@@ -30,7 +30,7 @@ const FIELDS = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags
 const BACKUP = `kv-admin-draft-${props.id}`;
 
 const post = reactive({ title: '', slug: '', slugTouched: false, description: '', category: '', tags: [], cover: null, coverAlt: '', share: {}, notes: '', body: '' });
-const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false });
+const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, repoSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false });
 const loaded = ref(false);
 const loadError = ref('');
 const site = ref(null);
@@ -128,6 +128,7 @@ function applyStatus(data) {
     status: data.status,
     source: data.source,
     liveSlug: data.liveSlug ?? null,
+    repoSlug: data.repoSlug ?? null,
     publishedVersion: data.publishedVersion ?? null,
     scheduledFor: data.scheduledFor ?? null,
     job: data.job ?? null,
@@ -281,7 +282,9 @@ function runChecks() {
     },
     { requireShare: false },
   );
-  const slugTaken = repoSlugs.has(post.slug) || otherSlugs.value.has(post.slug);
+  // The repo folder this post went live in, or was brought in from, is its own
+  const ownFolder = [meta.liveSlug, meta.repoSlug].includes(post.slug);
+  const slugTaken = otherSlugs.value.has(post.slug) || (!ownFolder && repoSlugs.has(post.slug));
   const slugProblem = slugFormatProblem(post.slug) ?? (slugTaken ? `The slug "${post.slug}" is already taken. Choose another.` : null);
   if (post.cover && !post.coverAlt.trim()) problems.unshift({ message: 'The cover needs alt text.' });
   checked.value = slugProblem ? [{ message: slugProblem }, ...problems] : problems;
@@ -550,7 +553,12 @@ onMounted(async () => {
     apply(data);
     images.value = data.images;
     site.value = siteInfo;
-    otherSlugs.value = new Set(list.posts.filter((entry) => entry.id !== props.id && entry.slug).map((entry) => entry.slug));
+    otherSlugs.value = new Set(
+      list.posts
+        .filter((entry) => entry.id !== props.id && entry.status !== 'bin')
+        .flatMap((entry) => [entry.slug, entry.liveSlug, entry.repoSlug])
+        .filter(Boolean),
+    );
     // Edits this device made but never managed to save
     const backup = storage.read();
     if (backup && backup.fields !== lastSaved) {
