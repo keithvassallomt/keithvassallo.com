@@ -7,6 +7,7 @@ import { SITE } from '../../lib/site.ts';
 import { SHARE_KEYS } from '../../lib/post-checks.mjs';
 import { slugify } from '../site.js';
 import Icon from '../Icon.vue';
+import ImageZoom from '../ImageZoom.vue';
 
 const props = defineProps({
   post: { type: Object, required: true },
@@ -70,7 +71,7 @@ function pickedCover(event) {
   <div class="details">
     <div class="field">
       <div class="label"><span>Cover</span><span class="muted">2:1, shown on cards and the post</span></div>
-      <img v-if="coverUrl" :src="coverUrl" alt="" class="cover" />
+      <ImageZoom v-if="coverUrl" :src="coverUrl" :alt="post.coverAlt" label="Show the cover full size"><img :src="coverUrl" alt="" class="cover" /></ImageZoom>
       <div v-else class="cover empty muted">No cover</div>
       <div class="row">
         <button type="button" class="btn small" :disabled="busy" @click="coverPicker.click()"><Icon name="image" />{{ post.cover ? 'Replace' : 'Upload a cover' }}</button>

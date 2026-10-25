@@ -2,12 +2,13 @@
 // One post in the editor. Every change saves itself two seconds after you stop typing, and is
 // kept on this device first, so a dropped connection or a closed tab loses nothing. A save
 // that another device beat to it shows both sides instead of overwriting either.
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../api.js';
 import { siteData, slugify, ukEndOfDay } from '../site.js';
 import { postProblems, slugFormatProblem } from '../../lib/post-checks.mjs';
 import { imageName, prepareImage, uploadImage } from '../editor/images.js';
+import { scrollSync } from '../editor/scroll-sync.js';
 import MarkdownEditor from '../editor/MarkdownEditor.vue';
 import PreviewFrame from '../editor/PreviewFrame.vue';
 import DetailsPanel from '../editor/DetailsPanel.vue';
@@ -312,6 +313,37 @@ watch([() => post.body, previewShown], () => {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(renderPreview, 600);
 });
+
+// ---- scrolling together ------------------------------------------------------------------
+// Side by side, scrolling either pane scrolls the other to the same place. On a phone,
+// switching between Write and Preview opens the other at the same place instead.
+const sync = scrollSync({ editor, preview, body: () => post.body });
+const SIDES = { write: 'editor', preview: 'preview' };
+// Where a phone's preview should be, until it has re-rendered or the reader scrolls it
+let phonePosition = null;
+
+function scrolled(side) {
+  if (!phone.value) return sync.scrolled(side);
+  if (sync.scrolled(side, false) && side === 'preview') phonePosition = null;
+}
+
+function rendered() {
+  if (!phone.value) return sync.align('editor', 'preview');
+  if (phonePosition && pane.value === 'preview') sync.go('preview', phonePosition);
+  phonePosition = null;
+}
+
+// Measured before the switch, while the pane being left is still on screen
+watch(
+  pane,
+  (to, from) => {
+    if (!phone.value || !SIDES[to] || !SIDES[from]) return;
+    const position = sync.where(SIDES[from]);
+    phonePosition = to === 'preview' ? position : null;
+    nextTick(() => requestAnimationFrame(() => sync.go(SIDES[to], position)));
+  },
+  { flush: 'pre' },
+);
 
 // ---- images ----------------------------------------------------------------------------
 async function addImages(files) {
@@ -684,12 +716,20 @@ function goToProblem(line) {
             <textarea v-model="post.notes" class="inp" rows="3" placeholder="What you want written, or facts from your own experience. Never published." :readonly="locked"></textarea>
           </details>
           <div class="card pane-card">
-            <MarkdownEditor ref="editor" v-model="post.body" :problems="checked" :busy="busy" :read-only="locked" @files="addImages" />
+            <MarkdownEditor ref="editor" v-model="post.body" :problems="checked" :busy="busy" :read-only="locked" @files="addImages" @scroll="scrolled('editor')" />
           </div>
         </div>
         <div v-show="!phone || pane === 'preview'" class="card pane-card previewing">
           <div class="pane-head"><span>Preview</span><span v-if="previewError" class="bad">{{ previewError }}</span><span v-else class="muted">The site's own rendering</span></div>
-          <PreviewFrame ref="preview" :html="html" :title="post.title" :marks="highlights.map((item) => item.quote)" @selection="selection = $event" />
+          <PreviewFrame
+            ref="preview"
+            :html="html"
+            :title="post.title"
+            :marks="highlights.map((item) => item.quote)"
+            @selection="selection = $event"
+            @scroll="scrolled('preview')"
+            @rendered="rendered"
+          />
         </div>
       </section>
 

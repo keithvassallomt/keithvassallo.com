@@ -18,7 +18,7 @@ const props = defineProps({
   busy: { type: String, default: '' },
   readOnly: { type: Boolean, default: false },
 });
-const emit = defineEmits(['update:modelValue', 'files']);
+const emit = defineEmits(['update:modelValue', 'files', 'scroll']);
 
 const host = ref(null);
 const picker = ref(null);
@@ -91,6 +91,7 @@ onMounted(() => {
       ],
     }),
   });
+  view.scrollDOM.addEventListener('scroll', () => emit('scroll'), { passive: true });
   showProblems();
 });
 
@@ -193,7 +194,14 @@ function goToLine(number) {
   view.focus();
 }
 
-defineExpose({ insertImage, goToLine, focus: () => view?.focus() });
+/** Where a line starts, in the scroller's own coordinates, for keeping the preview in step. */
+function lineTop(number) {
+  const { scrollDOM } = view;
+  const documentStart = view.documentTop - scrollDOM.getBoundingClientRect().top + scrollDOM.scrollTop;
+  return documentStart + view.lineBlockAt(view.state.doc.line(Math.min(number, view.state.doc.lines)).from).top;
+}
+
+defineExpose({ insertImage, goToLine, lineTop, scroller: () => view?.scrollDOM, focus: () => view?.focus() });
 </script>
 
 <template>

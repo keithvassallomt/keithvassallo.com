@@ -13,7 +13,7 @@ const props = defineProps({
   /** Passages to mark, for revision notes */
   marks: { type: Array, default: () => [] },
 });
-const emit = defineEmits(['selection']);
+const emit = defineEmits(['selection', 'scroll', 'rendered']);
 
 const frame = ref(null);
 let ready = false;
@@ -31,6 +31,8 @@ const TOKENS = `
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 html, body { margin: 0; background: var(--blog-bg); color: var(--blog-text); }
+/* Instant, so the editor's scroll sync can tell its own scrolling from the reader's */
+html { scroll-behavior: auto; }
 main { max-width: 720px; margin: 0 auto; padding: 28px 22px 80px; }
 h1.preview-title { font-family: var(--font-display); color: var(--blog-text); font-size: 2.3rem; line-height: 1.15; letter-spacing: -0.015em; margin: 0 0 28px; }
 h1.preview-title:empty { display: none; }
@@ -98,6 +100,18 @@ function show() {
   document.querySelector('.preview-title').textContent = props.title;
   document.querySelector('.prose').innerHTML = props.html;
   mark();
+  emit('rendered');
+}
+
+/** Headings and code blocks in order, with where each starts, for keeping the editor in step. */
+function landmarks() {
+  const document = doc();
+  const scroller = document?.scrollingElement;
+  if (!scroller) return [];
+  return [...document.querySelectorAll('.prose > :is(h2, h3, h4, h5, h6, .code-block, .diagram)')].map((node) => ({
+    kind: /^H\d$/.test(node.tagName) ? 'heading' : 'code',
+    top: node.getBoundingClientRect().top + scroller.scrollTop,
+  }));
 }
 
 /** Tells the parent what is selected, and where, so it can offer to add a note. */
@@ -117,6 +131,7 @@ onMounted(() => {
   frame.value.addEventListener('load', () => {
     ready = true;
     frame.value.contentDocument.addEventListener('selectionchange', selectionChanged);
+    frame.value.contentWindow.addEventListener('scroll', () => emit('scroll'), { passive: true });
     show();
   });
   frame.value.srcdoc = skeleton();
@@ -127,6 +142,8 @@ watch(() => props.marks, mark, { deep: true });
 
 defineExpose({
   clearSelection: () => doc()?.getSelection()?.removeAllRanges(),
+  landmarks,
+  scroller: () => doc()?.scrollingElement,
 });
 </script>
 
