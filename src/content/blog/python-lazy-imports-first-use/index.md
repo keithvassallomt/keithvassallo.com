@@ -1,8 +1,8 @@
 ---
 title: 'Python 3.15: choosing which imports to defer'
-description: Python 3.15's lazy imports let you delay loading dependencies. The useful question is what to defer, when to fail and how to measure the result.
+description: Python 3.15's lazy imports let you delay loading dependencies until you use them. The useful question is what to defer, and when to fail.
 pubDate: 2026-10-24
-updatedDate: 2026-10-24
+updatedDate: 2026-10-25
 category: programming
 tags:
   - Python
@@ -16,114 +16,211 @@ share:
 
     Python 3.15's explicit lazy imports let a command skip dependencies it never uses. For commands that do need them, the loading work and possible errors move to first use instead.
 
-    This walkthrough follows an imaginary status/report tool through a useful optimisation, a refactor that undoes it, and the decision about when dependencies should be checked. It finishes with a practical plan for measuring the whole operation, not just startup.
+    This walkthrough follows an imaginary status/report tool through a useful optimisation, a refactor that undoes it, and the decision about when dependencies should be checked. It finishes with the pattern PEP 810 recommends for modules that set things up when they're imported.
 
     #Python #SoftwareEngineering #Performance
-  x: Python 3.15's lazy imports can avoid unnecessary work or simply postpone it. Follow a small command-line example through first use, delayed errors and what to measure before keeping the change.
+  x: Python 3.15's lazy imports can avoid unnecessary work or simply postpone it. Follow a small command-line example through first use, a refactor that breaks it, and the fix.
   bluesky: A lazy import doesn't make loading disappear. Python 3.15 gives you control over when it happens, but even an innocent dispatch dictionary can bring it straight back into startup.
   threads: 'You make an import lazy, then put the imported function in a dispatch dictionary. Congratulations: you''ve deferred loading until first use, then arranged for first use to happen immediately. A practical look at Python 3.15''s lazy imports and where they actually help.'
   mastodon: |-
-    Python 3.15 adds explicit lazy imports. This walkthrough uses an imaginary status/report tool to explain when loading is avoided, when it's merely postponed, and why a dispatch dictionary can trigger it early. Includes a practical evaluation plan for timing, missing dependencies and registration.
+    Python 3.15 adds explicit lazy imports. This walkthrough uses an imaginary status/report tool to explain when loading is avoided, when it's merely postponed, and why a dispatch dictionary can trigger it early. It also covers missing dependencies and explicit registration, with code for each fix.
 
-    #Python #SoftwareEngineering #PerformanceTesting
-  facebook: Python 3.15 lets you delay loading dependencies until they're needed. That sounds simple, until a small refactor brings the work straight back into startup. Here's how to choose what to defer and check whether it helps.
+    #Python #SoftwareEngineering #Performance
+  facebook: Python 3.15 lets you delay loading dependencies until they're needed. That sounds simple, until a small refactor brings the work straight back into startup. Here's how to choose what to defer, and how to fix it when it breaks.
 ---
 
-Imagine a command-line tool with two commands: one checks its status, the other generates a report. You ask for the status, but before answering, it loads the entire reporting subsystem. You wanted a quick answer. Apparently, that requires convening the reporting department, presumably with a slide deck.
+If there's one thing Python doesn't lack, it's libraries. Even a simple app often includes imports from your own code, the Python standard library, and of course third-party libraries from places like [PyPI](https://pypi.org). Released on 9th October 2026, [Python 3.15.0](https://www.python.org/downloads/release/python-3150/) aims to make that more efficient with **explicit lazy imports**, a way to put off loading a module until you actually use it.
 
-[Python 3.15.0, released on 9 October 2026](https://www.python.org/downloads/release/python-3150/), adds explicit lazy imports: a way to put off loading a module until you use it. For a tool like this, that means the status command can leave the reporting dependency alone. Ordinary imports still behave as before under normal interpreter settings; upgrading doesn't automatically make them lazy.
+Imagine a simple Python tool that accepts two commands:
 
-The interesting decision is what to defer, and until when. I'd use this feature to keep irrelevant work out of a command's path, rather than sprinkle `lazy` over every import and celebrate a shorter startup. Our imaginary tool makes the distinction quite clear.
+1. Generate a status message.
+2. Generate a report.
 
-## Let the status command get on with it
+```python
+import report_backend
 
-Loading a Python module involves executing its top-level code. That can mean loading other modules and doing initialisation before your command gets anywhere near the work you asked it to do. An import isn't just an entry in a list of things the program might need later.
+def run(command):
+    if command == 'status':
+        return 'Ready'
+    elif command == 'report':
+        return report_backend.render()
+    else:
+        raise ValueError(command)
+```
 
-Here's the relevant part of our tool, with `report_backend` standing in for a made-up dependency:
+When we use `run('status')`, we need to wait for the entire `report_backend` to load before our simple tool returns a string. Let's fix that with lazy imports.
+
+## Using lazy imports
+
+Here's the same code, but with a lazy import:
 
 ```python
 lazy import report_backend
 
 def run(command):
     if command == 'status':
-        return 'status available'
-    if command == 'report':
+        return 'Ready'
+    elif command == 'report':
         return report_backend.render()
-    raise ValueError(command)
+    else:
+        raise ValueError(command)
 ```
 
-The [lazy declaration](https://docs.python.org/3.15/reference/simple_stmts.html#lazy-imports) is at module scope, but it doesn't load the backend there. Loading waits until something accesses the imported name.
+Looks similar, doesn't it? We've simply added a [lazy declaration](https://docs.python.org/3.15/reference/simple_stmts.html#lazy-imports) at the module scope. Here's what it looks like:
 
-For this example, the two paths run from left to right:
+```mermaid
+flowchart LR
+    A["run(command)"] --> B{"Command?"}
+    B -->|status| C["Return 'Ready'"]
+    C --> D["Backend stays unloaded"]
+    B -->|report| E["Load report_backend on first access"]
+    E --> F["Call render()"]
 
-- **Status:** `run(command)` → `status` → return `'status available'` → backend stays unloaded.
-- **Report:** `run(command)` → `report` → first access loads `report_backend` → call `render()`.
+    style D fill:#16271d,stroke:#8cd49c
+    style F fill:#132235,stroke:#79c0ff
+```
 
-Take the status branch. Nothing touches `report_backend`, so, provided nothing elsewhere loads it, the tool can answer and exit without loading it at all. That's work we've removed from this particular run, not merely shuffled somewhere less visible.
+Take the `status` branch - the `report_backend` import isn't used there, so the module simply isn't loaded. For the `report` branch, it _is_ loaded, but only when first accessing it (i.e. `report_backend.render()`).
 
-Now take the report branch. Python reaches `report_backend.render()`, accesses the name and loads the module before it can call the function. Reporting still needs its backend. The new keyword hasn't negotiated an exemption.
+The key takeaway here is that:
 
-This is the distinction worth keeping in mind: **unused work can disappear; necessary work gets postponed.** Measuring only startup won't tell you whether the first report finishes any sooner.
+- Unused work disappears.
+- Necessary work gets postponed.
 
-## Then we tidy up the command handling
+## Then, we screw it up
 
-Suppose you replace the branching with a dispatch dictionary. Quite reasonable: command names on one side, functions on the other.
-
-At the top level, you add this:
+Of course, we want our code to ~~look pretty~~ be maintainable. So, we replace the branching with a dispatch dictionary. Our code now looks like this:
 
 ```python
-HANDLERS = {'report': report_backend.render}
+lazy import report_backend
+
+HANDLERS = {
+    'report': report_backend.render
+}
+
+def run(command):
+    if command == 'status':
+        return 'Ready'
+
+    handler = HANDLERS.get(command)
+    if handler is None:
+        raise ValueError(command)
+
+    return handler()
 ```
 
-There's our loading work again. It would like to thank the refactor for restoring its place on the critical path.
+We've just defeated the whole purpose of lazy imports. On line 4 of our new code, Python has to evaluate `report_backend.render` to put the function into the dictionary. That accesses the imported name, which triggers loading whilst the dictionary is being constructed. This means it will **always** load, even if we're just calling `status`.
 
-Python has to evaluate `report_backend.render` to put the function into the dictionary. That accesses the imported name, which triggers loading while the dictionary is being constructed, before the tool has selected a command.
+> You've deferred loading until first use, then helpfully arranged for the first use to happen immediately.
 
-You've deferred loading until first use, then helpfully arranged for first use to happen immediately; a pretty epic self-fail.
+Keeping the access inside the reporting function, as in the original example, leaves it to load only on the reporting path. So, when you consider making an import lazy, follow the name through the surrounding code too. Setup code that collects functions or constructs objects can bring loading straight back into startup.
 
-Keeping the access inside the reporting function, as in the original example, leaves it on the reporting path. So when you consider making an import lazy, follow the name through the surrounding code too. Setup code that collects functions or constructs objects can bring loading straight back into startup.
+Of course, this doesn't mean we couldn't still use that handler. Here's how:
 
-There's a related distinction in my [Smart DnD plugin manager](https://github.com/keithvassallomt/smart-dnd-linux/blob/v0.1.1/smart_dnd/plugins/manager.py): it calls `ep.load()` during discovery, then checks and stores valid plugin classes. Finding entry points and loading them are separate steps, even though that implementation does both together. A lazy import elsewhere doesn't remove the explicit loading step.
+```python
+lazy import report_backend
+
+HANDLERS = {
+    'report': lambda: report_backend.render()
+}
+
+def run(command):
+    if command == 'status':
+        return 'Ready'
+
+    handler = HANDLERS.get(command)
+    if handler is None:
+        raise ValueError(command)
+
+    return handler()
+```
+
+Here we're using `lambda`. This creates a function that, when called, accesses our `report_backend.render()` function. The important bit is that this only happens when the lambda is called, not when it's being put in the dictionary.
 
 ## Now the backend is missing
 
-Let's give our imaginary tool another problem: the reporting dependency isn't installed.
+Let's give our tool another problem: the reporting library isn't installed.
 
-With the lazy declaration, the error arrives when code first accesses `report_backend`, rather than when Python reaches the import statement. Errors inside the module being loaded, including syntax errors, are delayed too.
+With a normal import, our tool doesn't work at all. The library is loaded immediately, so if it's not there, the tool fails immediately too. With lazy imports, our `status` branch still works. Of course, `report` will still fail due to the missing library.
 
-For this tool, that can be useful. Why should a missing reporting dependency prevent you from checking status? I'd handle the failure when reporting is selected and explain what's missing, leaving unrelated commands available.
+Now, you could argue that our code doesn't make much sense now; after all, if the point of a reporting library is to generate reports, reporting a `Ready` status is fairly disingenuous if the reporting library doesn't exist. However, my counter-argument to that is that our status branch was never much of a status at all - it simply returned a string. Let's make it actually check the status, without losing our lazy import:
 
-But change the setting slightly. Suppose this is a service whose job is to generate reports, and it announces that it's ready to accept reporting requests. I'd want the reporting capability checked before that announcement, not when the first user asks it to do its job.
+```python
+import importlib.util
+lazy import report_backend
 
-Being able to print ‘ready’ is a fairly modest qualification for a reporting service. A sticky note could make the same claim, and wouldn't need a virtual environment.
+HANDLERS = {
+    'report': lambda: report_backend.render()
+}
 
-Neither arrangement makes lazy imports inherently good or bad. You're choosing where failure belongs: when an optional feature is requested, or before a required capability is advertised. That choice needs to match what you're promising the user.
+def run(command):
+    if command == 'status':
+        if importlib.util.find_spec('report_backend') is None:
+            return 'Report backend missing'
+        return 'Ready'
 
-There's another bit of import behaviour to account for here. Some modules register handlers as a side effect of being imported. If you defer loading, you defer registration as well; a lazy declaration that nobody accesses won't arrange those handlers for you.
+    handler = HANDLERS.get(command)
+    if handler is None:
+        raise ValueError(command)
 
-[PEP 810 recommends explicit initialisation functions](https://peps.python.org/pep-0810/#how-do-lazy-imports-affect-modules-with-import-time-side-effects) for this sort of work. Call the registration deliberately when it's needed, and check that it has happened before using the feature. That makes the dependency visible instead of leaving an otherwise unused import responsible for quietly setting everything up.
+    return handler()
+```
 
-If your application supports older Python versions, an ordinary import inside a function is still an option. There's also [the `__lazy_modules__` compatibility mechanism](https://peps.python.org/pep-0810/#what-about-forwards-compatibility-with-older-python-versions): list fully qualified module names before ordinary imports, and Python 3.15 defers matching module-level imports while older versions import eagerly. The new `lazy import` spelling itself won't compile on older interpreters.
+By using `find_spec()`, we're checking the library exists before reporting our status and, crucially, we're not actually loading it, which would defeat the purpose of lazy imports.
 
-## Give it one dependency, then measure
+Of course, we're only checking the library exists - not that it works - but if anything we're at least making the status branch more honest.
 
-I'd start with just the reporting backend, not a wholesale conversion. We have a clear reason to defer it: the status command doesn't need it. Now we need to check whether the change does what we intended, without making the reporting path unpleasant.
+## The ideal scenario
 
-Keep the interpreter, installed dependencies, hardware and workload the same between comparisons, then check these cases:
+[PEP 810 recommends explicit initialisation functions](https://peps.python.org/pep-0810/#how-do-lazy-imports-affect-modules-with-import-time-side-effects) for modules that register things when they're imported. Call the registration deliberately when it's needed, and check that it has happened before using the feature. That makes the dependency visible instead of leaving an otherwise unused import responsible for quietly setting everything up.
 
-1. **Status or help:** use a fresh process and measure a command that doesn't need the dependency.
-2. **The first report:** use another fresh process and measure through to the completed report, not just a prompt or readiness message.
-3. **A later report:** if the application handles repeated operations, measure another report in the same process separately.
-4. **Failure and registration:** remove the optional dependency in a test environment and check the error you get. Confirm that required handlers exist before their feature is declared ready.
+With this recommendation, our code would be:
 
-[Python's `-X importtime` option](https://docs.python.org/3.15/using/cmdline.html#cmdoption-X) helps locate import costs, reporting self time and cumulative time including nested imports. Use it to diagnose where loading time goes, rather than treating it as the timing of the whole job; its output also has a documented limitation with multithreaded applications.
+```python title="report_backend.py"
+def render():
+    return "Report generated"
 
-Fresh processes matter because Python checks its [module cache](https://docs.python.org/3.15/reference/import.html#the-module-cache). A report generated after the backend has loaded isn't measuring the same thing as the first one. Keep those results separate.
+def register(handlers):
+    handlers['report'] = render
+```
 
-## Where lazy imports earn their keep
+```python title="app.py"
+lazy import report_backend
 
-I think this is a useful addition to Python, particularly for tools with several commands that need different dependencies. It lets a simple command stay simple without loading everything the application knows how to do. If a run needs those dependencies anyway, you're mainly choosing when it pays the loading cost.
+HANDLERS = {}
+reports_registered = False
+
+def enable_reports():
+    global reports_registered
+    report_backend.register(HANDLERS)
+    reports_registered = True
+
+def run(command):
+    if command == 'status':
+        return ('Reports ready' if reports_registered
+                else 'Reports not initialised')
+
+    handler = HANDLERS.get(command)
+    if handler is None:
+        raise ValueError(command)
+
+    return handler()
+```
+
+Now:
+
+- `run('status')` doesn't load the backend and accurately reports its initialisation state.
+- `enable_reports()` loads the backend and explicitly registers its handler.
+- `run('report')` works after registration.
+
+**Caveat**: Being installed, being imported, being initialised, and being operational are four different states. Checking one doesn't necessarily prove the others!
+
+## They earn their keep
+
+I think lazy imports are a useful addition to Python, particularly for tools with several commands that need different dependencies. It lets a simple command stay simple without loading everything the application knows how to do. If a run needs those dependencies anyway, you're mainly choosing when it pays the loading cost.
 
 That's still a useful choice, but a faster arrival at ‘ready’ followed by the same wait isn't a faster completed job. It's the software equivalent of being shown to your table before anyone checks whether the kitchen is open.
 
 For our tool, I'd retain deferral if it lets status avoid irrelevant work and leaves the delay and possible failure at an acceptable point when reporting is selected. If reporting must already be available when the application announces readiness, check it during initialisation instead. That gives you a concrete decision based on both the initial response and the completed operation, rather than one flattering startup number.
+
+I, for one, will be using lazy imports. Somehow, having `lazy` sprinkled in my code makes it match my approach to life better ;)
