@@ -13,7 +13,7 @@ interface Props {
 const { url, title, texts } = Astro.props;
 const encode = encodeURIComponent;
 
-// Plain links work without JavaScript. X, Bluesky and Threads accept prefilled text in the link.
+// Plain links work without JavaScript. X, Bluesky, Threads and Mastodon accept prefilled text in the link.
 // LinkedIn and Facebook only take a URL, so the script copies their text to the clipboard.
 const networks = [
   {
@@ -42,6 +42,12 @@ const networks = [
     icon: 'simple-icons:facebook',
     href: `https://www.facebook.com/sharer/sharer.php?u=${encode(url)}`,
     copyText: texts.facebook,
+  },
+  {
+    // Mastodon's own page asks for the visitor's server, and remembers it across every site that uses it
+    name: 'Mastodon',
+    icon: 'simple-icons:mastodon',
+    href: `https://share.joinmastodon.org/#text=${encode(`${texts.mastodon}\n\n${url}`)}`,
   },
 ];
 const displayUrl = url.replace(/^https:\/\//, '');
@@ -74,64 +80,15 @@ const displayUrl = url.replace(/^https:\/\//, '');
         </a>
       ))
     }
-    <button type="button" class="share-button share-icon" data-mastodon-text={`${texts.mastodon}\n\n${url}`} aria-haspopup="dialog" hidden>
-      <Icon name="simple-icons:mastodon" aria-hidden="true" />
-      <span class="sr-only">Share on Mastodon</span>
-    </button>
   </div>
   <p class="share-permalink">
     <span class="share-permalink-label">Permalink</span>
     <a href={url}>{displayUrl}</a>
   </p>
   <p class="share-status" role="status" aria-live="polite"></p>
-
-  <dialog class="mastodon-dialog" aria-labelledby="mastodon-dialog-title">
-    <form method="dialog" class="mastodon-form">
-      <h2 id="mastodon-dialog-title" class="mastodon-title">Share on Mastodon</h2>
-      <p class="mastodon-help">Mastodon is spread across many servers. Which one is your account on?</p>
-      <label for="mastodon-server" class="mastodon-label">Your server</label>
-      <input
-        id="mastodon-server"
-        name="server"
-        type="text"
-        inputmode="url"
-        autocomplete="off"
-        spellcheck="false"
-        placeholder="mastodon.social"
-        aria-describedby="mastodon-error"
-        required
-      />
-      <p id="mastodon-error" class="mastodon-error"></p>
-      <div class="mastodon-actions">
-        <button type="submit" value="cancel" formnovalidate class="mastodon-cancel">Cancel</button>
-        <button type="submit" value="share" class="mastodon-submit">Share</button>
-      </div>
-    </form>
-  </dialog>
 </section>
 
 <script>
-  const SERVER_KEY = 'mastodon-server';
-
-  // Accepts "mastodon.social", "https://mastodon.social/" or a handle like "@keith@mastodon.social"
-  function parseServer(input: string): string | undefined {
-    const host = input
-      .trim()
-      .replace(/^@?[^@\s/]+@/, '')
-      .replace(/^https?:\/\//i, '')
-      .replace(/[/?#].*$/, '')
-      .toLowerCase();
-    return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host) ? host : undefined;
-  }
-
-  function rememberedServer(): string {
-    try {
-      return localStorage.getItem(SERVER_KEY) ?? '';
-    } catch {
-      return '';
-    }
-  }
-
   function initShareButtons() {
     const status = document.querySelector<HTMLElement>('.share-status');
     const announce = (message: string) => {
@@ -172,40 +129,6 @@ const displayUrl = url.replace(/^https:\/\//, '');
           .catch(() => {});
       });
     });
-
-    const mastodonButton = document.querySelector<HTMLButtonElement>('[data-mastodon-text]');
-    const dialog = document.querySelector<HTMLDialogElement>('.mastodon-dialog');
-    const form = dialog?.querySelector('form');
-    const input = dialog?.querySelector<HTMLInputElement>('#mastodon-server');
-    const error = dialog?.querySelector<HTMLElement>('#mastodon-error');
-    if (mastodonButton && dialog && form && input && error && !mastodonButton.dataset.ready) {
-      mastodonButton.dataset.ready = 'true';
-      mastodonButton.hidden = false;
-      mastodonButton.addEventListener('click', () => {
-        input.value = rememberedServer();
-        error.textContent = '';
-        input.removeAttribute('aria-invalid');
-        dialog.showModal();
-      });
-      form.addEventListener('submit', (event) => {
-        if (event.submitter?.getAttribute('value') !== 'share') return;
-        const server = parseServer(input.value);
-        if (!server) {
-          event.preventDefault();
-          error.textContent = 'Enter a server name, such as mastodon.social.';
-          input.setAttribute('aria-invalid', 'true');
-          input.focus();
-          return;
-        }
-        try {
-          localStorage.setItem(SERVER_KEY, server);
-        } catch {
-          // Private browsing: just don't remember it
-        }
-        const text = encodeURIComponent(mastodonButton.dataset.mastodonText ?? '');
-        window.open(`https://${server}/share?text=${text}`, '_blank', 'noopener');
-      });
-    }
   }
 
   document.addEventListener('astro:page-load', initShareButtons);
@@ -290,94 +213,5 @@ const displayUrl = url.replace(/^https:\/\//, '');
     margin: 8px 0 0;
     font-size: 0.875rem;
     color: var(--c-green);
-  }
-
-  .mastodon-dialog {
-    width: min(420px, calc(100vw - 32px));
-    padding: 0;
-    color: var(--blog-text);
-    background: var(--blog-surface);
-    border: 1px solid var(--blog-border);
-    border-radius: 20px;
-  }
-
-  .mastodon-dialog::backdrop {
-    background: rgb(5 7 10 / 70%);
-  }
-
-  .mastodon-form {
-    display: flex;
-    flex-direction: column;
-    padding: 24px;
-  }
-
-  .mastodon-title {
-    margin: 0 0 8px;
-    font-family: var(--font-display);
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: var(--blog-text);
-  }
-
-  .mastodon-help {
-    margin: 0 0 20px;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: var(--blog-secondary);
-  }
-
-  .mastodon-label {
-    margin-bottom: 6px;
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--blog-body);
-  }
-
-  .mastodon-form input {
-    min-height: 48px;
-    padding: 0 14px;
-    font: inherit;
-    color: var(--blog-text);
-    background: var(--blog-bg);
-    border: 1px solid var(--blog-border);
-    border-radius: 12px;
-  }
-
-  .mastodon-form input[aria-invalid='true'] {
-    border-color: var(--c-red);
-  }
-
-  .mastodon-error {
-    min-height: 1.4em;
-    margin: 6px 0 12px;
-    font-size: 0.875rem;
-    color: var(--c-red);
-  }
-
-  .mastodon-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-
-  .mastodon-actions button {
-    min-height: 44px;
-    padding: 0 18px;
-    font: inherit;
-    font-weight: 700;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-
-  .mastodon-cancel {
-    color: var(--blog-body);
-    background: transparent;
-    border: 1px solid var(--blog-border);
-  }
-
-  .mastodon-submit {
-    color: var(--blog-bg);
-    background: var(--c-green);
-    border: 1px solid var(--c-green);
   }
 </style>
