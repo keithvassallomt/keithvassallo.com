@@ -99,12 +99,12 @@ draft: true
 | `pubDate` | Yes | `YYYY-MM-DD`. Today's date unless Keith gives another. |
 | `category` | Yes | One id from the table above. |
 | `tags` | Recommended | Two to five, written as the names are normally written (`Kotlin`, `GNOME`, `Nextcloud`). Reuse tags from existing posts where they fit, so tag pages group properly. |
-| `cover` | Optional | Landscape image in the post folder, at least 1200px wide, roughly 2:1. Shown at the top of the post and, cropped, on index cards. |
+| `cover` | Optional | Landscape image in the post folder, at least 1200px wide, roughly 2:1. Shown at the top of the post, cropped on index cards, and cropped to 1200x630 as the social preview image. |
 | `coverAlt` | With `cover` | Describes the cover image. The build fails without it. |
 | `share` | Recommended | Per-network blurbs. See [Share blurbs](#share-blurbs). |
 | `draft` | Yes, `true` | Always `true` for posts you write. Keith removes it to publish. |
 | `updatedDate` | Only on edits | Set when a published post changes in substance, not for typo fixes. |
-| `socialImage`, `socialImageAlt` | Rarely | A hand-made social preview image. Omit it: a branded card with the title is generated automatically. |
+| `socialImage`, `socialImageAlt` | Rarely | A hand-made social preview image. Omit it: the cover is used, or a branded card with the title when there is no cover. |
 | `metaTitle`, `metaDescription` | Rarely | Override the title or description used in search results and previews only. |
 | `canonicalURL` | Rarely | Only when the post was first published on another site. |
 | `redirectFrom` | Only on renames | After renaming a published post's folder, list the old path (`/blog/old-slug`). It becomes a 301 redirect. |

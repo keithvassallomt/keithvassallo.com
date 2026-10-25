@@ -77,11 +77,13 @@ export function siteCardAsset(key: SiteCard): SocialAsset {
 }
 
 export function postSocialAsset(post: Post, category: Category): SocialAsset {
-  const { title, socialImage, socialImageAlt, coverAlt } = post.data;
+  const { title, socialImage, socialImageAlt, cover, coverAlt } = post.data;
+  // A hand-made social image wins, then the cover; only posts with neither get a card
+  const photo = socialImage ?? cover;
 
-  if (socialImage) {
+  if (photo) {
     // Image proxies expose the source file path at build time
-    const source = (socialImage as ImageMetadata & { fsPath: string }).fsPath;
+    const source = (photo as ImageMetadata & { fsPath: string }).fsPath;
     const name = `blog-${post.id}-${shortHash(readFileSync(source))}`;
     return {
       kind: 'photo',
@@ -92,7 +94,7 @@ export function postSocialAsset(post: Post, category: Category): SocialAsset {
         width: SOCIAL_IMAGE_WIDTH,
         height: SOCIAL_IMAGE_HEIGHT,
         type: 'image/jpeg',
-        alt: socialImageAlt ?? coverAlt ?? title,
+        alt: (socialImage ? socialImageAlt : coverAlt) ?? title,
       },
     };
   }
