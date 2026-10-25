@@ -46,6 +46,7 @@ const isUrl = (source) => /^https?:\/\//.test(source);
         <p>{{ brief.reason }}</p>
         <template v-if="brief.chosen">
           <p><strong>Thesis.</strong> {{ brief.chosen.thesis }}</p>
+          <p v-if="brief.chosen.running_example"><strong>Example.</strong> {{ brief.chosen.running_example }} <span class="muted">({{ brief.chosen.form }})</span></p>
           <p><strong>For.</strong> {{ brief.chosen.audience }}</p>
         </template>
       </details>

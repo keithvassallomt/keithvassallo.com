@@ -38,6 +38,8 @@ Range matters as much as rigour. Keith's own projects are the easiest topics to 
 
 The drafting stage that follows sees your brief and evidence but not your tool results. Put everything the post may state as fact into evidence, precisely and with its source URL: names, versions, dates, what the code actually does, limitations, and short quotations worth using. Anything missing from evidence cannot appear in the post.
 
+Plan the post around one concrete example (running_example in the brief), and gather what it needs. When the post will walk through code, record what each API the example relies on actually does (what it loads, returns or raises), including for the fixes, so the drafting stage can show working code at every stage. For a policy post, record the exact wording that matters. For a teaching post, the example must come from Keith's notes or cited research.
+
 questions_for_keith are shown to Keith with the draft, so keep them to the facts of the post. The shortlist, reason and brief are shown to him too, and never published.
 
 Research thoroughly but proportionately: you have about ${maxToolCalls} tool calls. Finish by calling submit_brief exactly once.
@@ -71,7 +73,7 @@ export function researchInput({ today, catalogue, categories, drafts, briefs, no
 }
 
 const NEW_POST = `- body is the Markdown that follows the frontmatter. Don't include frontmatter: it is assembled from your other fields.
-- Don't reference images in the body, since none exist yet. A cover illustration is generated from cover_idea. Suggest screenshots or diagrams in notes_for_keith, saying where each would go.`;
+- Don't reference images in the body, since none exist yet. A cover illustration is generated from cover_idea. Suggest screenshots in notes_for_keith, saying where each would go. Diagrams can go straight in the body as mermaid blocks (see the writing guide).`;
 
 // Each writing pass shares the instructions and most of the input, so the task comes last:
 // everything before it is an identical prefix the API can bill at the cached rate.
@@ -85,14 +87,15 @@ ${NEW_POST}`,
 
 ${NEW_POST}`,
 
-  edit: `You are Keith's editor. The facts_draft above is accurate and passes every check, but it reads like a reference rather than something written for a person. Rewrite it into the post Keith would actually publish: the same facts, told as a story in his voice, with a clear and pleasant flow, talking to the reader, with his humour.
+  edit: `You are Keith's editor. The facts_draft above is accurate and passes every check, but it reads like a reference rather than something written for a person. Rewrite it into the post Keith would actually publish: the same facts, shown through the brief's running example in his voice, with a clear and pleasant flow, talking to the reader, with his humour.
 
-- Keep the facts the story needs, and add none that aren't in the draft or the brief's evidence. Drop detail the story doesn't need.
-- Rebuild the structure if that helps: an introduction that says what the post is about and why it matters, a middle whose headings read like stages of the story rather than reference sections, and a conclusion that answers the question and makes it practical.
+- Keep the facts the post needs, and add none that aren't in the draft or the brief's evidence. Drop detail it doesn't need, and any point that can't be shown on the example.
+- Rebuild the structure if that helps: an introduction that says what the post is about and why it matters, a middle whose sections are stages of the example, with headings that say plainly what the section is or what happens in it, and a conclusion with Keith's verdict.
+- Where the draft describes something it could show (code, a flow, a setup, a quotation), show it. Where it raises a problem and leaves it, resolve it.
 - Rewrite the title, description, share blurbs and cover idea if they no longer fit. Keep the category and tags unless they are plainly wrong.
 - Move any caveats Keith should check into notes_for_keith.
 
-Before you finish, read it as a stranger would. Do you know from the introduction what the post is about and why you should care? Does the conclusion answer that and tell you how to put it into practice? Does it talk to you? Did anything make you smile? Fix whatever doesn't.
+Before you finish, read it as a stranger would. Do you know from the introduction what the post is about and why you should care? Could you follow it without building the example in your head, or is something described that should be shown? Is every problem it raises resolved? Does the conclusion give a verdict? Does it talk to you? Did anything make you smile, and is any joke an extra sentence after the point, or code acting like a person? Fix whatever doesn't work.
 ${NEW_POST}`,
 
   revise: `Revise current_post after Keith's review. His comments are the highest authority after the site guide's hard rules: apply every one. A comment that corrects a fact is Keith's own statement and replaces the old claim. A comment that says how he would put something gives you his wording.
@@ -114,15 +117,19 @@ Order of authority, highest first:
 2. The evidence in the brief. Every fact in the post comes from it: never invent anecdotes, numbers, test results, quotations, reactions or motivations. Keith built and maintains his projects, so what his commits, issues, releases and READMEs show him doing can be told in the first person.
 3. Keith's corrections (keith-feedback.md, if present), then his voice guide, editorial instructions and the writing samples, for how the post should sound.
 
-How the post should read:
+How the post should read. These rules come from comparing a draft with Keith's own rewrite of it. The brief's form says what kind of post this is, and the writing guide's "Post forms" section gives each kind its shape.
 
-- It is a story told by Keith, not a technical reference or a research report. Follow what happened, in order, with a clear and pleasant flow, and let the technical detail serve the story. A reader should enjoy it, not study it.
-- Give it a real introduction. Within the first two or three paragraphs, before the first heading, tell the reader what the post is about, the question it answers and why it matters to them. A hook or example can come first, but never assume the reader already knows the subject.
-- Give it a real conclusion. Answer the question the introduction raised, pull the threads together and make it practical: how it would work in practice, how you'd measure or check it, what to try next. No moral, slogan or engagement question, but no abrupt stop either.
-- Talk to the reader. Use "you" naturally, anticipate their questions and objections, and bring them along, the way Keith does in his videos and longer posts.
-- Be funny. Every post needs some humour, serious subjects included: dry asides, self-deprecation, the absurdity of the situation, a well-placed rhetorical question. It must never rest on invented events or claims, but a clearly hypothetical example can be played for laughs.
+- Show, then explain. Build the post on one concrete example and keep returning to it as it develops: the code in a tutorial, Keith's actual setup in a review, a real situation from his notes in a teaching post, the actual wording in a policy post. Explain each point with the example in front of the reader, never instead of it. Anything the reader would otherwise have to build in their head (a program, a flow, a setup, the wording of a rule) is shown: code, a diagram, a table, a list or a quotation. Arguing about a subject in the abstract reads as dense, however short the sentences.
+- Concrete before abstract. Say what happens, in the reader's terms, before explaining why, and tie each general claim to the line, step or case that shows it. Prefer plain words to abstract nouns: "it loads every time", not "loading returns to the critical path".
+- Cover fewer points, properly. Each point gets its example, and a point that can't have one probably isn't needed. Don't switch to a second hypothetical to make a point, and don't detour into other projects unless they're the subject.
+- Resolve what you raise. A problem the post points out is fixed before the section ends, or the post says plainly that it can't be. An objection is answered on the same example, ideally by improving it.
+- Give it a real introduction. Within the first two or three paragraphs, before the first heading, tell the reader what the post is about, the question it answers and why it matters to them. A relatable observation or the example can come first, but never assume the reader already knows the subject. Then get to the example quickly.
+- Give it a real conclusion: Keith's verdict, in the first person, on whether it's worth it and for whom, plus anything practical the body hasn't already shown. A short, self-deprecating last line suits him. No moral, slogan or engagement question, and no abrupt stop.
+- Talk to the reader the way Keith teaches. Working through an example, it's "we" and "our code", building it together ("Let's fix that"). "You" is for the reader's own choices, "I" for Keith's opinions and experience. Conversational turns are welcome: a tag question, "The important bit is...", or arguing with himself ("Now, you could argue... However, my counter-argument is...").
+- Be funny, Keith's way. Every post needs some humour, serious subjects included, but three or four light moments are plenty, and headings and the last line are good places for them. His jokes are short and aimed at himself, the reader or the situation: a self-deprecating heading, a strikethrough correction (~~look pretty~~ be maintainable), mild mock-indignation. A joke that is itself the point, said ironically, works, and so does one everyday analogy that explains it. Never tack a joke on as an extra sentence after a technical point, and never make code, tools or processes act like people (departments convening, keywords negotiating, modules saying thank you). These are kinds of joke, not lines to reuse. Never rest a joke on invented events.
 - Don't hedge in the prose. If a claim isn't certain, leave it out of the post and put it in notes_for_keith. Never describe how the research was done: what was inspected, read, run or not run.
-- Keep only the caveats a reader needs. Use code, tables and lists where they help the reader follow the story, not to fill sections: one good code excerpt beats three.
+- Keep only the caveats a reader needs, each stated once and plainly after the thing it qualifies, not as a clause inside an explanation.
+- Keith's habits are his voice, not mistakes: "Of course", "Now" and "So" to open a sentence, "whilst", "i.e.", the odd spaced hyphen, ordinal dates (9th October). Use them where they come naturally, never on a quota.
 
 The writing samples and Keith's documents are private. Learn how Keith writes from them, but never use them as content: don't quote them, closely paraphrase them, refer to them or repeat personal details from them in the post, the share blurbs or your notes. The same goes for the editorial strategy itself (who the blog is meant to reach, and why). A check rejects any draft that repeats ten or more consecutive words from the private material.
 
@@ -197,6 +204,9 @@ const object = (properties) => ({
   additionalProperties: false,
 });
 
+// The kinds of post, each with its shape in the writing guide's "Post forms"
+export const POST_FORMS = ['tutorial', 'project', 'review', 'opinion', 'teaching', 'policy'];
+
 export function briefTool(categoryIds) {
   const editorialCategory = { type: 'string', enum: ['A', 'B', 'C', 'D'] };
   return {
@@ -228,10 +238,18 @@ export function briefTool(categoryIds) {
             working_title: text('Working title'),
             editorial_category: editorialCategory,
             site_category: { type: 'string', enum: categoryIds },
+            form: {
+              type: 'string',
+              enum: POST_FORMS,
+              description: 'The kind of post, which sets its shape: see "Post forms" in the writing guide',
+            },
             purpose: text('What the reader should understand or be able to do afterwards'),
             audience: text('Who it is for and what they already know'),
-            thesis: text('The single claim, tension, question or story that anchors it'),
-            structure: strings('The sections the subject genuinely needs, in order'),
+            thesis: text('The one point the post makes, or the question it answers, in plain words'),
+            running_example: text(
+              "The one concrete example the post follows throughout and how it develops: code that changes stage by stage, Keith's actual setup, a real situation from his notes, the actual wording of a rule",
+            ),
+            structure: strings('The sections in order, each a stage of the running example'),
             limitations: text('What is not proven or was not tried'),
             editorial_risks: strings('Facts needing confirmation, confidential details, possible misrepresentations'),
           }),

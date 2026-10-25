@@ -142,10 +142,16 @@ Any network without a blurb falls back to the `description`.
 
 - Write as Keith: first person, conversational but technically precise, British English spelling
   (colour, organise, licence as a noun). The site's language is `en-GB`.
-- Talk to the reader. Use "you" naturally, anticipate their questions and bring them along.
-- Every post needs some humour, serious ones included: dry asides, self-deprecation, the absurdity
-  of the situation. It must never rest on invented events, but a clearly hypothetical example can
-  be played for laughs.
+- Talk to the reader the way Keith teaches: "we" and "our code" when working through an example
+  together, "you" for the reader's own choices, "I" for his opinions and experience. Anticipate
+  their questions and objections.
+- Every post needs some humour, serious ones included: three or four light moments, aimed at Keith,
+  the reader or the situation (self-deprecation, a strikethrough correction, mild
+  mock-indignation). Never an extra joke sentence tacked onto a technical point, and never code or
+  tools acting like people. It must never rest on invented events, but a clearly hypothetical
+  example can be played for laughs.
+- Keith's habits are his voice, not mistakes to tidy: "Of course", "Now" and "So" to open a
+  sentence, "whilst", "i.e.", ordinal dates (9th October).
 - **Never use an em dash** (the long dash, Unicode U+2014). Use a comma, a colon, parentheses or a
   new sentence instead. Don't use an en dash (U+2013) as a substitute either.
 - A spaced hyphen (` - `) is fine for the odd aside, as Keith writes them. Don't make a habit of
@@ -170,10 +176,50 @@ Any network without a blurb falls back to the `description`.
   already the page's only top-level heading. Don't skip levels (no `####` straight under `##`).
 - Headings are sentence case and short (under about 50 characters). Two or more `##` headings
   produce a table of contents automatically, so headings double as navigation.
-- Close with a real conclusion. Answer the question the introduction raised, pull the threads
-  together and make it practical: how it works in practice, how to measure or check it, what to
-  try next, or where to find the project or code. No moral or engagement question, but no abrupt
-  stop either.
+- Headings say plainly what the section is or what happens in it ("Using lazy imports", "Now the
+  backend is missing"), not clever phrases about the example.
+- Close with a real conclusion: Keith's verdict in the first person, on whether it's worth it and
+  for whom, plus anything practical the body hasn't already shown (where to find the project or
+  code, what to try next). A short self-deprecating last line suits him. No moral or engagement
+  question, but no abrupt stop either.
+
+### Post forms
+
+Every post is built on one concrete example that it keeps returning to as it develops. Explain each
+point with the example in front of the reader, rather than arguing about the subject in the
+abstract. What the example is depends on the kind of post, which the brief names:
+
+| Form | The running example | Shape |
+| --- | --- | --- |
+| `tutorial` | Code, complete at every stage | Context, the starting code and what it costs, the change, a realistic mistake, the fix, an edge case, the recommended pattern, the verdict |
+| `project` | Keith's project as it actually behaves | Why he built it, what it does in ordinary words, how it works (real code or screenshots), what works and what doesn't, where to get it |
+| `review` | Keith's actual setup and what happened | The verdict early, the setup, problem by problem with what he tried, what's genuinely good, the final judgement |
+| `opinion` | One real case that shows the issue | The position early, the case, the strongest objection answered on that case, the verdict |
+| `teaching` | A situation from Keith's notes (anonymised) or a cited study | What happened or what the research found, why it matters, what he does about it, how he'd know it works |
+| `policy` | The actual wording of the rule or announcement | What changed, quoted, who it affects with a concrete example, Keith's angle, what to do now |
+
+Whatever the form, resolve what you raise: a problem the post points out is fixed before the
+section ends, or the post says plainly that it can't be. An objection is answered on the same
+example, ideally by improving it, rather than by switching to a new hypothetical. Cover fewer
+points and give each its example.
+
+**Tutorials and technical explainers** (these come from Keith's own rewrite of a draft):
+
+- Reach the first code block within about a hundred words, and show the starting code before the
+  change, so the reader sees what changed.
+- Show the complete program at each stage when it's short (under about 25 lines), not one-line
+  fragments. Introduce each block with a sentence ending in a colon. Afterwards, say what happens
+  and point at the line or expression responsible.
+- Fix each problem in code. An objection to the code is answered by improving the code.
+- After the final code, a short list of what each entry point does helps. So does a diagram for
+  branching or flow.
+- A two- or three-bullet takeaway straight after a demonstration is fine. A "key takeaways" summary
+  at the end isn't.
+- Writing "we" and "our code" presents a worked example, not a claim that Keith ran it: never
+  invent output, timings or test results.
+
+Other forms have no code quota. Use code where the subject has some, and let screenshots, the
+quoted wording of a rule or a table of the real setup do the showing.
 
 ### Avoiding walls of text
 
@@ -184,9 +230,9 @@ The page is designed for a mix of elements. A post that is only paragraphs reads
   anything the reader might type or copy, a list for steps or options, a table for comparisons, an
   image or screenshot for anything visual, a callout for a warning or tip.
 - Use these where they genuinely help. Never add one purely as decoration.
-- In a tutorial or reference post, aim for at least one non-paragraph element per `##` section. A
-  story-led post needs fewer: one good code excerpt or screenshot can carry it, and short
-  paragraphs keep it readable.
+- In a tutorial, show code at every stage (see [Post forms](#post-forms)). Other forms need fewer
+  elements, but whatever the reader would otherwise have to picture (a setup, a flow, the wording
+  of a rule) is shown rather than described.
 
 ## Formatting reference
 
