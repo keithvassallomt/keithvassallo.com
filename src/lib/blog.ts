@@ -80,6 +80,27 @@ export function readingTime(post: Post): number {
   return Math.max(1, Math.round(words / 220));
 }
 
+/** The post's first paragraph as plain text, for previews, past any headings, code or lists before it. */
+export function openingParagraph(post: Post): string {
+  const lines: string[] = [];
+  let fence = false;
+  for (const line of (post.body ?? '').split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) fence = !fence;
+    else if (!fence && line.trim() && !/^\s*([#>|<!*+-]|\d+\.\s|\[\^)/.test(line)) {
+      lines.push(line.trim());
+      continue;
+    }
+    if (lines.length) break;
+  }
+  return lines
+    .join(' ')
+    .replace(/\[\^[^\]]+\]/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/(\*\*|__|~~)(.+?)\1/g, '$2')
+    .replace(/(^|\W)[*_](\S(?:.*?\S)?)[*_](?=\W|$)/g, '$1$2');
+}
+
 /** Up to `count` other posts, preferring the same category, newest first. */
 export function relatedPosts(post: Post, posts: Post[], count = 2): Post[] {
   const others = posts.filter((other) => other.id !== post.id);

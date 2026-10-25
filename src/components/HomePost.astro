@@ -1,0 +1,442 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import '@fontsource-variable/bricolage-grotesque/opsz.css';
+import '@fontsource-variable/atkinson-hyperlegible-next/wght.css';
+import '../styles/blog-palette.css';
+import CategoryChip from './blog/CategoryChip.astro';
+import { formatDate, openingParagraph, postUrl, readingTime, type Category, type Post } from '../lib/blog';
+import { postSocialAsset } from '../lib/social';
+
+// A post on the home page, under the photo: the pinned one, or the newest. With a mouse on a
+// desktop, hovering it grows a larger card over the whole panel, with the post's first paragraph
+// and its sections, so a reader can see what's in it before clicking through. The larger card is
+// positioned against the nearest positioned ancestor, the home page's right-hand panel.
+
+interface Props {
+  post: Post;
+  category: Category;
+  /** Why it's on the home page, shown as the badge on its cover. */
+  kind: 'latest' | 'pinned';
+  /** The newest post while a pin is showing: the page shows it instead once the pin expires. */
+  hidden?: boolean;
+}
+
+const { post, category, kind, hidden = false } = Astro.props;
+const { title, description, cover, pubDate } = post.data;
+const url = postUrl(post);
+const meta = `${formatDate(pubDate, 'short')} · ${readingTime(post)} min`;
+const opening = openingParagraph(post);
+const { headings } = await render(post);
+const sections = headings.filter((heading) => heading.depth === 2 && heading.slug !== 'footnote-label').slice(0, 6);
+// A post without a cover shows its generated social card instead
+const fallback = cover ? null : new URL(postSocialAsset(post, category).image.url).pathname;
+const pinIcon =
+  '<path d="M12 17v5"></path><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"></path>';
+---
+
+<div class="home-post blog-palette" data-home-post={kind} hidden={hidden}>
+  <a class="hp-card" href={url}>
+    <div class="hp-media">
+      {
+        cover ? (
+          <Image src={cover} alt="" widths={[400, 800, 1200]} sizes="(max-width: 900px) calc(100vw - 40px), 400px" class="hp-cover" />
+        ) : (
+          <img src={fallback} alt="" class="hp-cover" loading="lazy" />
+        )
+      }
+      <span class="hp-badge">
+        {kind === 'pinned' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={pinIcon} />}
+        {kind}
+      </span>
+    </div>
+    <div class="hp-body">
+      <span class="hp-domain">keithvassallo.com</span>
+      <h2 class="hp-title">{title}</h2>
+      <p class="hp-description">{description}</p>
+      <div class="hp-meta">
+        <CategoryChip category={category} link={false} />
+        <span>{meta}</span>
+        <span class="hp-read">read →</span>
+      </div>
+    </div>
+  </a>
+
+  <a class="hp-full" href={url} tabindex="-1" aria-hidden="true">
+    <div class="hp-media">
+      {
+        cover ? (
+          <Image src={cover} alt="" widths={[400, 800, 1200]} sizes="calc(50vw - 48px)" class="hp-full-cover" />
+        ) : (
+          <img src={fallback} alt="" class="hp-full-cover" loading="lazy" />
+        )
+      }
+      <span class="hp-badge">
+        {kind === 'pinned' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={pinIcon} />}
+        {kind}
+      </span>
+    </div>
+    <div class="hp-full-body">
+      <span class="hp-domain">keithvassallo.com</span>
+      <span class="hp-full-title">{title}</span>
+      {opening && <p class="hp-full-opening">{opening}</p>}
+      {
+        sections.length > 0 && (
+          <>
+            <span class="hp-full-label">Inside this post</span>
+            <ol class="hp-sections">
+              {sections.map((section, index) => (
+                <li>
+                  <span class="hp-section-number">{String(index + 1).padStart(2, '0')}</span>
+                  <span>{section.text}</span>
+                </li>
+              ))}
+            </ol>
+          </>
+        )
+      }
+      <div class="hp-full-foot">
+        <CategoryChip category={category} link={false} />
+        <span>{meta}</span>
+        <span class="hp-full-read">read the whole post →</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<script>
+  // Grows the larger card out of the small one: the small card's place is measured each time,
+  // so the animation starts exactly where it sits, whatever the window
+  const canExpand = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 901px)');
+
+  function startFrom(card: HTMLElement, full: HTMLElement) {
+    const from = card.getBoundingClientRect();
+    const to = full.getBoundingClientRect();
+    full.style.setProperty(
+      '--hp-from',
+      `inset(${from.top - to.top}px ${to.right - from.right}px ${to.bottom - from.bottom}px ${from.left - to.left}px round 16px)`,
+    );
+  }
+
+  function close(slot: HTMLElement) {
+    const card = slot.querySelector<HTMLElement>('.hp-card');
+    const full = slot.querySelector<HTMLElement>('.hp-full');
+    if (!card || !full?.classList.contains('is-open')) return;
+    startFrom(card, full);
+    full.classList.remove('is-open');
+    card.classList.remove('is-under');
+  }
+
+  const closeAll = () => document.querySelectorAll<HTMLElement>('[data-home-post]').forEach(close);
+
+  function open(slot: HTMLElement) {
+    const card = slot.querySelector<HTMLElement>('.hp-card');
+    const full = slot.querySelector<HTMLElement>('.hp-full');
+    if (!canExpand.matches || !card || !full || full.classList.contains('is-open')) return;
+    // Jump to the small card's shape without animating, then grow from there
+    full.style.transition = 'none';
+    startFrom(card, full);
+    full.getBoundingClientRect();
+    full.style.transition = '';
+    requestAnimationFrame(() => {
+      full.classList.add('is-open');
+      card.classList.add('is-under');
+    });
+  }
+
+  function initHomePosts() {
+    document.querySelectorAll<HTMLElement>('[data-home-post]').forEach((slot) => {
+      if (slot.dataset.ready) return;
+      slot.dataset.ready = 'true';
+      slot.querySelector('.hp-card')?.addEventListener('mouseenter', () => open(slot));
+      slot.querySelector('.hp-full')?.addEventListener('mouseleave', () => close(slot));
+      slot.parentElement?.addEventListener('mouseleave', () => close(slot));
+    });
+  }
+
+  window.addEventListener('resize', closeAll);
+  canExpand.addEventListener('change', closeAll);
+  // Now and after each navigation: the first page-load event can fire before this script runs
+  initHomePosts();
+  document.addEventListener('astro:page-load', initHomePosts);
+</script>
+
+<style>
+  .home-post {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 36px;
+  }
+
+  .home-post[hidden] {
+    display: none;
+  }
+
+  .hp-card {
+    display: block;
+    overflow: hidden;
+    color: var(--blog-text);
+    text-decoration: none;
+    background: var(--blog-surface);
+    border: 1px solid var(--blog-border);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    transition:
+      border-color 150ms ease,
+      opacity 220ms ease;
+  }
+
+  .hp-card:hover,
+  .hp-card:focus-visible {
+    color: var(--blog-text);
+    border-color: #3b4453;
+  }
+
+  .hp-card.is-under {
+    opacity: 0;
+  }
+
+  .hp-media {
+    position: relative;
+  }
+
+  .hp-cover,
+  .hp-full-cover {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 1;
+    object-fit: cover;
+  }
+
+  /* Flush with the card's top and right edges, following its corner */
+  .hp-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px 8px 13px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    color: var(--blog-bg);
+    background: var(--c-green);
+    border-radius: 0 15px 0 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  .hp-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 20px 18px;
+  }
+
+  .hp-domain {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--blog-muted);
+  }
+
+  .hp-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--blog-text);
+  }
+
+  .hp-description {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-family: var(--font-reading);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--blog-secondary);
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .hp-meta,
+  .hp-full-foot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-reading);
+    font-size: 13px;
+    color: var(--blog-muted);
+  }
+
+  .hp-meta {
+    margin-top: 4px;
+  }
+
+  .hp-read,
+  .hp-full-read {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--c-green);
+  }
+
+  /* The larger card: over the whole panel, clipped down to the small card's shape until hovered */
+  .hp-full {
+    position: absolute;
+    inset: 24px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--blog-text);
+    text-decoration: none;
+    background: var(--blog-surface);
+    border: 1px solid var(--blog-border);
+    border-radius: 16px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    clip-path: var(--hp-from, inset(50% round 16px));
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      clip-path 460ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 120ms ease 400ms,
+      visibility 0s linear 520ms;
+  }
+
+  .hp-full:hover {
+    color: var(--blog-text);
+  }
+
+  .hp-full.is-open {
+    clip-path: inset(0 round 16px);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      clip-path 460ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 120ms ease,
+      visibility 0s;
+  }
+
+  .hp-full-cover {
+    flex: none;
+    aspect-ratio: 3 / 1;
+  }
+
+  .hp-full-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+    padding: 24px 32px 26px;
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+
+  .hp-full.is-open .hp-full-body {
+    opacity: 1;
+    transition: opacity 240ms ease 200ms;
+  }
+
+  .hp-full-title {
+    font-family: var(--font-display);
+    font-size: 29px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--blog-text);
+  }
+
+  .hp-full-opening {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-family: var(--font-reading);
+    font-size: 16.5px;
+    line-height: 1.6;
+    color: var(--blog-body);
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+  }
+
+  .hp-full-label {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--blog-muted);
+  }
+
+  .hp-sections {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-reading);
+    font-size: 15px;
+    color: var(--blog-secondary);
+  }
+
+  .hp-sections li {
+    display: flex;
+    gap: 12px;
+  }
+
+  .hp-section-number {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--c-green);
+  }
+
+  .hp-full-foot {
+    margin-top: auto;
+    padding-top: 14px;
+    font-size: 13.5px;
+    border-top: 1px solid var(--blog-border);
+  }
+
+  .hp-full-read {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  /* No hover on phones and tablets: the small card is the whole thing */
+  @media (max-width: 900px), (hover: none) {
+    .hp-full {
+      display: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .home-post {
+      margin-top: 28px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hp-full,
+    .hp-full.is-open {
+      clip-path: inset(0 round 16px);
+      transition:
+        opacity 150ms ease,
+        visibility 0s linear 150ms;
+    }
+
+    .hp-full.is-open {
+      transition:
+        opacity 150ms ease,
+        visibility 0s;
+    }
+  }
+</style>

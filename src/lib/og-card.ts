@@ -3,6 +3,7 @@ import path from 'node:path';
 import satori from 'satori';
 import sharp from 'sharp';
 import type { CardContent } from './social';
+import { AUTHOR } from './site';
 import { SOCIAL_IMAGE_HEIGHT, SOCIAL_IMAGE_WIDTH } from './social';
 
 // Renders the branded 1200x630 social cards at build time. Only the og/ endpoints import
@@ -60,8 +61,8 @@ function loadShared() {
     fonts: loadFonts(),
     logo: dataUri(readFileSync(path.join(root, 'public/assets/icons/kv.png'))),
     avatar: dataUri(
-      await sharp(path.join(root, 'public/assets/images/keith_pic.png'))
-        .resize(144, 144, { fit: 'cover', position: 'top' })
+      await sharp(path.join(root, 'public', AUTHOR.photo))
+        .resize(144, 144, { fit: 'cover' })
         .flatten({ background: '#C9CED6' })
         .png()
         .toBuffer(),

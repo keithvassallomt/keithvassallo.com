@@ -19,7 +19,7 @@ const frame = ref(null);
 let ready = false;
 let selectionTimer = null;
 
-// BlogShell.astro's tokens, which prose.css reads
+// The blog's tokens (src/styles/blog-palette.css), which prose.css reads
 const TOKENS = `
 :root {
   --blog-bg: #0b0d12; --blog-surface: #12161d; --blog-raised: #181d26; --blog-border: #262c37;

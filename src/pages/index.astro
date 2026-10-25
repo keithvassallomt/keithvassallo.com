@@ -1,7 +1,32 @@
 ---
+import type { ImageMetadata } from 'astro';
+import { getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import HomePost from '../components/HomePost.astro';
+import { getCategoryMap, getPosts, pinnedPost } from '../lib/blog';
 
 const currentYear = new Date().getFullYear();
+
+// The photo: the original and its artistic versions, all in src/assets/portraits. The page is sent
+// with the original, so it's what search engines and anything without JavaScript see; the browser
+// then shows one of them at random. Share images and structured data use AUTHOR.photo instead.
+const ORIGINAL_PORTRAIT = '/keith-face.jpg';
+const portraitFiles = Object.entries(
+  import.meta.glob<{ default: ImageMetadata }>('../assets/portraits/*.{jpg,jpeg,png,webp,avif}', { eager: true }),
+).sort(([a], [b]) => Number(b.endsWith(ORIGINAL_PORTRAIT)) - Number(a.endsWith(ORIGINAL_PORTRAIT)));
+const portraits = await Promise.all(
+  portraitFiles.map(async ([, { default: src }]) => {
+    const [small, large] = await Promise.all([getImage({ src, width: 256, format: 'webp' }), getImage({ src, width: 512, format: 'webp' })]);
+    return { src: large.src, srcset: `${small.src} 256w, ${large.src} 512w` };
+  }),
+);
+
+// Under it, the pinned post, or the newest. A pin with an end date also brings the newest post,
+// which the page swaps in once the pin expires, as the blog's listing does.
+const [posts, categories] = await Promise.all([getPosts(), getCategoryMap()]);
+const pin = pinnedPost(posts);
+const latest = posts[0];
+const categoryOf = (post: (typeof posts)[number]) => categories.get(post.data.category.id)!;
 ---
 
 <BaseLayout title="Home">
@@ -83,13 +108,42 @@ const currentYear = new Date().getFullYear();
 
     <!-- Right Panel - Accent -->
     <div class="panel panel-right">
-      <div class="image-container">
-        <img src="/assets/images/keith_pic.png" alt="Keith Vassallo" class="profile-image" />
-      </div>
-      <div class="accent-text">
-        <span class="big-number">20+</span>
-        <span class="label">Years of<br/>Experience</span>
-      </div>
+      <img
+        id="portrait"
+        class="portrait"
+        src={portraits[0].src}
+        srcset={portraits[0].srcset}
+        sizes="(max-width: 900px) 200px, 256px"
+        width="256"
+        height="256"
+        alt="Keith Vassallo"
+        fetchpriority="high"
+        data-portraits={JSON.stringify(portraits)}
+      />
+      <script is:inline data-astro-rerun>
+        // A different version of the photo on each visit, when there's more than one
+        (() => {
+          const photo = document.getElementById('portrait');
+          const options = JSON.parse(photo?.dataset.portraits ?? '[]');
+          if (options.length < 2) return;
+          const pick = options[Math.floor(Math.random() * options.length)];
+          photo.srcset = pick.srcset;
+          photo.src = pick.src;
+        })();
+      </script>
+      {pin && <HomePost post={pin.post} category={categoryOf(pin.post)} kind="pinned" />}
+      {latest && (!pin || pin.until) && <HomePost post={latest} category={categoryOf(latest)} kind="latest" hidden={!!pin} />}
+      {
+        pin?.until && (
+          <script is:inline data-astro-rerun define:vars={{ until: pin.until }}>
+            // The pin's end date is checked here rather than by a rebuild
+            if (Date.now() >= Date.parse(until)) {
+              document.querySelector('[data-home-post="pinned"]')?.remove();
+              document.querySelector('[data-home-post="latest"]')?.removeAttribute('hidden');
+            }
+          </script>
+        )
+      }
       <!-- Mobile scroll indicator -->
       <div class="scroll-indicator" id="scroll-indicator">
         <span class="scroll-text">Scroll</span>
@@ -371,14 +425,12 @@ const currentYear = new Date().getFullYear();
     position: relative;
   }
 
-  .image-container {
-    position: relative;
-    max-width: 350px;
-  }
-
-  .profile-image {
-    width: 100%;
-    border-radius: var(--radius-xl);
+  .portrait {
+    display: block;
+    width: 256px;
+    height: 256px;
+    object-fit: cover;
+    border-radius: 50%;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   }
 
@@ -418,29 +470,6 @@ const currentYear = new Date().getFullYear();
     60% { transform: translateY(4px); }
   }
 
-  .accent-text {
-    position: absolute;
-    bottom: var(--space-2xl);
-    right: var(--space-2xl);
-    text-align: right;
-  }
-
-  .big-number {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 4rem;
-    font-weight: 700;
-    color: var(--accent-green);
-    line-height: 1;
-  }
-
-  .label {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
   /* Modal */
   .modal { background: transparent; border: none; padding: 0; max-width: 90vw; width: 450px; }
   .modal::backdrop { background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
@@ -476,6 +505,8 @@ const currentYear = new Date().getFullYear();
       order: 1;
       min-height: calc(100vh - 220px);
       min-height: calc(100svh - 220px);
+      /* Room at the bottom for the scroll hint, under the post */
+      padding: var(--space-xl) 20px 88px;
     }
     .header {
       position: relative;
@@ -489,8 +520,7 @@ const currentYear = new Date().getFullYear();
     .typing-container { text-align: center; }
     .nav-buttons { max-width: 400px; margin: 0 auto var(--space-xl); }
     .social-links { justify-content: center; }
-    .image-container { max-width: 250px; }
-    .accent-text { display: none; }
+    .portrait { width: 200px; height: 200px; }
     .scroll-indicator { display: flex; }
   }
 

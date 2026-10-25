@@ -6,6 +6,7 @@ import BottomNav from '../components/BottomNav.astro';
 import '@fontsource-variable/bricolage-grotesque/opsz.css';
 import '@fontsource-variable/atkinson-hyperlegible-next/wght.css';
 import '@fontsource-variable/atkinson-hyperlegible-next/wght-italic.css';
+import '../styles/blog-palette.css';
 
 // Page chrome for the blog and the about page: the "Field Notes" palette and type,
 // the site navigation, a skip link and the footer.
@@ -21,7 +22,7 @@ const currentYear = new Date().getFullYear();
 
 <BaseLayout {...layoutProps}>
   <slot name="head" slot="head" />
-  <div class="blog-shell">
+  <div class="blog-shell blog-palette">
     <a class="skip-link" href="#main">Skip to content</a>
     <NavRail currentPage={currentPage} />
 
@@ -45,30 +46,10 @@ const currentYear = new Date().getFullYear();
 
 <style>
   .blog-shell {
-    /* Field Notes palette. --bg-primary and --border-default are overridden so the
-       shared navigation blends with the darker blog background. */
+    /* The palette itself is in blog-palette.css. --bg-primary and --border-default are
+       overridden so the shared navigation blends with the darker blog background. */
     --bg-primary: #0b0d12;
     --border-default: #262c37;
-    --blog-bg: #0b0d12;
-    --blog-surface: #12161d;
-    --blog-raised: #181d26;
-    --blog-border: #262c37;
-    --blog-text: #eef1f5;
-    --blog-body: #d5dae1;
-    --blog-secondary: #a3acb9;
-    --blog-muted: #8a93a1;
-    --c-green: #8cd49c;
-    --c-orange: #ffa657;
-    --c-cyan: #56d4dd;
-    --c-purple: #d2a8ff;
-    --c-blue: #79c0ff;
-    --c-red: #ff7b72;
-    --c-indigo: #a5a6ff;
-    --c-yellow: #f2cc60;
-    --c-pink: #f2a0d6;
-    --c-lime: #b9e06f;
-    --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
-    --font-reading: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif;
 
     min-height: 100vh;
     background: var(--blog-bg);

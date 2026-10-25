@@ -1,0 +1,25 @@
+/* The blog's "Field Notes" palette and type: the blog itself (BlogShell.astro) and anywhere else a
+   post is shown, such as the post card on the home page. The admin's preview keeps its own copy
+   (src/admin/editor/PreviewFrame.vue). */
+.blog-palette {
+  --blog-bg: #0b0d12;
+  --blog-surface: #12161d;
+  --blog-raised: #181d26;
+  --blog-border: #262c37;
+  --blog-text: #eef1f5;
+  --blog-body: #d5dae1;
+  --blog-secondary: #a3acb9;
+  --blog-muted: #8a93a1;
+  --c-green: #8cd49c;
+  --c-orange: #ffa657;
+  --c-cyan: #56d4dd;
+  --c-purple: #d2a8ff;
+  --c-blue: #79c0ff;
+  --c-red: #ff7b72;
+  --c-indigo: #a5a6ff;
+  --c-yellow: #f2cc60;
+  --c-pink: #f2a0d6;
+  --c-lime: #b9e06f;
+  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-reading: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif;
+}

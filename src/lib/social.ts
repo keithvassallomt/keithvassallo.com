@@ -14,7 +14,7 @@ export const SOCIAL_IMAGE_WIDTH = 1200;
 export const SOCIAL_IMAGE_HEIGHT = 630;
 
 // Bump when the card design in og-card.ts changes, so every card gets a new URL.
-const CARD_TEMPLATE_VERSION = 1;
+const CARD_TEMPLATE_VERSION = 2;
 
 export interface SocialImage {
   url: string;

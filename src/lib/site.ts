@@ -14,7 +14,7 @@ export const AUTHOR = {
   employer: { name: 'ICE Campus', url: 'https://icecampus.com' },
   location: 'Carlisle, UK',
   profilePath: '/about',
-  photo: '/assets/images/keith_pic.png',
+  photo: '/assets/images/keith-face.jpg',
   bio: 'I build things, break things, and teach others to do the same. Passionate about code, teaching, and open-source. Always with a laugh.',
 };
 
