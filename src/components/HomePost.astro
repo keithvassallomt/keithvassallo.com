@@ -3,15 +3,17 @@ import { Image } from 'astro:assets';
 import { render } from 'astro:content';
 import '@fontsource-variable/bricolage-grotesque/opsz.css';
 import '@fontsource-variable/atkinson-hyperlegible-next/wght.css';
+import '@fontsource-variable/atkinson-hyperlegible-next/wght-italic.css';
 import '../styles/blog-palette.css';
+import '../styles/prose.css';
 import CategoryChip from './blog/CategoryChip.astro';
-import { formatDate, openingParagraph, postUrl, readingTime, type Category, type Post } from '../lib/blog';
+import { formatDate, postUrl, readingTime, type Category, type Post } from '../lib/blog';
 import { postSocialAsset } from '../lib/social';
 
 // A post on the home page, under the photo: the pinned one, or the newest. With a mouse on a
-// desktop, hovering it grows a larger card over the whole panel, with the post's first paragraph
-// and its sections, so a reader can see what's in it before clicking through. The larger card is
-// positioned against the nearest positioned ancestor, the home page's right-hand panel.
+// desktop, hovering it grows a larger card over the whole panel, with as much of the post's start
+// as fits and its sections, so a reader can see what's in it before clicking through. The larger
+// card is positioned against the nearest positioned ancestor, the home page's right-hand panel.
 
 interface Props {
   post: Post;
@@ -26,9 +28,8 @@ const { post, category, kind, hidden = false } = Astro.props;
 const { title, description, cover, pubDate } = post.data;
 const url = postUrl(post);
 const meta = `${formatDate(pubDate, 'short')} · ${readingTime(post)} min`;
-const opening = openingParagraph(post);
-const { headings } = await render(post);
-const sections = headings.filter((heading) => heading.depth === 2 && heading.slug !== 'footnote-label').slice(0, 6);
+const { Content, headings } = await render(post);
+const sections = headings.filter((heading) => heading.depth === 2 && heading.slug !== 'footnote-label');
 // A post without a cover shows its generated social card instead
 const fallback = cover ? null : new URL(postSocialAsset(post, category).image.url).pathname;
 const pinIcon =
@@ -40,7 +41,7 @@ const pinIcon =
     <div class="hp-media">
       {
         cover ? (
-          <Image src={cover} alt="" widths={[400, 800, 1200]} sizes="(max-width: 900px) calc(100vw - 40px), 400px" class="hp-cover" />
+          <Image src={cover} alt="" widths={[400, 800, 1200]} sizes="(max-width: 900px) calc(100vw - 40px), 500px" class="hp-cover" />
         ) : (
           <img src={fallback} alt="" class="hp-cover" loading="lazy" />
         )
@@ -51,7 +52,7 @@ const pinIcon =
       </span>
     </div>
     <div class="hp-body">
-      <span class="hp-domain">keithvassallo.com</span>
+      <span class="hp-path">~/blog</span>
       <h2 class="hp-title">{title}</h2>
       <p class="hp-description">{description}</p>
       <div class="hp-meta">
@@ -62,8 +63,8 @@ const pinIcon =
     </div>
   </a>
 
-  <a class="hp-full" href={url} tabindex="-1" aria-hidden="true">
-    <div class="hp-media">
+  <div class="hp-full">
+    <div class="hp-media" inert>
       {
         cover ? (
           <Image src={cover} alt="" widths={[400, 800, 1200]} sizes="calc(50vw - 48px)" class="hp-full-cover" />
@@ -76,32 +77,39 @@ const pinIcon =
         {kind}
       </span>
     </div>
-    <div class="hp-full-body">
-      <span class="hp-domain">keithvassallo.com</span>
+    <div class="hp-full-body" inert>
+      <span class="hp-path">~/blog</span>
       <span class="hp-full-title">{title}</span>
-      {opening && <p class="hp-full-opening">{opening}</p>}
-      {
-        sections.length > 0 && (
-          <>
-            <span class="hp-full-label">Inside this post</span>
-            <ol class="hp-sections">
-              {sections.map((section, index) => (
-                <li>
-                  <span class="hp-section-number">{String(index + 1).padStart(2, '0')}</span>
-                  <span>{section.text}</span>
-                </li>
-              ))}
-            </ol>
-          </>
-        )
-      }
+      <div class="hp-full-main">
+        <div class="hp-preview prose">
+          <Content />
+        </div>
+        {
+          sections.length > 0 && (
+            <div class="hp-contents">
+              <span class="hp-full-label">Inside this post</span>
+              <ol class="hp-sections">
+                {sections.map((section, index) => (
+                  <li>
+                    <span class="hp-section-number">{String(index + 1).padStart(2, '0')}</span>
+                    <span>{section.text}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )
+        }
+      </div>
       <div class="hp-full-foot">
         <CategoryChip category={category} link={false} />
         <span>{meta}</span>
         <span class="hp-full-read">read the whole post →</span>
       </div>
     </div>
-  </a>
+    <!-- One link over the whole card: the post inside has links and buttons of its own, which can't
+         sit inside another link, so the card's contents are inert underneath it -->
+    <a class="hp-full-link" href={url} tabindex="-1" aria-hidden="true"></a>
+  </div>
 </div>
 
 <script>
@@ -162,9 +170,10 @@ const pinIcon =
 </script>
 
 <style>
+  /* As wide as the home page's left column, or its nav buttons once the page is one column */
   .home-post {
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     margin-top: 36px;
   }
 
@@ -236,12 +245,11 @@ const pinIcon =
     padding: 16px 20px 18px;
   }
 
-  .hp-domain {
+  /* The site's path prompt, as on every section's heading, so the card says where it leads */
+  .hp-path {
     font-family: var(--font-mono);
-    font-size: 11.5px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--blog-muted);
+    font-size: 13px;
+    color: var(--c-green);
   }
 
   .hp-title {
@@ -296,11 +304,11 @@ const pinIcon =
     flex-direction: column;
     overflow: hidden;
     color: var(--blog-text);
-    text-decoration: none;
     background: var(--blog-surface);
     border: 1px solid var(--blog-border);
     border-radius: 16px;
     box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    container-type: inline-size;
     clip-path: var(--hp-from, inset(50% round 16px));
     opacity: 0;
     visibility: hidden;
@@ -311,8 +319,10 @@ const pinIcon =
       visibility 0s linear 520ms;
   }
 
-  .hp-full:hover {
-    color: var(--blog-text);
+  .hp-full-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
   }
 
   .hp-full.is-open {
@@ -355,20 +365,83 @@ const pinIcon =
     color: var(--blog-text);
   }
 
-  .hp-full-opening {
-    display: -webkit-box;
-    margin: 0;
+  /* The post's start, with its sections beside it when the card is wide enough, below when not */
+  .hp-full-main {
+    display: grid;
+    flex: 1;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 22px;
+    min-height: 0;
+  }
+
+  @container (min-width: 800px) {
+    .hp-full-main {
+      grid-template-columns: minmax(0, 1fr) 220px;
+      grid-template-rows: minmax(0, 1fr);
+      gap: 36px;
+    }
+
+    .hp-contents {
+      padding-left: 28px;
+      border-left: 1px solid var(--blog-border);
+    }
+  }
+
+  /* The post as the blog renders it (prose.css), at the card's smaller size and fading out where
+     the card cuts it off. The few parts prose.css sizes against the page are scaled down here, and
+     nothing scrolls. Blocks well past the fold aren't drawn, so their images aren't fetched. */
+  .hp-preview.prose {
+    min-height: 0;
     overflow: hidden;
-    font-family: var(--font-reading);
     font-size: 16.5px;
-    line-height: 1.6;
-    color: var(--blog-body);
-    -webkit-line-clamp: 6;
-    -webkit-box-orient: vertical;
+    line-height: 1.65;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 96px), transparent);
+  }
+
+  .hp-preview.prose > :global(:nth-child(n + 21)) {
+    display: none;
+  }
+
+  .hp-preview.prose :global(.code-block-header) {
+    min-height: 36px;
+    padding-left: 16px;
+    font-size: 12px;
+  }
+
+  .hp-preview.prose :global(.code-copy) {
+    min-height: 26px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .hp-preview.prose :global(.code-block pre) {
+    padding: 14px 18px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  .hp-preview.prose :global(figcaption) {
+    font-size: 13px;
+  }
+
+  .hp-preview.prose :global(.diagram),
+  .hp-preview.prose :global(.table-scroll) {
+    overflow: hidden;
+  }
+
+  .hp-preview.prose :global(.diagram svg) {
+    min-width: 0;
+  }
+
+  .hp-contents {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .hp-full-label {
-    margin-top: 4px;
     font-family: var(--font-mono);
     font-size: 11.5px;
     letter-spacing: 0.06em;
@@ -420,6 +493,7 @@ const pinIcon =
 
   @media (max-width: 900px) {
     .home-post {
+      max-width: 400px;
       margin-top: 28px;
     }
   }
