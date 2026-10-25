@@ -2,9 +2,12 @@
 // The hast plugins use Sätteri's visitor API (Astro's default Markdown processor);
 // codeBlockChrome is a Shiki transformer.
 
+import { renderMermaidSVG } from 'beautiful-mermaid';
+
 const element = (tagName, properties, children = []) => ({ type: 'element', tagName, properties, children });
 const text = (value) => ({ type: 'text', value });
 const isBlank = (node) => node.type === 'text' && !node.value.trim();
+const escape = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** Wraps tables in a focusable region so wide tables scroll sideways instead of the page. */
 export const scrollableTables = {
@@ -73,6 +76,65 @@ export const callouts = {
     },
   },
 };
+
+// The blog's tokens (BlogShell.astro), so diagrams follow the site's colours
+const DIAGRAM_COLOURS = {
+  bg: 'var(--blog-surface)',
+  fg: 'var(--blog-text)',
+  line: 'var(--blog-muted)',
+  accent: 'var(--c-green)',
+  muted: 'var(--blog-secondary)',
+  surface: 'var(--blog-raised)',
+  border: 'var(--blog-border)',
+};
+
+/** A Mermaid diagram as an SVG in the site's colours and fonts. Throws if the source doesn't parse. */
+export function diagramSvg(source) {
+  const svg = renderMermaidSVG(source, { ...DIAGRAM_COLOURS, transparent: true });
+  // The renderer's stylesheet imports fonts from Google and styles every svg and text element on
+  // the page. Keep it to diagrams, in the site's own fonts.
+  return svg.replace(/<style>[\s\S]*?<\/style>/, (style) =>
+    style
+      .replace(/^\s*@import .*\n/gm, '')
+      .replace(/\btext \{[^}]*\}/, '.diagram text { font-family: var(--font-reading); }')
+      .replace(/\.mono \{[^}]*\}/, '.diagram .mono { font-family: var(--font-mono); }')
+      .replace(/\bsvg \{/, '.diagram svg {'),
+  );
+}
+
+/**
+ * Draws ```mermaid blocks as SVG diagrams at build time (Shiki skips them: see `excludeLangs`
+ * in astro.config.mjs). `strict` fails on a diagram that doesn't parse, as the build should;
+ * otherwise the error shows in its place, which suits the admin's live preview.
+ */
+export const diagrams = ({ strict = true } = {}) => ({
+  name: 'blog-diagrams',
+  element: {
+    filter: ['pre'],
+    visit(node, ctx) {
+      const code = node.children.find((child) => child.type === 'element' && child.tagName === 'code');
+      const langClass = [code?.properties?.className ?? []].flat().find((name) => String(name).startsWith('language-'));
+      if ((code?.data?.lang ?? langClass?.slice('language-'.length)) !== 'mermaid') return;
+
+      const source = ctx.textContent(code);
+      let svg;
+      try {
+        svg = diagramSvg(source);
+      } catch (error) {
+        if (strict) throw new Error(`A Mermaid diagram doesn't parse: ${error.message}`);
+        const message = `<p class="diagram-error">This diagram doesn't parse: ${escape(error.message)}</p>`;
+        ctx.replaceNode(node, { type: 'raw', value: `<div class="diagram">${message}<pre>${escape(source)}</pre></div>` });
+        return;
+      }
+      // Wide diagrams shrink to fit, down to a readable size, then scroll sideways like tables
+      const width = Math.ceil(Number(/width="([\d.]+)"/.exec(svg)?.[1] ?? 0));
+      ctx.replaceNode(node, {
+        type: 'raw',
+        value: `<div class="diagram" style="--diagram-width: ${width}px" tabindex="0" role="region" aria-label="Diagram, scrolls sideways">${svg}</div>`,
+      });
+    },
+  },
+});
 
 const UNLABELLED_LANGS = new Set(['text', 'txt', 'plaintext', 'plain']);
 

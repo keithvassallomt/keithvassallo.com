@@ -2,7 +2,7 @@
 // Shiki theme and its own Markdown plugins (src/lib/markdown.mjs, bundled from the site).
 // Keep the options in step with `markdown` in astro.config.mjs.
 import { createSatteriMarkdownProcessor } from '@astrojs/markdown-satteri';
-import { callouts, codeBlockChrome, figures, scrollableTables } from '../../../../src/lib/markdown.mjs';
+import { callouts, codeBlockChrome, diagrams, figures, scrollableTables } from '../../../../src/lib/markdown.mjs';
 
 let processor = null;
 
@@ -16,8 +16,10 @@ const escape = (value) =>
  */
 export async function renderPreview(body, imageUrl) {
   processor ??= await createSatteriMarkdownProcessor({
+    syntaxHighlight: { type: 'shiki', excludeLangs: ['mermaid'] },
     shikiConfig: { theme: 'github-dark-default', transformers: [codeBlockChrome] },
-    hastPlugins: [scrollableTables, figures, callouts],
+    // A diagram that doesn't parse yet shows its error instead of failing the whole preview
+    hastPlugins: [scrollableTables, figures, callouts, diagrams({ strict: false })],
   });
   const { code } = await processor.render(body);
 

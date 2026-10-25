@@ -5,7 +5,7 @@ import sitemap from '@astrojs/sitemap';
 import vue from '@astrojs/vue';
 import { satteri } from '@astrojs/markdown-satteri';
 import { readBlogFrontmatter } from './src/lib/blog-frontmatter.mjs';
-import { callouts, codeBlockChrome, figures, scrollableTables } from './src/lib/markdown.mjs';
+import { callouts, codeBlockChrome, diagrams, figures, scrollableTables } from './src/lib/markdown.mjs';
 
 const site = 'https://keithvassallo.com';
 
@@ -44,11 +44,13 @@ export default defineConfig({
     breakpoints: [360, 540, 720, 1080, 1440, 1800],
   },
   markdown: {
+    // Mermaid blocks become diagrams instead (src/lib/markdown.mjs)
+    syntaxHighlight: { type: 'shiki', excludeLangs: ['mermaid'] },
     shikiConfig: {
       theme: 'github-dark-default',
       transformers: [codeBlockChrome],
     },
-    processor: satteri({ hastPlugins: [scrollableTables, figures, callouts] }),
+    processor: satteri({ hastPlugins: [scrollableTables, figures, callouts, diagrams()] }),
   },
   build: {
     // Content-hashed assets for aggressive caching

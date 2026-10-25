@@ -148,6 +148,8 @@ Any network without a blurb falls back to the `description`.
   be played for laughs.
 - **Never use an em dash** (the long dash, Unicode U+2014). Use a comma, a colon, parentheses or a
   new sentence instead. Don't use an en dash (U+2013) as a substitute either.
+- A spaced hyphen (` - `) is fine for the odd aside, as Keith writes them. Don't make a habit of
+  it: the checks allow two per field, or one per 150 words of a longer body.
 - **Never begin a sentence with "And".** Restructure the sentence.
 - Don't invent facts: no made-up numbers, benchmarks, quotes, dates, version numbers or
   features. When writing about one of Keith's projects, read its entry in
@@ -307,6 +309,29 @@ most, or they stop standing out.
   resize them.
 - Only use images that exist in the post folder. Don't link images from other websites: they are not
   optimised and can disappear.
+
+### Diagrams
+
+````markdown
+```mermaid
+flowchart TD
+    A["run(command)"] --> B{"Command?"}
+    B -->|status| C["Return 'Ready'"]
+    B -->|report| D["Load report_backend"]
+```
+````
+
+- A `mermaid` code block is drawn as a diagram when the site builds, in the site's colours and
+  fonts. Flowcharts, sequence, state, class and entity-relationship diagrams and XY charts work.
+  Pie charts, Gantt charts and the other Mermaid types don't.
+- Use one where the shape is the point: branching, a sequence of calls, states, how parts connect.
+  Never as decoration.
+- Prefer top to bottom (`flowchart TD`) beyond four or five nodes. A wide left-to-right diagram
+  shrinks to fit, then scrolls sideways on phones.
+- Leave the colours to the theme. To highlight a node, use the site's green or blue on a dark
+  fill: `style C fill:#16271d,stroke:#8cd49c` or `style D fill:#132235,stroke:#79c0ff`.
+- The build fails on a diagram type that isn't supported. A malformed line inside a diagram is
+  skipped instead, so check the diagram in the preview.
 
 ### Tables
 

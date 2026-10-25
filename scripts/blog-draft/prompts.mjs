@@ -110,7 +110,7 @@ export function draftingInstructions({ instructions, siteGuide }) {
 
 Order of authority, highest first:
 
-1. The hard rules in the site's writing guide (docs/writing-a-blog-post.md, below). In particular: no em dashes, no en dashes and no spaced hyphens used as dashes; no sentence that starts with "And"; British English. Where the voice guide allows something the site guide forbids, the site guide wins.
+1. The hard rules in the site's writing guide (docs/writing-a-blog-post.md, below). In particular: no em dashes or en dashes, ever; a spaced hyphen ( - ) for the odd aside is fine, but sparingly; no sentence that starts with "And"; British English. Where the voice guide allows something the site guide forbids, the site guide wins.
 2. The evidence in the brief. Every fact in the post comes from it: never invent anecdotes, numbers, test results, quotations, reactions or motivations. Keith built and maintains his projects, so what his commits, issues, releases and READMEs show him doing can be told in the first person.
 3. Keith's corrections (keith-feedback.md, if present), then his voice guide, editorial instructions and the writing samples, for how the post should sound.
 

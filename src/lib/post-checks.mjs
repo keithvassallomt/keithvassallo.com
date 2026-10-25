@@ -13,7 +13,10 @@ const STATIC = new Set(STATIC_PAGES);
 const ALLOWED_TAGS = new Set(['kbd', 'mark']);
 
 const DASHES = /[\u2013\u2014]/;
-const SPACED_HYPHEN = /\S - \S/;
+const SPACED_HYPHEN = /\S - (?=\S)/g;
+// Spaced hyphens are fine for the odd aside, so only a habit of them is a problem: two per field,
+// or one per 150 words of a longer body (Keith's own posts run at about one per 220)
+const SPACED_HYPHEN_WORDS = 150;
 // "And" opening a line or following sentence punctuation, allowing for list markers,
 // quotes and emphasis in between.
 const SENTENCE_AND = /(?:^|[.!?]["'\u2019\u201d)\]]*\s+)(?:[-*+>]\s+|\d+\.\s+)*[*_"'\u2018\u201c(]*And\b/m;
@@ -49,10 +52,11 @@ function textProblems(label, text, lines = null) {
   if (dashed.length) {
     problems.push({ message: `${label} contains an em or en dash. Use a comma, colon, parentheses or a new sentence.`, ...at(dashed) });
   }
-  const spaced = stripped.flatMap((row, index) => (SPACED_HYPHEN.test(row) ? [index] : []));
-  if (spaced.length) {
+  const spaced = stripped.flatMap((row, index) => [...row.matchAll(SPACED_HYPHEN)].map(() => index));
+  const allowed = Math.max(2, Math.floor(text.split(/\s+/).filter(Boolean).length / SPACED_HYPHEN_WORDS));
+  if (spaced.length > allowed) {
     problems.push({
-      message: `${label} uses a spaced hyphen (" - ") as a dash. Use a comma, colon, parentheses or a new sentence.`,
+      message: `${label} uses ${spaced.length} spaced hyphens (" - "). The odd one is fine, but keep it to ${allowed} at most: use a comma, colon, parentheses or a new sentence for the rest.`,
       ...at(spaced),
     });
   }

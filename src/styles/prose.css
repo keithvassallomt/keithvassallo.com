@@ -285,6 +285,40 @@
   border-color: #3b4453;
 }
 
+/* Diagrams: Mermaid blocks drawn as SVG at build time (src/lib/markdown.mjs), which sets
+   --diagram-width to the drawing's natural width. They shrink to fit, but not below a readable
+   size: past that they scroll sideways. */
+.prose .diagram {
+  margin: 1.6em 0;
+  padding: 20px;
+  overflow-x: auto;
+  background: var(--blog-surface);
+  border: 1px solid var(--blog-border);
+  border-radius: 14px;
+}
+
+.prose .diagram svg {
+  display: block;
+  width: 100%;
+  max-width: var(--diagram-width);
+  min-width: min(var(--diagram-width), 34rem);
+  height: auto;
+  margin: 0 auto;
+}
+
+.prose .diagram-error {
+  margin: 0 0 12px;
+  font-size: 0.9em;
+  color: var(--c-red);
+}
+
+.prose .diagram pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}
+
 /* Tables: wrapped in .table-scroll (src/lib/markdown.mjs) */
 .prose .table-scroll {
   margin: 1.6em 0;
@@ -351,5 +385,14 @@
   .prose .code-block pre {
     padding: 16px 20px;
     font-size: 0.8125rem;
+  }
+
+  .prose .diagram {
+    margin-left: -20px;
+    margin-right: -20px;
+    padding: 16px 20px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
   }
 }
