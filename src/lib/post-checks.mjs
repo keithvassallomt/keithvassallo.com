@@ -67,6 +67,57 @@ function textProblems(label, text, lines = null) {
   return problems;
 }
 
+// ---- gaps for Keith ----------------------------------------------------------------------
+
+// Where a draft needs Keith's own experience or verdict, the AI leaves a gap instead of
+// inventing it: a blockquote whose first line is the marker and a short label, then the
+// question for him.
+//
+//   > [!KEITH] Your verdict
+//   > Would you tell someone starting a course today to carry on?
+//
+// He fills it in his own words, and nothing with a gap left in it can be published.
+const GAP = /^\s*>\s*\[!KEITH\]\s*(.*)$/i;
+
+/** The gaps in a body, with their 1-based first and last lines, label and question. */
+export function findGaps(body) {
+  const gaps = [];
+  let fence = null;
+  const rows = (body ?? '').split('\n');
+  for (let index = 0; index < rows.length; index++) {
+    const marker = /^\s*(`{3,}|~{3,})/.exec(rows[index]);
+    if (fence) {
+      if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length) fence = null;
+      continue;
+    }
+    if (marker) {
+      fence = marker[1];
+      continue;
+    }
+    const start = GAP.exec(rows[index]);
+    if (!start) continue;
+    const question = [];
+    let end = index;
+    while (end + 1 < rows.length && /^\s*>/.test(rows[end + 1])) {
+      end += 1;
+      question.push(rows[end].replace(/^\s*>\s?/, '').trim());
+    }
+    gaps.push({ start: index + 1, end: end + 1, label: start[1].trim(), question: question.filter(Boolean).join(' ') });
+    index = end;
+  }
+  return gaps;
+}
+
+/** The body with one gap replaced by Keith's words, or null if that gap has moved or gone. */
+export function fillGap(body, gap, text) {
+  const rows = body.split('\n');
+  const current = findGaps(body).find((found) => found.start === gap.start && found.label === gap.label);
+  if (!current) return null;
+  const words = text.replace(/\r\n/g, '\n').trim();
+  rows.splice(current.start - 1, current.end - current.start + 1, ...words.split('\n'));
+  return rows.join('\n');
+}
+
 /** A problem with the slug's form, or null. Whether it is free is for the caller to say. */
 export function slugFormatProblem(slug) {
   if (/^[a-z0-9]+(?:-[a-z0-9]+){2,5}$/.test(slug)) return null;
@@ -76,14 +127,15 @@ export function slugFormatProblem(slug) {
 /**
  * @param {{ slug: string, title: string, description: string, category: string, tags: string[], share: object, body: string }} post
  * @param {{ categoryIds: Set<string>, publishedSlugs: Set<string>, projectIds: Set<string>, imageExists: (path: string) => boolean }} site
- * @param {{ story?: boolean, requireShare?: boolean, notesField?: string | null }} options
+ * @param {{ story?: boolean, requireShare?: boolean, notesField?: string | null, maxGaps?: number | null }} options
  *   `story` adds the checks for the finished voice, which a facts-first draft doesn't have to
  *   meet yet. `requireShare` asks for a blurb for every network, which the AI must write but a
  *   hand-written post can leave to the description. `notesField` names where a model should
- *   put notes and image ideas instead.
+ *   put notes and image ideas instead. `maxGaps` limits the gaps a model may leave for Keith;
+ *   the editor lists gaps on their own (findGaps) rather than as problems.
  * @returns {{ message: string, lines?: number[] }[]} problems in the body carry its line numbers
  */
-export function postProblems(post, site, { story = false, requireShare = true, notesField = null } = {}) {
+export function postProblems(post, site, { story = false, requireShare = true, notesField = null, maxGaps = null } = {}) {
   const { slug, title, description, tags, share = {}, body } = post;
   const problems = [];
   const add = (message, lines) => problems.push(lines?.length ? { message, lines } : { message });
@@ -134,6 +186,12 @@ export function postProblems(post, site, { story = false, requireShare = true, n
     for (const [, tag] of `${row.text}\n`.matchAll(/<\/?([a-z][a-z0-9-]*)(?=[\s/>])/gi)) {
       if (!ALLOWED_TAGS.has(tag.toLowerCase())) add(`The body uses a <${tag}> tag. Only <kbd> and <mark> are allowed.`, [row.line]);
     }
+  }
+  if (maxGaps !== null) {
+    const gaps = findGaps(body);
+    if (gaps.length > maxGaps) add(`The body leaves ${gaps.length} gaps for Keith. Leave ${maxGaps} at most, where only he can say it.`, gaps.map((gap) => gap.start));
+    const unlabelled = gaps.filter((gap) => !gap.label || !gap.question).map((gap) => gap.start);
+    if (unlabelled.length) add('Each gap for Keith needs a short label after [!KEITH], and the question on the next line.', unlabelled);
   }
   const bare = prose.filter((row) => /https?:\/\//.test(row.text.replace(/\]\([^)]*\)/g, ']()'))).map((row) => row.line);
   if (bare.length) add('The body contains a bare URL. Link descriptive text instead: [text](url).', bare);

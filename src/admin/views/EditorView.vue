@@ -6,7 +6,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import { useRouter } from 'vue-router';
 import { api } from '../api.js';
 import { siteData, slugify, ukEndOfDay } from '../site.js';
-import { postProblems, slugFormatProblem } from '../../lib/post-checks.mjs';
+import { fillGap, findGaps, postProblems, slugFormatProblem } from '../../lib/post-checks.mjs';
 import { imageName, prepareImage, uploadImage } from '../editor/images.js';
 import { scrollSync } from '../editor/scroll-sync.js';
 import MarkdownEditor from '../editor/MarkdownEditor.vue';
@@ -19,6 +19,8 @@ import GenerateDialog from '../editor/GenerateDialog.vue';
 import RevisePanel from '../editor/RevisePanel.vue';
 import DiffDialog from '../editor/DiffDialog.vue';
 import AiNotes from '../editor/AiNotes.vue';
+import AskPanel from '../editor/AskPanel.vue';
+import ForYouPanel from '../editor/ForYouPanel.vue';
 import ModelPicker from '../editor/ModelPicker.vue';
 import PublishDialog from '../editor/PublishDialog.vue';
 import Dialog from '../Dialog.vue';
@@ -27,11 +29,11 @@ import Icon from '../Icon.vue';
 const props = defineProps({ id: { type: String, required: true } });
 const router = useRouter();
 
-const FIELDS = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags', 'cover', 'coverAlt', 'share', 'notes', 'body'];
+const FIELDS = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags', 'cover', 'coverAlt', 'share', 'notes', 'body', 'questions'];
 const BACKUP = `kv-admin-draft-${props.id}`;
 
-const post = reactive({ title: '', slug: '', slugTouched: false, description: '', category: '', tags: [], cover: null, coverAlt: '', share: {}, notes: '', body: '' });
-const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, repoSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false });
+const post = reactive({ title: '', slug: '', slugTouched: false, description: '', category: '', tags: [], cover: null, coverAlt: '', share: {}, notes: '', body: '', questions: [] });
+const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, repoSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false, ask: null });
 const loaded = ref(false);
 const loadError = ref('');
 const site = ref(null);
@@ -134,6 +136,7 @@ function applyStatus(data) {
     scheduledFor: data.scheduledFor ?? null,
     job: data.job ?? null,
     repoChanged: !!data.repoChanged,
+    ask: data.ask ?? null,
   });
 }
 
@@ -423,8 +426,11 @@ const aiActive = computed(() => jobActive.value && AI_KINDS.has(meta.job.kind));
 const locked = computed(() => aiActive.value || meta.status === 'bin');
 const hasText = computed(() => !!post.body.trim());
 const showJob = computed(() => meta.job && meta.job.id !== dismissed.value);
+// A run that stopped to ask for Keith's angle, until he answers
+const asking = computed(() => !!meta.ask && !aiActive.value && meta.status !== 'bin');
 const chip = computed(() => {
   if (meta.status === 'bin') return { label: 'In the bin', style: 'color: var(--red); background: rgba(255,123,114,0.12)' };
+  if (asking.value) return { label: 'Needs you', style: 'color: var(--yellow); background: rgba(242,204,96,0.12)' };
   if (meta.status === 'scheduled') return { label: 'Scheduled', style: 'color: var(--yellow); background: rgba(242,204,96,0.12)' };
   if (meta.liveSlug) return { label: changed.value ? 'Live, with changes' : 'Live', style: 'color: var(--green); background: rgba(140,212,156,0.12)' };
   return { label: 'Draft', style: 'color: var(--secondary); background: rgba(138,147,161,0.14)' };
@@ -473,6 +479,45 @@ const newCover = () => act(() => api(`/posts/${props.id}/cover`, { method: 'POST
 
 async function revise({ request, learn, choice }) {
   await act(() => api(`/posts/${props.id}/revise`, { method: 'POST', body: { highlights: highlights.value, request, learn, ...choice } }));
+}
+
+// ---- for you ---------------------------------------------------------------------------
+// The gaps the AI left for Keith's words, and its questions (docs/blog-admin-plan.md, stage 9)
+const gaps = computed(() => findGaps(post.body));
+const openQuestions = computed(() => post.questions.filter((question) => !question.answer.trim() && !question.left));
+const forYouCount = computed(() => gaps.value.length + openQuestions.value.length);
+const forYouShown = computed(() => gaps.value.length > 0 || post.questions.length > 0);
+
+/** Puts Keith's words in place of a gap, exactly as he typed them. */
+function fillIn({ gap, text }) {
+  const body = fillGap(post.body, gap, text);
+  if (body === null) {
+    actionError.value = 'That gap has moved since the list was drawn. Try again.';
+    return;
+  }
+  post.body = body;
+}
+
+const answersRevision = ({ choice }) => revise({ request: reviseRequest.value, learn: reviseLearn.value, choice });
+
+/** Keith's angle and answers for a run that stopped to ask, which start the writing. */
+async function answerAsk({ answers, choice }) {
+  await act(() => api(`/posts/${props.id}/generate`, { method: 'POST', body: { ...choice, answers } }));
+  if (!actionError.value) meta.ask = null;
+}
+
+/** Puts the idea back at the top of the queue, and the post in the bin. */
+async function putBack() {
+  menuOpen.value = false;
+  const [title, ...rest] = post.notes.trim().split('\n');
+  if (!confirm('Put the idea back at the top of your ideas, and move this post to the bin?')) return;
+  await act(async () => {
+    await api('/ideas', { method: 'POST', body: { title, details: rest.join('\n').trim(), next: true } });
+    await api(`/posts/${props.id}`, { method: 'DELETE' });
+  });
+  if (actionError.value) return;
+  storage.clear();
+  router.push('/ideas');
 }
 
 async function cancelAi(job) {
@@ -537,6 +582,7 @@ async function jobFinished(job) {
     renderPreview();
     aiRefresh.value += 1;
     history.value?.load();
+    if (forYouCount.value && !phone.value && job.status === 'done') panel.value = 'foryou';
   } else if (data) {
     applyStatus(data);
   }
@@ -598,6 +644,7 @@ onMounted(async () => {
       else leftover.value = backup;
     }
     loaded.value = true;
+    if (forYouCount.value && !phone.value) panel.value = 'foryou';
     runChecks();
     renderPreview();
     if (lastSaved !== fields()) save();
@@ -618,6 +665,7 @@ onBeforeUnmount(() => {
 const panes = computed(() => [
   ['write', 'Write'],
   ['preview', 'Preview'],
+  ...(forYouShown.value ? [['foryou', forYouCount.value ? `For you (${forYouCount.value})` : 'For you']] : []),
   ...(reviseMode.value ? [['revise', `Revise${highlights.value.length ? ` (${highlights.value.length})` : ''}`]] : []),
   ['details', 'Details'],
   ['checks', checked.value.length ? `Checks (${checked.value.length})` : 'Checks'],
@@ -645,16 +693,17 @@ function goToProblem(line) {
       <span class="chip" :style="chip.style">{{ chip.label }}</span>
       <span class="state" :class="saveState" role="status">{{ loaded ? saveLabel : 'Loading' }}</span>
       <span class="grow"></span>
-      <button type="button" class="btn ai" :class="{ on: reviseMode }" :disabled="locked || jobActive" @click="aiButton">
+      <button v-if="!asking" type="button" class="btn ai" :class="{ on: reviseMode }" :disabled="locked || jobActive" @click="aiButton">
         <Icon name="sparkles" /><span class="wide">{{ aiActive ? 'Working' : hasText ? 'Revise' : 'Generate' }}</span>
       </button>
       <button v-if="meta.liveSlug" type="button" class="btn btn-go" :disabled="!changed || jobActive || meta.status === 'bin'" :title="changed ? '' : 'No changes since it went live'" @click="open('publish')">
         <span class="wide">Update live post</span><span class="narrow">Update</span>
       </button>
-      <button v-else type="button" class="btn btn-go" :disabled="jobActive || meta.status !== 'draft'" @click="open('publish')">Publish</button>
+      <button v-else-if="!asking" type="button" class="btn btn-go" :disabled="jobActive || meta.status !== 'draft'" @click="open('publish')">Publish</button>
       <div class="menu-wrap">
         <button type="button" class="btn icon" aria-label="More actions" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><Icon name="more" /></button>
         <div v-if="menuOpen" class="card menu">
+          <button v-if="asking" type="button" :disabled="acting" @click="putBack"><Icon name="idea" />Put it back in Ideas</button>
           <button v-if="hasText && !locked" type="button" :disabled="jobActive" @click="open('generate')"><Icon name="sparkles" />Generate again</button>
           <button v-if="!locked" type="button" :disabled="jobActive || !post.title.trim()" @click="open('cover')"><Icon name="image" />Draw a new cover</button>
           <template v-if="meta.liveSlug">
@@ -703,11 +752,15 @@ function goToProblem(line) {
     <p v-if="actionError && !dialog" class="card banner error-banner" role="alert">{{ actionError }}</p>
     <JobBanner v-if="showJob" :job="meta.job" :slug="meta.liveSlug ?? post.slug" @finished="jobFinished" @dismiss="dismissed = meta.job.id" @cancel="cancelAi" />
 
-    <nav v-if="phone" class="panes" aria-label="Editor views">
+    <div v-if="asking" class="asking">
+      <AskPanel :post-id="id" :ask="meta.ask" :notes="post.notes" :categories="site?.categories ?? []" :busy="acting || jobActive" :error="dialog ? '' : actionError" @answer="answerAsk" />
+    </div>
+
+    <nav v-if="phone && !asking" class="panes" aria-label="Editor views">
       <button v-for="[name, label] in panes" :key="name" type="button" :class="{ on: pane === name }" :aria-pressed="pane === name" @click="pane = name">{{ label }}</button>
     </nav>
 
-    <div class="body">
+    <div v-if="!asking" class="body">
       <section v-show="!phone || pane === 'write' || pane === 'preview'" class="work">
         <div v-show="!phone || pane === 'write'" class="writing">
           <input v-model="post.title" class="title hd" placeholder="Title" aria-label="Title" :readonly="locked" />
@@ -752,8 +805,21 @@ function goToProblem(line) {
         <fieldset v-if="showPanel('details') && loaded" class="plain" :disabled="locked">
           <DetailsPanel :post="post" :categories="site?.categories ?? []" :cover-url="coverUrl" :busy="!!busy" @cover="setCover" @remove-cover="post.cover = null" @regenerate="open('cover')" />
         </fieldset>
+        <ForYouPanel
+          v-if="showPanel('foryou')"
+          v-model:questions="post.questions"
+          v-model:choice="reviseChoice"
+          :body="post.body"
+          :locked="locked"
+          :busy="acting || jobActive"
+          :error="dialog ? '' : actionError"
+          :notes="highlights.length"
+          @fill="fillIn"
+          @go="goToProblem"
+          @revise="answersRevision"
+        />
         <AiNotes v-if="showPanel('ai')" :post-id="id" :refresh="aiRefresh" />
-        <ChecksPanel v-if="showPanel('checks')" :problems="checked" @go="goToProblem" />
+        <ChecksPanel v-if="showPanel('checks')" :problems="checked" :gaps="gaps" @go="goToProblem" />
         <HistoryPanel v-if="showPanel('history')" ref="history" :post-id="id" @restore="restore" />
       </aside>
     </div>
@@ -764,6 +830,7 @@ function goToProblem(line) {
       :live="!!meta.liveSlug"
       :pinned="pinned"
       :problems="checked"
+      :gaps="gaps.length"
       :cover-url="coverUrl"
       :busy="acting"
       :error="actionError"
@@ -1087,6 +1154,12 @@ function goToProblem(line) {
   flex: 1;
   min-height: 0;
   display: flex;
+}
+
+.asking {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .work {

@@ -11,14 +11,17 @@ import {
   changeLesson,
   cleanIdea,
   editRepoFile,
+  ideaNotes,
   keithLessons,
   lessonList,
+  moveIdeaToTop,
+  nextIdea,
   parseIdeas,
   readRepoFile,
 } from '../../../../src/lib/private-notes.mjs';
 import { token } from './github.mjs';
-import { allPosts, createPost } from './posts.mjs';
-import { HttpError, busy } from './store.mjs';
+import { createPost } from './posts.mjs';
+import { HttpError } from './store.mjs';
 
 const { PRIVATE_REPO } = process.env;
 const ukDay = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
@@ -45,8 +48,11 @@ async function read(file) {
   }
 }
 
-/** Saves a change to a file. `change` returns null when what it should change isn't there. */
-async function edit(file, message, change, missing) {
+/**
+ * Saves a change to a file. `change` returns null when what it should change isn't there, which
+ * is a 409 with the `missing` message, or no change at all without one.
+ */
+async function edit(file, message, change, missing = null) {
   let found = true;
   try {
     const { text } = await editRepoFile({
@@ -60,7 +66,7 @@ async function edit(file, message, change, missing) {
         return next;
       },
     });
-    if (!found) throw new HttpError(409, missing);
+    if (!found && missing) throw new HttpError(409, missing);
     return text;
   } catch (error) {
     throw githubFailure(error, file);
@@ -71,15 +77,10 @@ async function edit(file, message, change, missing) {
 
 const IDEA_GONE = 'That idea has changed or gone since the page loaded. The list is up to date now.';
 
-/** The ideas, each with the draft it led to, if any. */
-async function ideasWithDrafts(text) {
-  const { ideas } = parseIdeas(text);
-  const posts = ideas.some((idea) => idea.post) ? new Map((await allPosts(['id', 'title', 'status', 'job'])).map((post) => [post.id, post])) : new Map();
+/** The queue, oldest first. Ideas an older file marked used are already taken, so they're left out. */
+function queue(text) {
   return {
-    ideas: ideas.map((idea) => {
-      const post = idea.post ? posts.get(idea.post) : null;
-      return { ...idea, draft: post ? { id: post.id, title: post.title, status: post.status, drafting: busy(post) && post.job.kind === 'generate' } : null };
-    }),
+    ideas: parseIdeas(text).ideas.filter((idea) => !idea.used).map(({ id, title, details, added }) => ({ id, title, details, added })),
     file: `https://github.com/${PRIVATE_REPO}/blob/main/${IDEAS_FILE}`,
   };
 }
@@ -92,28 +93,46 @@ function validIdea(input = {}) {
   }
 }
 
-export const getIdeas = async () => ideasWithDrafts(await read(IDEAS_FILE));
+export const getIdeas = async () => queue(await read(IDEAS_FILE));
 
-export async function addIdea(input) {
+/** Adds an idea at the end of the queue, or at the top when `next` is set. */
+export async function addIdea(input = {}) {
   const idea = validIdea(input);
-  return ideasWithDrafts(await edit(IDEAS_FILE, 'Added an idea from the blog admin', (text) => addToIdeas(text, idea, ukDay()).text));
+  return queue(await edit(IDEAS_FILE, 'Added an idea from the blog admin', (text) => addToIdeas(text, idea, ukDay(), { next: input.next === true }).text));
 }
 
-export async function saveIdea(id, input) {
+/** Edits an idea's text, or with `next` alone, moves it to the top of the queue. */
+export async function saveIdea(id, input = {}) {
+  if (input.next === true && input.title === undefined) {
+    return queue(await edit(IDEAS_FILE, 'Moved an idea to the top of the queue in the blog admin', (text) => moveIdeaToTop(text, id), IDEA_GONE));
+  }
   const idea = validIdea(input);
-  return ideasWithDrafts(await edit(IDEAS_FILE, 'Edited an idea in the blog admin', (text) => changeIdea(text, id, (current) => ({ ...current, ...idea })), IDEA_GONE));
+  return queue(await edit(IDEAS_FILE, 'Edited an idea in the blog admin', (text) => changeIdea(text, id, (current) => ({ ...current, ...idea })), IDEA_GONE));
 }
 
 export async function deleteIdea(id) {
-  return ideasWithDrafts(await edit(IDEAS_FILE, 'Deleted an idea in the blog admin', (text) => changeIdea(text, id, () => null), IDEA_GONE));
+  return queue(await edit(IDEAS_FILE, 'Deleted an idea in the blog admin', (text) => changeIdea(text, id, () => null), IDEA_GONE));
 }
 
-/** A new post with the idea as its notes for the AI, and the idea marked with it. */
+/**
+ * Takes an idea out of the queue for a post: the one with this id, or the one at the top.
+ * Returns it, or null when the queue is empty. It comes out before the post is made, so two
+ * runs at once can never take the same idea; if the post then failed, git still has it.
+ */
+export async function takeIdea(id = null) {
+  let taken = null;
+  await edit(IDEAS_FILE, 'Took an idea for a post in the blog admin', (text) => {
+    taken = id ? (parseIdeas(text).ideas.find((idea) => idea.id === id) ?? null) : nextIdea(text);
+    return taken ? changeIdea(text, taken.id, () => null) : null;
+  });
+  return taken;
+}
+
+/** A new post with the idea as its notes for the AI. The idea leaves the queue. */
 export async function draftIdea(id) {
-  const idea = parseIdeas(await read(IDEAS_FILE)).ideas.find((item) => item.id === id);
+  const idea = await takeIdea(id);
   if (!idea) throw new HttpError(409, IDEA_GONE);
-  const post = await createPost({ notes: [idea.title, idea.details].filter(Boolean).join('\n\n') });
-  await edit(IDEAS_FILE, 'Started a draft from an idea in the blog admin', (text) => changeIdea(text, id, (current) => ({ ...current, used: ukDay(), post: post.id })), IDEA_GONE);
+  const post = await createPost({ notes: ideaNotes(idea) });
   return { id: post.id };
 }
 

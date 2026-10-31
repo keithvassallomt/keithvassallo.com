@@ -30,7 +30,7 @@ export function checkSlug(slug, site) {
 export function checkPost(post, site, { story = false } = {}) {
   const { slug } = post;
   const imageExists = (image) => existsSync(path.join(site.siteDir, 'src/content/blog', slug, image));
-  const problems = postProblems(post, { ...site, imageExists }, { story, notesField: 'notes_for_keith' });
+  const problems = postProblems(post, { ...site, imageExists }, { story, notesField: 'notes_for_keith', maxGaps: 3 });
   return [...new Set([checkSlug(slug, site), ...problems.map((problem) => problem.message)].filter(Boolean))];
 }
 

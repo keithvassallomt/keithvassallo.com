@@ -57,9 +57,11 @@ onMounted(async () => {
     const fromAdmin = drafts.posts.map((post) => {
       const key = post.status === 'bin' ? 'bin' : post.status === 'scheduled' ? 'scheduled' : post.liveSlug ? 'live' : 'draft';
       const working = ['queued', 'running'].includes(post.job?.status) && Date.now() - Date.parse(post.job.at ?? 0) < 45 * 60 * 1000;
+      // A run waiting for Keith's angle, or a draft with gaps for his words, says so
+      const waiting = !working && key === 'draft' && (post.ask ? 'Pick your angle, and the AI writes it' : post.gaps ? `${post.gaps} ${post.gaps === 1 ? 'gap' : 'gaps'} for you to fill` : null);
       const sub = working
         ? `${JOBS[post.job.kind] ?? 'Working'}: ${post.job.stage}`
-        : {
+        : waiting || {
             bin: () => `Deleted ${bin.format(new Date(post.deletedAt))}, gone after ${bin.format(new Date(Date.parse(post.deletedAt) + 30 * 864e5))}`,
             scheduled: () => `Goes live ${post.scheduledFor?.replace('T', ', ')}`,
             live: () => (post.version > post.publishedVersion ? 'Live, with unpublished changes' : 'Published'),
@@ -68,6 +70,7 @@ onMounted(async () => {
       return {
         ...post,
         key,
+        needsYou: !working && key === 'draft' && !!post.ask,
         pinned: !!post.liveSlug && pin.slug === post.liveSlug,
         cover: post.coverUrl,
         sub,
@@ -188,7 +191,8 @@ const linkFor = (post) => {
             <span class="muted desc">{{ post.description || 'No description yet' }}</span>
           </span>
           <span class="state">
-            <span class="status" :style="{ color: STATUS[post.key].color }">{{ STATUS[post.key].label }}</span>
+            <span v-if="post.needsYou" class="status" style="color: var(--yellow)">Needs you</span>
+            <span v-else class="status" :style="{ color: STATUS[post.key].color }">{{ STATUS[post.key].label }}</span>
             <span class="muted sub"><Icon v-if="post.pinned" name="pin" class="pin" />{{ post.pinned ? 'Pinned. ' : '' }}{{ post.sub }}</span>
             <button v-if="post.key === 'bin'" type="button" class="btn small" @click="unbin(post)"><Icon name="restore" />Restore</button>
           </span>

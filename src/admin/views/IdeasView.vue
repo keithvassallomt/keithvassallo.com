@@ -1,17 +1,25 @@
 <script setup>
-// Ideas: notes/ideas.md in blog-private, which the research stage reads. Add one from the
-// phone, edit or delete it, or start a draft from it. Each change is a commit there.
-import { onMounted, ref } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+// Ideas: notes/ideas.md in blog-private, as a queue, oldest first (docs/blog-admin-plan.md,
+// stage 9). The weekly run, and Generate on an empty post, take the one at the top, and an idea
+// leaves the list once a post is made from it. Add one from the phone, or share a page to the
+// installed admin from another app; move one to the top, edit or delete it, or draft it now.
+// Each change is a commit there.
+import { computed, nextTick, onMounted, ref } from 'vue';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { api } from '../api.js';
 import Dialog from '../Dialog.vue';
 import Icon from '../Icon.vue';
 
+const route = useRoute();
 const router = useRouter();
 const ideas = ref(null);
 const file = ref('');
+const weekly = ref(null);
 const title = ref('');
 const details = ref('');
+const next = ref(false);
+const shared = ref(false);
+const titleInput = ref(null);
 const editing = ref(null);
 const deleting = ref(null);
 const busy = ref(false);
@@ -25,12 +33,37 @@ function apply(result) {
 
 const load = async () => apply(await api('/ideas'));
 
-onMounted(() =>
+/** A page shared from another app (src/admin/share-target.js) fills in the new idea. */
+function takeShare() {
+  const { shared: from, title: sharedTitle = '', text = '', url = '' } = route.query;
+  if (!from) return;
+  // Android often puts the link in the text, so it only goes in once
+  const link = url && !text.includes(url) ? url : '';
+  title.value = String(sharedTitle || (!link && !/^https?:\/\//.test(text) ? text.split('\n')[0] : '')).slice(0, 200);
+  details.value = [text && text !== title.value ? text : '', link].filter(Boolean).join('\n\n');
+  shared.value = true;
+  router.replace('/ideas');
+  nextTick(() => titleInput.value?.focus());
+}
+
+onMounted(() => {
+  takeShare();
+  api('/weekly').then((result) => (weekly.value = result)).catch(() => {});
   load().catch((error) => {
     failed.value = true;
     message.value = error.message;
-  }),
-);
+  });
+});
+
+/** What the next weekly run writes, for the banner. */
+const nextRun = computed(() => {
+  const settings = weekly.value?.settings;
+  if (!settings) return null;
+  const day = new Date(`${weekly.value.next}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
+  if (!settings.enabled) return { off: true };
+  if (settings.topic?.trim()) return { day, topic: true };
+  return { day, idea: ideas.value?.[0] ?? null };
+});
 
 async function run(task, done = '') {
   busy.value = true;
@@ -53,11 +86,16 @@ async function run(task, done = '') {
 }
 
 async function add() {
-  if (await run(() => api('/ideas', { method: 'POST', body: { title: title.value, details: details.value } }), 'Added.')) {
+  const body = { title: title.value, details: details.value, next: next.value };
+  if (await run(() => api('/ideas', { method: 'POST', body }), next.value ? 'Added, at the top.' : 'Added, at the end of the queue.')) {
     title.value = '';
     details.value = '';
+    next.value = false;
+    shared.value = false;
   }
 }
+
+const makeNext = (idea) => run(() => api(`/ideas/${idea.id}`, { method: 'PUT', body: { next: true } }), `“${idea.title}” is next.`);
 
 const startEdit = (idea) => (editing.value = { id: idea.id, title: idea.title, details: idea.details });
 
@@ -81,6 +119,7 @@ async function draft(idea) {
     failed.value = true;
     message.value = error.message;
     busy.value = false;
+    if (error.status === 409) await load().catch(() => {});
   }
 }
 
@@ -98,19 +137,30 @@ function added(day) {
   <div class="page narrow">
     <div class="page-head">
       <h1 class="hd">Ideas</h1>
-      <p>Anything you might want to write about. The weekly run and Generate both read these, and what you write here counts as your own experience.</p>
+      <p>Anything you might want to write about: a line, rough notes, links. Your ideas come before the AI's own: each weekly run writes the one at the top, and the AI only picks a topic itself when the queue is empty.</p>
+    </div>
+
+    <div v-if="nextRun" class="card banner" :class="{ off: nextRun.off }">
+      <Icon name="calendar" />
+      <span v-if="nextRun.off">The weekly run is off, so ideas wait until you draft them or turn it on.</span>
+      <span v-else-if="nextRun.topic">{{ nextRun.day }}, 09:00: the weekly run writes the topic set on the Weekly page, then your ideas the weeks after.</span>
+      <span v-else-if="nextRun.idea">{{ nextRun.day }}, 09:00: the weekly run writes <strong>{{ nextRun.idea.title }}</strong>.</span>
+      <span v-else>{{ nextRun.day }}, 09:00: with no ideas queued, the AI picks a topic itself.</span>
+      <RouterLink to="/weekly">Weekly settings</RouterLink>
     </div>
 
     <form class="card add" @submit.prevent="add">
+      <p v-if="shared" class="shared"><Icon name="external" />Shared from another app. Add a line of your own if you like.</p>
       <label>
         <span class="label">New idea</span>
-        <input v-model="title" class="inp" placeholder="One line is enough" maxlength="200" />
+        <input ref="titleInput" v-model="title" class="inp" placeholder="One line is enough" maxlength="200" />
       </label>
       <label>
-        <span class="label">Details (optional)</span>
-        <textarea v-model="details" class="inp" rows="2" placeholder="What happened, what you think, links"></textarea>
+        <span class="label">Notes and links (optional)</span>
+        <textarea v-model="details" class="inp" rows="3" placeholder="Paste links, rough notes, half a thought. If the AI needs your angle, it asks you."></textarea>
       </label>
       <div class="end">
+        <label class="next"><input v-model="next" type="checkbox" />Write this one next</label>
         <button type="submit" class="btn btn-go" :disabled="busy || !title.trim()"><Icon name="plus" />Add idea</button>
       </div>
     </form>
@@ -118,14 +168,15 @@ function added(day) {
     <p v-if="message" class="card note" :class="failed ? 'bad' : 'good'" role="status">{{ message }}</p>
 
     <p v-if="ideas === null && !failed" class="muted">Loading</p>
-    <p v-else-if="ideas && !ideas.length" class="muted">No ideas yet.</p>
+    <p v-else-if="ideas && !ideas.length" class="muted">No ideas queued. Until there are, the weekly run picks a topic itself.</p>
 
-    <section v-if="ideas?.length" class="list">
-      <div v-for="idea in ideas" :key="idea.id" class="card idea">
+    <section v-if="ideas?.length" class="list" aria-labelledby="queue">
+      <h2 id="queue" class="hd queue">Up next <span class="muted">{{ ideas.length }} waiting · oldest first, unless you move one up</span></h2>
+      <div v-for="(idea, index) in ideas" :key="idea.id" class="card idea" :class="{ first: index === 0 }">
         <template v-if="editing?.id === idea.id">
           <form class="edit" @submit.prevent="saveEdit">
             <input v-model="editing.title" class="inp" maxlength="200" aria-label="The idea" />
-            <textarea v-model="editing.details" class="inp" rows="3" aria-label="Details" placeholder="Details (optional)"></textarea>
+            <textarea v-model="editing.details" class="inp" rows="3" aria-label="Notes and links" placeholder="Notes and links (optional)"></textarea>
             <div class="end">
               <button type="button" class="btn" :disabled="busy" @click="editing = null">Cancel</button>
               <button type="submit" class="btn btn-go" :disabled="busy || !editing.title.trim()">Save</button>
@@ -133,23 +184,15 @@ function added(day) {
           </form>
         </template>
         <template v-else>
-          <span class="mark" :class="{ used: idea.used }"><Icon :name="idea.used ? 'check' : 'idea'" /></span>
+          <span class="pos" :aria-label="`Number ${index + 1} in the queue`">{{ index + 1 }}</span>
           <div class="text">
             <strong>{{ idea.title }}</strong>
             <p v-if="idea.details" class="details">{{ idea.details }}</p>
             <div class="muted when">{{ added(idea.added) }}</div>
-            <div v-if="idea.draft?.drafting" class="state">
-              <span class="chip" style="color: var(--pink); background: rgba(242, 160, 214, 0.12)">Being drafted now</span>
-              <RouterLink :to="`/posts/${idea.draft.id}`">See the run</RouterLink>
-            </div>
-            <div v-else-if="idea.used" class="state">
-              <span class="chip" style="color: var(--secondary); background: rgba(138, 147, 161, 0.14)">Used</span>
-              <RouterLink v-if="idea.draft" :to="`/posts/${idea.draft.id}`">{{ idea.draft.title || 'Untitled draft' }}</RouterLink>
-              <span v-else class="muted">The draft has been deleted</span>
-            </div>
           </div>
           <div class="actions">
-            <button type="button" class="btn btn-ai small" :disabled="busy" @click="draft(idea)">Draft this</button>
+            <button v-if="index > 0" type="button" class="btn small" :disabled="busy" @click="makeNext(idea)">Make next</button>
+            <button type="button" class="btn btn-ai small" :disabled="busy" @click="draft(idea)">Draft now</button>
             <button type="button" class="iconbtn" :disabled="busy" aria-label="Edit the idea" @click="startEdit(idea)"><Icon name="pen" /></button>
             <button type="button" class="iconbtn" :disabled="busy" aria-label="Delete the idea" @click="deleting = idea"><Icon name="trash" /></button>
           </div>
@@ -158,7 +201,7 @@ function added(day) {
     </section>
 
     <p class="muted foot">
-      Saved privately in blog-private, never on the site. Draft this opens a new post with the idea in its notes for the AI.
+      Saved privately in blog-private, never on the site. Once an idea becomes a post, it leaves this list and its words go with the post. Draft now does that straight away, without waiting for Saturday.
       <a v-if="file" :href="file" target="_blank" rel="noopener">The file on GitHub</a>
     </p>
 
@@ -194,7 +237,9 @@ function added(day) {
 
 .end {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
   gap: 10px;
 }
 
@@ -224,13 +269,100 @@ function added(day) {
   align-items: flex-start;
 }
 
-.mark {
-  color: var(--yellow);
-  padding-top: 2px;
+.pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--secondary);
+  font-weight: 700;
+  font-size: 14px;
+  flex: none;
 }
 
-.mark.used {
+.first .pos {
+  background: var(--green);
+  color: var(--ground);
+}
+
+.queue {
+  font-size: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.queue .muted {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.banner {
+  padding: 14px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  border-color: #2a3a2e;
+  background: #111a15;
+  color: var(--body);
+}
+
+.banner > .ic {
+  color: var(--green);
+}
+
+.banner > span {
+  flex: 1 1 300px;
+}
+
+.banner strong {
+  color: var(--text);
+}
+
+.banner a {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.banner.off {
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+.banner.off > .ic {
   color: var(--muted);
+}
+
+.shared {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.next {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-right: auto;
+  cursor: pointer;
+}
+
+.next input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--green);
 }
 
 .text {
@@ -254,16 +386,6 @@ function added(day) {
 .when {
   font-size: 14px;
   margin-top: 4px;
-}
-
-.state {
-  margin-top: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 700;
 }
 
 .actions {

@@ -44,7 +44,11 @@ const CALLOUTS = {
   caution: 'Caution',
 };
 
-/** GitHub-style callouts: a blockquote starting with [!NOTE], [!TIP], [!IMPORTANT], [!WARNING] or [!CAUTION]. */
+/**
+ * GitHub-style callouts: a blockquote starting with [!NOTE], [!TIP], [!IMPORTANT], [!WARNING] or
+ * [!CAUTION]. [!KEITH] is a gap the AI left for Keith (src/lib/post-checks.mjs), titled with its
+ * label so the admin's preview shows what's missing. Publishing refuses a post with one left.
+ */
 export const callouts = {
   name: 'blog-callouts',
   element: {
@@ -55,11 +59,20 @@ export const callouts = {
       if (!first || first.tagName !== 'p') return;
       const lead = first.children[0];
       if (!lead || lead.type !== 'text') return;
-      const match = /^\s*\[!(note|tip|important|warning|caution)\]\s*/i.exec(lead.value);
+      const match = /^\s*\[!(note|tip|important|warning|caution|keith)\][ \t]*/i.exec(lead.value);
       if (!match) return;
 
       const kind = match[1].toLowerCase();
-      const remainder = lead.value.slice(match[0].length);
+      let remainder = lead.value.slice(match[0].length);
+      let title = CALLOUTS[kind];
+      if (kind === 'keith') {
+        // The rest of the marker's line is the gap's label
+        const [label, ...rest] = remainder.split('\n');
+        title = `For you: ${label.trim() || 'your words'}`;
+        remainder = rest.join('\n');
+      } else {
+        remainder = remainder.replace(/^\s+/, '');
+      }
       const leadChildren = [...(remainder ? [text(remainder)] : []), ...first.children.slice(1)];
       const body = node.children.flatMap((child, index) => {
         if (index !== firstIndex) return [child];
@@ -69,7 +82,7 @@ export const callouts = {
       ctx.replaceNode(
         node,
         element('aside', { className: ['callout', `callout-${kind}`] }, [
-          element('p', { className: ['callout-title'] }, [text(CALLOUTS[kind])]),
+          element('p', { className: ['callout-title'] }, [text(title)]),
           ...body,
         ]),
       );

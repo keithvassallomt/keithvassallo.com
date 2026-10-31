@@ -2,9 +2,10 @@
 // The admin's frame: sign-in, then the navigation and whichever screen the address names.
 // Mounted by src/pages/admin/index.astro.
 import { onMounted, ref, watch } from 'vue';
-import { RouterLink, RouterView, useRoute } from 'vue-router';
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { session, signIn, startSession } from './auth.js';
 import { api } from './api.js';
+import { registration } from './push.js';
 import Icon from './Icon.vue';
 import './admin.css';
 
@@ -12,6 +13,7 @@ import './admin.css';
 const admin = ref(null);
 // The editor takes the whole screen, without the navigation
 const route = useRoute();
+const router = useRouter();
 // A missing GitHub token, or one about to expire, stops publishing and the AI jobs
 const tokenWarning = ref(null);
 
@@ -48,9 +50,14 @@ onMounted(async () => {
       if (event.data?.type === 'notification') showToast(event.data);
     });
     navigator.serviceWorker.startMessages();
+    registration().catch((error) => console.warn('The admin’s service worker didn’t register', error));
   }
   await startSession();
   if (session.status !== 'signed-in') return;
+  // A sign-in returns to the screen it started from by rewriting the address, which the router
+  // doesn't see on its own
+  const wanted = location.hash.slice(1) || '/';
+  if (wanted !== route.fullPath) router.replace(wanted);
   try {
     const me = await api('/me');
     admin.value = true;

@@ -1,5 +1,5 @@
-// Tells Keith when a job ends: a draft is ready, a post is live, something failed, or the week
-// had no draft. It runs on the table's change stream, filtered to job records, and sends an
+// Tells Keith when a job ends: a draft is ready, a run needs his angle before it can write, a
+// post is live, something failed, or the week had no draft. It runs on the table's change stream, filtered to job records, and sends an
 // email through SES and a Web Push notification to each device he has allowed, as his
 // notification settings say. Cancelled jobs, dry runs and pin changes stay quiet. A daily
 // rule also runs it to warn him before the GitHub token in Settings expires.
@@ -17,7 +17,17 @@ const ses = new SESv2Client({ region: SES_REGION });
 const ssm = new SSMClient({});
 
 const ENDED = new Set(['done', 'failed', 'skipped']);
-export const EVENT_DEFAULTS = { draft: true, revision: true, live: true, failed: true, weekly: true };
+export const EVENT_DEFAULTS = { draft: true, needsYou: true, revision: true, live: true, failed: true, weekly: true };
+
+const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+
+/** What's waiting for Keith on a draft: its gaps and open questions, or nothing. */
+function forYou(post) {
+  const gaps = post?.gaps ?? 0;
+  const questions = (post?.questions ?? []).filter((question) => !question.answer?.trim() && !question.left).length;
+  const parts = [gaps && plural(gaps, 'gap', 'gaps') + ' to fill', questions && plural(questions, 'question', 'questions')].filter(Boolean);
+  return parts.length ? `For you: ${parts.join(' and ')}.` : '';
+}
 
 let vapid = null;
 
@@ -40,13 +50,24 @@ function message(job, post) {
     return { event: 'weekly', subject: 'No weekly draft this week', text: job.reason ?? 'The weekly run was skipped.', link: `${ADMIN}#/weekly` };
   }
   if (job.kind === 'generate') {
+    if (job.outcome === 'ask') {
+      const angles = (post?.ask?.angles ?? []).map((angle) => `- ${angle.title}`).join('\n');
+      return {
+        event: 'needsYou',
+        subject: `Needs your angle: ${title}`,
+        text: `${job.reason ?? post?.ask?.why ?? 'The AI needs your view before it writes.'}\n\nPick an angle and it writes the post${angles ? `. It suggests:\n\n${angles}\n\nor your own.` : '.'}`,
+        link,
+      };
+    }
     if (job.outcome === 'skip') {
       return { event: 'weekly', subject: 'No draft: nothing met the bar', text: job.reason ?? 'The research found no topic that met the editorial bar.', link };
     }
     const weekly = job.params?.source === 'weekly';
-    return { event: 'draft', subject: `${weekly ? 'Weekly draft' : 'Draft'} ready: ${title}`, text: `${title}\n\n${post?.description ?? ''}`, link };
+    return { event: 'draft', subject: `${weekly ? 'Weekly draft' : 'Draft'} ready: ${title}`, text: [title, forYou(post), post?.description ?? ''].filter(Boolean).join('\n\n'), link };
   }
-  if (job.kind === 'revise') return { event: 'revision', subject: `Revision ready: ${title}`, text: `${(job.changes ?? []).map((change) => `- ${change}`).join('\n')}`, link };
+  if (job.kind === 'revise') {
+    return { event: 'revision', subject: `Revision ready: ${title}`, text: [(job.changes ?? []).map((change) => `- ${change}`).join('\n'), forYou(post)].filter(Boolean).join('\n\n'), link };
+  }
   if (job.kind === 'cover') return { event: 'revision', subject: `New cover: ${title}`, text: `The new cover for "${title}" is in.`, link };
   if (job.kind === 'publish') return { event: 'live', subject: `Live: ${title}`, text: `"${title}" is live${live ? ` at ${live}` : ''}.`, link: live ?? link };
   if (job.kind === 'unpublish' || job.kind === 'delete') {

@@ -8,7 +8,7 @@ import { HttpError, TABLE, db, now, setting } from './store.mjs';
 
 const { NOTIFIER_FUNCTION, VAPID_PUBLIC_KEY } = process.env;
 const lambda = new LambdaClient({});
-const EVENTS = ['draft', 'revision', 'live', 'failed', 'weekly'];
+const EVENTS = ['draft', 'needsYou', 'revision', 'live', 'failed', 'weekly'];
 
 export async function notifySettings() {
   const prefs = (await setting('notify')) ?? {};

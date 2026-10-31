@@ -81,7 +81,11 @@ export async function saveWeekly(input = {}) {
   return getWeekly();
 }
 
-/** A weekly-style draft now, with the queued topic if there is one. The schedule is unchanged. */
+/**
+ * A weekly-style draft now, with the topic set on the Weekly page if there is one; otherwise the
+ * post starts empty, so generatePost takes the idea at the top of Keith's queue. The schedule is
+ * unchanged.
+ */
 export async function runWeekly() {
   const settings = await weeklySettings();
   const id = randomUUID();

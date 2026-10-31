@@ -4,9 +4,12 @@
 // API and Keith's private material:
 //
 //   generate   researches and writes a post, then draws its cover. What it starts from is the
-//              post's notes for the AI and its body: neither (it picks a topic, as the weekly
-//              run does), notes (it writes about them), a body (Keith's rough draft, which it
-//              keeps and builds on) or both.
+//              post's notes for the AI and its body: neither (it picks a topic), notes (Keith's
+//              topic, often the idea the API took from the top of his queue), a body (Keith's
+//              rough draft, which it keeps and builds on) or both. When his notes don't say
+//              what he thinks, the research can stop and ask him for his angle instead of
+//              writing; his answers then start a second run that reuses its research. The draft
+//              can leave gaps for his own words, and questions for him beside it.
 //   revise     rewrites the post from Keith's notes on passages and an overall request
 //   cover      draws a new cover, optionally from an instruction
 //
@@ -14,9 +17,9 @@
 // runs this with a checkout of that repository at --private. Each stage is reported on the
 // job. The result is saved to the post as a new version, with History snapshots either side,
 // and the AI's notes go to ai/<post>/<job>.json in the bucket, never into the site repo.
-// --out receives brief.md (for briefs/ in the private repo) and result.json. Style lessons, and
-// the mark on an idea a draft came from, are saved to the private repository through GitHub's
-// API as the job runs, so an edit made in the admin meanwhile can't clash with them.
+// --out receives brief.md (for briefs/ in the private repo) and result.json. Style lessons are
+// saved to the private repository through GitHub's API as the job runs, so an edit made in the
+// admin meanwhile can't clash with them.
 //
 // Usage: TABLE=... BUCKET=... JOB=<id> OPENAI_API_KEY=... GITHUB_TOKEN=... \
 //   node scripts/blog-admin/ai-job.mjs --private ../private --out /tmp/ai-job
@@ -28,7 +31,8 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { randomUUID } from 'node:crypto';
 import { postFile as postText } from '../../src/lib/post-file.mjs';
-import { IDEAS_FILE, LESSONS_FILE, changeIdea, editRepoFile, reviseLessons } from '../../src/lib/private-notes.mjs';
+import { findGaps } from '../../src/lib/post-checks.mjs';
+import { LESSONS_FILE, editRepoFile, reviseLessons } from '../../src/lib/private-notes.mjs';
 import { JOB, failJob, finishJob, getItem, getJson, now, postFiles, putItem, putObject, reportStage, update } from './store.mjs';
 
 const { values: args } = parseArgs({
@@ -61,9 +65,11 @@ const { writeUntilClean } = await import('../blog-draft/writer.mjs');
 requireEnv('OPENAI_API_KEY', 'GITHUB_TOKEN');
 
 const MAX_TOOL_CALLS = 40;
+// A run that carries on after Keith answered already has most of its research
+const RESUMED_TOOL_CALLS = 20;
 const MAX_ROUNDS = 30;
 const PRIVATE_REPO = process.env.GITHUB_REPOSITORY ?? 'keithvassallomt/blog-private';
-const EDITABLE = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags', 'cover', 'coverAlt', 'share', 'notes', 'body'];
+const EDITABLE = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags', 'cover', 'coverAlt', 'share', 'notes', 'body', 'questions'];
 
 const siteDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const privateDir = path.resolve(args.private);
@@ -112,8 +118,12 @@ function writePost(post, { cover = false, files = [], frontmatter = {} } = {}) {
 
 // ---- research --------------------------------------------------------------------------
 
-async function research({ topic, roughDraft }) {
-  const tools = [...github.definitions, prompts.briefTool(categoryIds), { type: 'web_search' }];
+/**
+ * @param {{ topic: string, roughDraft: string, mode: { requested: boolean, canAsk: boolean, resumed: boolean, aiChooses: boolean }, earlier: object | null }} run
+ */
+async function research({ topic, roughDraft, mode, earlier }) {
+  const maxToolCalls = mode.resumed ? RESUMED_TOOL_CALLS : MAX_TOOL_CALLS;
+  const tools = [...github.definitions, prompts.briefTool(categoryIds, prompts.researchDecisions(mode)), { type: 'web_search' }];
   const input = [
     {
       role: 'user',
@@ -126,6 +136,7 @@ async function research({ topic, roughDraft }) {
         notes,
         topic,
         roughDraft,
+        earlier,
       }),
     },
   ];
@@ -135,7 +146,7 @@ async function research({ topic, roughDraft }) {
     const response = await respond({
       model,
       reasoning,
-      instructions: prompts.researchInstructions({ instructions, maxToolCalls: MAX_TOOL_CALLS }),
+      instructions: prompts.researchInstructions({ instructions, maxToolCalls, ...mode }),
       input,
       tools,
       tool_choice: toolChoice,
@@ -157,7 +168,7 @@ async function research({ topic, roughDraft }) {
       publicTexts.push(output);
       input.push({ type: 'function_call_output', call_id: call.call_id, output });
     }
-    if (toolCalls >= MAX_TOOL_CALLS) toolChoice = { type: 'function', name: 'submit_brief' };
+    if (toolCalls >= maxToolCalls) toolChoice = { type: 'function', name: 'submit_brief' };
   }
   throw new Error(`The research stage did not submit a brief within ${MAX_ROUNDS} rounds`);
 }
@@ -165,7 +176,8 @@ async function research({ topic, roughDraft }) {
 // ---- writing ---------------------------------------------------------------------------
 
 const clean = (result) => !result.problems.length && !result.leaks.length;
-const postPublicText = (post) => [post.title, post.description, post.cover_alt, ...Object.values(post.share), post.body, ...(post.notes_for_keith ?? [])].join('\n');
+const postPublicText = (post) =>
+  [post.title, post.description, post.cover_alt, ...Object.values(post.share), post.body, ...(post.notes_for_keith ?? []), ...(post.questions_for_keith ?? [])].join('\n');
 
 /**
  * Writes the post in two passes: a facts-first draft from the brief, then an edit that turns
@@ -340,6 +352,22 @@ function briefMarkdown(brief, outcome, post, problems) {
       '',
     ]),
   ];
+  if (brief.ask) {
+    lines.push(
+      '## Asked Keith',
+      '',
+      brief.ask.why,
+      '',
+      'Angles:',
+      '',
+      bullets(brief.ask.angles.map((angle) => `${angle.title} (${angle.site_category}): ${angle.summary}`)),
+      '',
+      'Questions:',
+      '',
+      bullets(brief.ask.questions.map((question) => question.question)),
+      '',
+    );
+  }
   if (chosen) {
     lines.push(
       '## Brief',
@@ -398,20 +426,55 @@ async function editPrivate(file, message, change) {
 
 // ---- the jobs --------------------------------------------------------------------------
 
+/** The draft's questions for Keith, each with an empty answer. */
+const newQuestions = (texts) => texts.filter((text) => text.trim()).slice(0, 20).map((text) => ({ id: randomUUID().slice(0, 8), text: text.trim(), answer: '', left: false }));
+
+/**
+ * Stops before writing to ask Keith for his angle. The post shows as Needs you, with the
+ * angles and questions, and his answers start a second run that reuses this one's evidence.
+ */
+async function askKeith(brief, topic, briefFile) {
+  await stage('saving', 'Saving');
+  const ask = {
+    job: job.id,
+    at: now(),
+    why: brief.ask.why,
+    angles: brief.ask.angles.slice(0, 4).map((angle) => ({ title: angle.title, summary: angle.summary, category: angle.site_category })),
+    questions: brief.ask.questions.slice(0, 3).map((question, index) => ({ id: `q${index + 1}`, text: question.question, options: question.options.slice(0, 4) })),
+  };
+  current = await getItem({ pk: 'POST', sk: job.postId });
+  // Until it's written, the post goes by its idea's line
+  const title = current.title.trim() || topic.split('\n')[0].replace(/^#+\s*/, '').slice(0, 200);
+  const ai = { brief: job.id, latest: { job: job.id, kind: job.kind, at: ask.at } };
+  await update({ pk: 'POST', sk: job.postId }, { ask, title, ai, version: current.version + 1, updated: ask.at }, { expected: current.version });
+  await writeNotes({ brief, outcome: 'ask' });
+  result('ask', { reason: ask.why, brief_file: briefFile(null, 'ask') });
+  return { status: 'done', stage: 'asked', outcome: 'ask', reason: ask.why };
+}
+
 async function generate() {
   const snap = job.snapshot;
   const topic = snap.notes.trim();
   const roughDraft = snap.body.trim();
+  const requested = !!(topic || roughDraft);
+  const resumed = !!choice.resumeFrom;
+  const aiChooses = !!choice.aiChooses;
+  const mode = { requested, canAsk: requested && !resumed && !aiChooses, resumed, aiChooses };
+  // A run after Keith answered starts from the evidence the run that asked him gathered
+  const earlierBrief = resumed ? ((await getJson(`ai/${job.postId}/${choice.resumeFrom}.json`))?.brief ?? null) : null;
+  const earlier = earlierBrief ? { evidence: earlierBrief.evidence, angles_offered: earlierBrief.ask?.angles ?? [], best_guess: earlierBrief.chosen } : null;
   await stage('researching', 'Research');
-  console.log(`Researching (${catalogue.length} posts, ${notes.length} notes${topic ? ', with notes for this post' : ''}${roughDraft ? ', from a rough draft' : ''})`);
-  const brief = await research({ topic, roughDraft });
+  console.log(`Researching (${catalogue.length} posts, ${notes.length} notes${topic ? ', with notes for this post' : ''}${roughDraft ? ', from a rough draft' : ''}${earlier ? ', after Keith answered' : ''})`);
+  const brief = await research({ topic, roughDraft, mode, earlier });
   const briefFile = (post, outcome, problems = []) => {
     const name = `${today.iso}-${post?.slug ?? outcome}.md`;
     writeFileSync(path.join(outDir, 'brief.md'), briefMarkdown(brief, outcome, post, problems));
     return name;
   };
 
-  if (brief.decision === 'skip' || !brief.chosen) {
+  if (brief.decision === 'ask' && brief.ask?.angles?.length) return askKeith(brief, topic, briefFile);
+
+  if (brief.decision !== 'write' || !brief.chosen) {
     await writeNotes({ brief, outcome: 'skip' });
     result('skip', { reason: brief.reason, brief_file: briefFile(null, 'skip') });
     return { status: 'done', stage: 'skipped', outcome: 'skip', reason: brief.reason };
@@ -441,17 +504,12 @@ async function generate() {
     tags: post.tags,
     share: post.share,
     body: post.body,
+    questions: newQuestions(post.questions_for_keith ?? []),
+    gaps: findGaps(post.body).length,
     ...(covered.image ? { cover: COVER_FILE, coverAlt: post.cover_alt } : {}),
   };
   const { version, beforeId } = await save(fields, { before: 'Before generating', after: `Generated by ${model}`, kind: 'generated' });
   const writingNotes = [...written.notes, ...(covered.note ? [covered.note] : [])];
-  // The idea the topic came from, if any, is marked with this draft
-  if (brief.idea_id) {
-    const marked = await editPrivate(IDEAS_FILE, `Marked the idea behind "${post.title}" as used`, (text) =>
-      changeIdea(text, brief.idea_id, (idea) => ({ ...idea, used: today.iso, post: job.postId })),
-    );
-    if (marked.error) writingNotes.push(marked.error);
-  }
   await writeNotes({ brief, outcome: 'draft', notesForKeith: post.notes_for_keith, problems: written.problems, attempts: written.attempts, writingNotes });
   result('draft', { title: post.title, slug: fields.slug, attempts: written.attempts, brief_file: briefFile({ ...post, slug: fields.slug }, 'draft', written.problems) });
   return { status: 'done', stage: 'done', outcome: 'draft', version, beforeId, problems: written.problems };
@@ -477,10 +535,17 @@ async function revise() {
   const base = { ...snap, slug, cover_alt: snap.coverAlt };
   writePost(base, { files, frontmatter: current.frontmatter ?? {} });
   const original = readFileSync(path.join(writtenDir, 'index.md'), 'utf8');
+  // The draft's questions: answered ones are Keith's words, left-out ones are settled
+  const questions = snap.questions ?? [];
+  const answeredQuestions = questions.filter((question) => question.answer.trim() && !question.left);
+  const leftOut = questions.filter((question) => question.left);
+  const stillOpen = questions.filter((question) => !question.answer.trim() && !question.left);
   const feedback = {
     requests: [choice.request].filter((text) => text?.trim()),
     review_summaries: [],
     line_comments: (choice.highlights ?? []).map((item) => ({ on: item.quote, comment: item.note })),
+    answers: answeredQuestions.map((question) => ({ question: question.text, answer: question.answer.trim() })),
+    left_out: leftOut.map((question) => question.text),
   };
   const { forPost, reasons } = await earlierBrief();
   const merged = (post) => ({ ...base, title: post.title, description: post.description, category: post.category, tags: post.tags, share: post.share, body: post.body });
@@ -490,13 +555,16 @@ async function revise() {
       reasoning,
       instructions: prompts.draftingInstructions({ instructions, siteGuide }),
       input: [
-        { role: 'user', content: prompts.revisionInput({ today, catalogue, categories, projects, samples, brief: forPost, current: original, feedback }) },
+        {
+          role: 'user',
+          content: prompts.revisionInput({ today, catalogue, categories, projects, samples, brief: forPost, current: original, feedback, openQuestions: stillOpen.map((question) => question.text) }),
+        },
       ],
       text: { format: prompts.postFormat(categoryIds, { revision: true }) },
       max_output_tokens: 64_000,
     },
     check: (post) => checkPost({ ...post, slug }, site, { story: true }),
-    publicText: (post) => [post.title, post.description, ...Object.values(post.share), post.body, ...post.changes, ...post.notes_for_keith].join('\n'),
+    publicText: (post) => [post.title, post.description, ...Object.values(post.share), post.body, ...post.changes, ...post.notes_for_keith, ...post.questions_for_keith].join('\n'),
     privateShingles: shingles([...instructions, ...samples].map((doc) => doc.text).concat(reasons)),
     // Keith's own post and notes can be repeated
     publicShingles: shingles([siteGuide, projects, original, forPost, JSON.stringify(feedback)]),
@@ -513,7 +581,22 @@ async function revise() {
   const post = written.post;
   await stage('saving', 'Saving');
   const count = (await getItem({ pk: 'POST', sk: job.postId })).revisions ?? 0;
-  const fields = { title: post.title, description: post.description, category: post.category, tags: post.tags, share: post.share, body: post.body, revisions: count + 1 };
+  // Questions that stayed open keep their ids; any the revision settled drop out
+  const settled = new Set([...answeredQuestions, ...leftOut].map((question) => question.text));
+  const open = new Map(stillOpen.map((question) => [question.text, question]));
+  const remaining = post.questions_for_keith.map((text) => text.trim()).filter((text) => text && !settled.has(text));
+  const nextQuestions = remaining.map((text) => open.get(text) ?? newQuestions([text])[0]);
+  const fields = {
+    title: post.title,
+    description: post.description,
+    category: post.category,
+    tags: post.tags,
+    share: post.share,
+    body: post.body,
+    questions: nextQuestions,
+    gaps: findGaps(post.body).length,
+    revisions: count + 1,
+  };
   const { version, beforeId } = await save(fields, { before: 'Before revision', after: `Revision ${count + 1}`, kind: 'revised' });
   const lessons = choice.learn === false ? [] : post.style_lessons;
   const saved = lessons.length

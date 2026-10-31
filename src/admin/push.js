@@ -1,5 +1,6 @@
 // Web Push for the admin: registering this browser for the notifications the notifier sends
-// when a job ends. The service worker is public/admin-sw.js, scoped to /admin.
+// when a job ends. The service worker is public/admin-sw.js, scoped to /admin. The admin
+// registers it on every visit too, since it also keeps the app's files for opening offline.
 import { api } from './api.js';
 
 export const pushSupported = () => typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -17,7 +18,7 @@ function deviceLabel() {
   return `${browser} on ${system}`;
 }
 
-async function registration() {
+export async function registration() {
   return navigator.serviceWorker.register('/admin-sw.js', { scope: '/admin' });
 }
 

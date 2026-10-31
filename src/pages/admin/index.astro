@@ -16,10 +16,18 @@ import '@fontsource/jetbrains-mono/500.css';
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="theme-color" content="#0b0d12" />
+    <meta name="color-scheme" content="dark" />
     <title>Admin · keithvassallo.com</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="description" content="Write, generate, revise and publish posts for keithvassallo.com" />
+    <!-- Installed from the home screen, it's its own app: icons from scripts/admin-icons.mjs -->
+    <link rel="icon" href="/admin-icons/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/admin-icons/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/admin-icons/apple-touch-icon.png" />
     <link rel="manifest" href="/admin.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Blog admin" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   </head>
   <body style="margin: 0; background: #0b0d12">
     <AdminApp client:only="vue" />

@@ -1,12 +1,16 @@
 // The AI jobs (docs/blog-admin-plan.md, stage 5): generating, revising and new covers. The API
 // records a job and starts blog-ai.yml in the private repository, which runs
 // scripts/blog-admin/ai-job.mjs with Keith's private material and reports back on the job.
+// Generating an empty post takes Keith's next idea first, and a run that stopped to ask him for
+// his angle carries on from here once he answers (stage 9).
 // Also: which models to offer (from models.dev), the AI settings, and what the runs cost.
 import { randomUUID } from 'node:crypto';
 import { GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { ideaNotes } from '../../../../src/lib/private-notes.mjs';
 import { GitHubError, cancelRun, dispatch } from './github.mjs';
-import { allPosts, editable } from './posts.mjs';
+import { takeIdea } from './notes.mjs';
+import { allPosts, editable, writeFields } from './posts.mjs';
 import { AI_KINDS, BUCKET, HttpError, TABLE, busy, db, loadPost, now, s3, setting, update } from './store.mjs';
 
 const { PRIVATE_REPO } = process.env;
@@ -210,11 +214,16 @@ async function choices(input, settings) {
   return { model, effort, imageModel };
 }
 
-/** Records an AI job and starts the private repository's workflow. */
-export async function startAiJob(kind, post, params) {
+/** Whether a job could start on this post now; throws the reason it can't. */
+async function preflight(post) {
   if (post.status === 'bin') throw new HttpError(409, 'This post is in the bin. Restore it first.');
   if (busy(post)) throw new HttpError(409, 'Something is already happening to this post. Wait for it to finish.');
   await underCap();
+}
+
+/** Records an AI job and starts the private repository's workflow. */
+export async function startAiJob(kind, post, params) {
+  await preflight(post);
   // The research stage avoids the topics and slugs of the admin's other drafts
   const others = (await allPosts(['id', 'title', 'slug', 'liveSlug', 'repoSlug', 'status'])).filter((other) => other.id !== post.id && other.status !== 'bin');
   const job = {
@@ -247,9 +256,62 @@ export async function startAiJob(kind, post, params) {
   return { job: state };
 }
 
+/**
+ * Generates the post. An empty one takes the idea at the top of Keith's queue first, unless
+ * `idea` is false: it goes in as the post's notes, and leaves the queue. With `answers`, it's
+ * Keith answering a run that stopped to ask him.
+ */
 export async function generatePost(id, input = {}) {
   const settings = await aiSettings();
-  return startAiJob('generate', await loadPost(id), { ...(await choices(input, settings)), source: input.source === 'weekly' ? 'weekly' : 'on request' });
+  const params = { ...(await choices(input, settings)), source: input.source === 'weekly' ? 'weekly' : 'on request' };
+  let post = await loadPost(id);
+  if (input.answers) return answerAsk(post, input.answers, params);
+  if (!post.notes.trim() && !post.body.trim() && input.idea !== false) {
+    // Checked before the idea leaves the queue, so a run that can't start doesn't take it
+    await preflight(post);
+    const idea = await takeIdea();
+    if (idea) {
+      const notes = ideaNotes(idea);
+      const version = await writeFields(id, { notes }, post.version, { updated: now() });
+      post = { ...post, notes, version };
+    }
+  }
+  return startAiJob('generate', post, params);
+}
+
+const answer = (value) => (typeof value === 'string' ? value.trim().slice(0, 2000) : '');
+
+/**
+ * Keith's answers to a run that stopped to ask him, added to the post's notes in his words, then
+ * the writing, which reuses that run's research. With `choose`, the AI picks the angle itself
+ * and asks on the draft whether it got his view right.
+ */
+async function answerAsk(post, answers, params) {
+  const { ask } = post;
+  if (!ask) throw new HttpError(409, 'This post isn’t waiting for your answers any more.');
+  const choose = answers.choose === true;
+  const lines = [];
+  if (!choose) {
+    const own = answer(answers.own);
+    const angle = Number.isInteger(answers.angle) ? ask.angles?.[answers.angle] : null;
+    if (!own && !angle) throw new HttpError(400, 'Pick an angle, or write your own.');
+    lines.push(own ? `My angle: ${own}` : `My angle: ${angle.title}. ${angle.summary}`);
+  }
+  for (const question of ask.questions ?? []) {
+    const reply = answer(answers.replies?.[question.id]);
+    if (reply) lines.push(`${question.text}\n${reply}`);
+  }
+  const notes = [post.notes.trim(), ...lines].filter(Boolean).join('\n\n');
+  // The job reads the notes from its snapshot, so they're saved to the post only once it has
+  // started: answering again after a failed start doesn't add them twice
+  const result = await startAiJob('generate', { ...post, notes }, { ...params, resumeFrom: ask.job, aiChooses: choose });
+  try {
+    await writeFields(post.id, { notes }, post.version, { updated: now() });
+  } catch (error) {
+    console.error('The answers started the run but did not save to the notes', error);
+  }
+  await update({ pk: 'POST', sk: post.id }, {}, { remove: ['ask'] });
+  return result;
 }
 
 export async function revisePost(id, input = {}) {
@@ -260,7 +322,11 @@ export async function revisePost(id, input = {}) {
     .filter((item) => typeof item?.quote === 'string' && typeof item?.note === 'string' && item.note.trim())
     .map((item) => ({ quote: item.quote.slice(0, 2000), note: item.note.slice(0, 2000) }));
   const request = typeof input.request === 'string' ? input.request.slice(0, 4000) : '';
-  if (!clean.length && !request.trim()) throw new HttpError(400, 'Add a note on a passage, or an overall request, so the AI knows what to change.');
+  // Answers to the draft's questions, or ones Keith left out, are on the post itself
+  const answered = (post.questions ?? []).some((question) => question.answer.trim() || question.left);
+  if (!clean.length && !request.trim() && !answered) {
+    throw new HttpError(400, 'Add a note on a passage, an overall request or an answer to a question, so the AI knows what to change.');
+  }
   const settings = await aiSettings();
   return startAiJob('revise', post, { ...(await choices(input, settings)), highlights: clean, request, learn: input.learn !== false });
 }

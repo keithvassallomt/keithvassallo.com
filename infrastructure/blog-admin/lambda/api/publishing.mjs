@@ -10,7 +10,7 @@ import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { CreateScheduleCommand, DeleteScheduleCommand, SchedulerClient } from '@aws-sdk/client-scheduler';
 import { adminFields, parsePost } from '../../../../src/lib/post-file.mjs';
-import { slugFormatProblem } from '../../../../src/lib/post-checks.mjs';
+import { findGaps, slugFormatProblem } from '../../../../src/lib/post-checks.mjs';
 import { GitHubError, dispatch, download, saveToken, siteContents } from './github.mjs';
 import { FILE_NAME, allPosts, editable, getPost, snapshot, writeFields } from './posts.mjs';
 import { BUCKET, HttpError, TABLE, busy, db, loadPost, now, s3, setting, update } from './store.mjs';
@@ -71,6 +71,8 @@ async function publishProblems(post) {
   if (!post.description.trim()) problems.push('It needs a description.');
   if (!post.category) problems.push('It needs a category.');
   if (post.cover && !post.coverAlt.trim()) problems.push('The cover needs alt text.');
+  const gaps = findGaps(post.body).length;
+  if (gaps) problems.push(`It still has ${gaps === 1 ? 'a gap' : `${gaps} gaps`} for you to fill. They're listed under For you.`);
   const slugProblem = slugFormatProblem(post.slug);
   if (slugProblem) problems.push(slugProblem);
   else {

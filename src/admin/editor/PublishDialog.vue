@@ -1,6 +1,7 @@
 <script setup>
 // Publishing a draft (now or at a set time), or updating a live post, with the option to pin
-// it. "Check the build" runs the whole thing except the commit.
+// it. "Check the build" runs the whole thing except the commit. A gap the AI left for Keith's
+// own words stops both, as it does in the API.
 import { computed, ref } from 'vue';
 import { ukEndOfDay as endOfDay } from '../site.js';
 import Dialog from '../Dialog.vue';
@@ -11,6 +12,7 @@ const props = defineProps({
   live: { type: Boolean, default: false },
   pinned: { type: Object, default: null },
   problems: { type: Array, default: () => [] },
+  gaps: { type: Number, default: 0 },
   coverUrl: { type: String, default: null },
   busy: { type: Boolean, default: false },
   error: { type: String, default: '' },
@@ -74,14 +76,15 @@ const label = computed(() => {
       <p v-if="pin" class="muted note">On that date the page's own script drops the pin, with no rebuild.</p>
     </div>
 
-    <p v-if="problems.length" class="warn"><Icon name="alert" />{{ problems.length }} {{ problems.length === 1 ? 'check fails' : 'checks fail' }}. You can still publish; the Checks tab lists {{ problems.length === 1 ? 'it' : 'them' }}.</p>
+    <p v-if="gaps" class="error"><Icon name="alert" />{{ gaps === 1 ? 'A gap is' : `${gaps} gaps are` }} still waiting for your words. Fill {{ gaps === 1 ? 'it' : 'them' }} under For you first.</p>
+    <p v-else-if="problems.length" class="warn"><Icon name="alert" />{{ problems.length }} {{ problems.length === 1 ? 'check fails' : 'checks fail' }}. You can still publish; the Checks tab lists {{ problems.length === 1 ? 'it' : 'them' }}.</p>
     <p v-else class="good"><Icon name="check" />Every check passes. The production build runs again before anything goes live.</p>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
 
     <template #buttons>
       <button type="button" class="btn" @click="emit('close')">Cancel</button>
-      <button type="button" class="btn" :disabled="busy" title="Runs everything except the commit" @click="submit(true)">Check the build</button>
-      <button type="button" class="btn btn-go" :disabled="busy || (!live && when === 'schedule' && (!date || !time))" @click="submit(false)">{{ label }}</button>
+      <button type="button" class="btn" :disabled="busy || gaps > 0" title="Runs everything except the commit" @click="submit(true)">Check the build</button>
+      <button type="button" class="btn btn-go" :disabled="busy || gaps > 0 || (!live && when === 'schedule' && (!date || !time))" @click="submit(false)">{{ label }}</button>
     </template>
   </Dialog>
 </template>

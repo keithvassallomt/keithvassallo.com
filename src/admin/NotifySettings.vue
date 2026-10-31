@@ -8,6 +8,7 @@ import Icon from './Icon.vue';
 
 const EVENTS = [
   ['draft', 'A draft is ready'],
+  ['needsYou', 'A post needs your angle before the AI writes it'],
   ['revision', 'A revision or new cover is ready'],
   ['live', 'A post goes live or comes off'],
   ['failed', 'Something failed'],

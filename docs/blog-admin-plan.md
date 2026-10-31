@@ -380,6 +380,55 @@ emails at 14 days, at 3 days and on expiry, and every screen shows a banner from
 `/admin/posts.json`; opening one copies it and its files into the admin, and publishing writes
 it back to the same folder. Not yet tried with a draft committed from VS Code.
 
+### Stage 9: your ideas first, and questions for you
+
+Prototyped in the canvas's "Your ideas first, and questions for you" section.
+
+- **Ideas are a queue.**
+  - The list is oldest first. A new idea goes to the end, unless you tick Write this one next.
+  - Make next moves an idea to the top.
+  - The weekly run, and Generate on an empty post, take the idea at the top. A topic set on the
+    Weekly page still goes first.
+  - The code takes the idea, not the model. It goes in as the post's notes for the AI, so the
+    research can't pass over it. The shortlist is just that idea, without the category mix.
+  - An idea leaves the list as soon as a post is made from it. Its words go with the post.
+    Otherwise a post waiting on you would leave the idea at the top, and the queue would stick.
+- **The AI asks before it writes.**
+  - If your idea doesn't say what you think, the research stops and asks rather than guessing.
+    A run never skips one of your ideas.
+  - It offers two to four angles the evidence supports, plus your own, and up to three
+    questions only you can answer.
+  - You get a notification and an email. The post shows as Needs you.
+  - Write it starts the writing, reusing the research. Let the AI choose writes now with its
+    pick, and asks on the draft whether it got your view right.
+  - Unanswered, the post just sits. Next Saturday takes the next idea.
+  - Put it back in Ideas returns the idea to the top of the queue and bins the post.
+- **Drafts leave gaps for you.**
+  - The AI never invents your experience or your verdict. Where the post needs them, it leaves a
+    gap: a `> [!KEITH] label` blockquote, with the question on the next line.
+  - The For you panel lists the gaps. What you type goes in word for word.
+  - Publishing waits until every gap is filled, in the admin and in the API.
+- **Questions for you.** The draft's questions sit in For you with an answer box, or Leave it
+  out. Answers save as you type. Revise with my answers sends them to the AI as your own words,
+  and the revision returns whatever is still open.
+- **Share to the admin.** On Android, with the admin installed, it appears in the share sheet.
+  Sharing a page opens New idea with its title and link filled in, through the sign-in if your
+  session has ended.
+- **A proper app.**
+  - Its own icons, including maskable ones for Android's shapes and a monochrome badge for
+    notifications.
+  - Shortcuts to New idea, Posts and Weekly from a long press on the icon.
+  - A service worker that keeps the app's files, so it opens without a connection. Anything that
+    needs the API still needs one.
+
+**Done when:**
+
+- a weekly run takes the oldest idea, and the idea leaves the list
+- an idea without an angle produces a Needs you post, a notification and an email
+- answering it produces a draft with any gaps and questions in For you
+- a post with a gap can't be published
+- a page shared from Chrome on the phone lands in New idea
+
 ## Running costs
 
 - **AWS:** under a dollar a month at your usage.

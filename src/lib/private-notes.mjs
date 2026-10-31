@@ -47,15 +47,17 @@ function sections(text) {
 
 // ---- ideas ---------------------------------------------------------------------------------
 
-// Each idea is a `## ` heading, a comment with its id and dates, and any details:
+// Each idea is a `## ` heading, a comment with its id and date, and any details:
 //
 //   ## Why Loft uses one WebView per service
-//   <!-- idea id=k3x9q2 added=2026-10-24 used=2026-10-31 post=<admin post id> -->
+//   <!-- idea id=k3x9q2 added=2026-10-24 -->
 //
 //   Details, in Keith's words.
 //
-// `used` and `post` appear once a draft has come from the idea. A section written by hand,
-// without the comment, gets an id from its title, and the comment the next time the file is saved.
+// The file is a queue, oldest first: the weekly run, and Generate on an empty post, take the
+// idea at the top, and an idea leaves the file once a post is made from it. A section written by
+// hand, without the comment, gets an id from its title, and the comment the next time the file
+// is saved. Older files marked used ideas with `used` and `post`; those count as taken.
 const META = /^<!--\s*idea\b(.*?)-->$/;
 
 export function parseIdeas(text) {
@@ -93,14 +95,30 @@ export function cleanIdea({ title, details }) {
   return { title: cleanTitle, details: cleanDetails };
 }
 
-export function addIdea(text, idea, day) {
+/** Adds an idea at the end of the queue, or at the top with `next`. */
+export function addIdea(text, idea, day, { next = false } = {}) {
   const parsed = parseIdeas(text);
   const taken = new Set(parsed.ideas.map((existing) => existing.id));
   let id = randomId();
   while (taken.has(id)) id = randomId();
   const added = { id, ...cleanIdea(idea), added: day, used: null, post: null };
-  return { text: serialiseIdeas({ ...parsed, ideas: [added, ...parsed.ideas] }), idea: added };
+  const ideas = next ? [added, ...parsed.ideas] : [...parsed.ideas, added];
+  return { text: serialiseIdeas({ ...parsed, ideas }), idea: added };
 }
+
+/** Moves an idea to the top of the queue. Null if there's no such idea. */
+export function moveIdeaToTop(text, id) {
+  const parsed = parseIdeas(text);
+  const idea = parsed.ideas.find((item) => item.id === id);
+  if (!idea) return null;
+  return serialiseIdeas({ ...parsed, ideas: [idea, ...parsed.ideas.filter((item) => item !== idea)] });
+}
+
+/** The idea at the top of the queue, skipping any an older file marked used, or null. */
+export const nextIdea = (text) => parseIdeas(text).ideas.find((idea) => !idea.used) ?? null;
+
+/** An idea as notes for the AI: its line, then its details. */
+export const ideaNotes = (idea) => [idea.title, idea.details].filter(Boolean).join('\n\n');
 
 /** Applies `change` to the idea with this id; a change that returns null deletes it. */
 export function changeIdea(text, id, change) {

@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { DeleteCommand, GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { DeleteObjectsCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { findGaps } from '../../../../src/lib/post-checks.mjs';
 import { renderPreview } from './preview.mjs';
 import { BUCKET, HttpError, TABLE, aiBusy, db, imageKey, loadPost, now, s3, update, viewUrl } from './store.mjs';
 
@@ -31,10 +32,12 @@ export const EDITABLE = {
   share: {},
   notes: '',
   body: '',
+  // The draft's questions for Keith, with his answers as he types them: { id, text, answer, left }
+  questions: [],
 };
 const LIST_FIELDS = [
   'id', 'title', 'slug', 'description', 'category', 'tags', 'cover', 'status', 'source', 'created', 'updated',
-  'deletedAt', 'version', 'liveSlug', 'repoSlug', 'publishedVersion', 'scheduledFor', 'job',
+  'deletedAt', 'version', 'liveSlug', 'repoSlug', 'publishedVersion', 'scheduledFor', 'job', 'ask', 'gaps',
 ];
 /** Names the editor gives uploads */
 const IMAGE_NAME = /^[a-z0-9][a-z0-9-]{0,80}\.(webp|jpg|png|gif)$/;
@@ -54,13 +57,20 @@ export function validated(input) {
       key === 'tags' ? Array.isArray(value) && value.every((tag) => typeof tag === 'string')
       : key === 'share' ? value && typeof value === 'object' && !Array.isArray(value) && Object.values(value).every((text) => typeof text === 'string')
       : key === 'cover' ? value === null || (FILE_NAME.test(value) && value !== 'index.md')
+      : key === 'questions'
+        ? Array.isArray(value) && value.length <= 20 &&
+          value.every((item) => item && typeof item.id === 'string' && typeof item.text === 'string' && typeof item.answer === 'string' && typeof item.left === 'boolean')
       : typeof value === typeof empty;
     if (!ok) throw new HttpError(400, `"${key}" has the wrong shape`);
     fields[key] = value;
   }
   if (JSON.stringify(fields).length > 300_000) throw new HttpError(413, 'The post is too long to save');
+  fields.questions = fields.questions.map(({ id, text, answer, left }) => ({ id, text, answer, left }));
   return fields;
 }
+
+/** How many gaps the AI left for Keith are still in the body, for the posts list. */
+export const gapCount = (body) => findGaps(body ?? '').length;
 
 export async function images(id) {
   const { Contents = [] } = await s3.send(new ListObjectsV2Command({ Bucket: BUCKET, Prefix: `posts/${id}/` }));
@@ -167,7 +177,7 @@ export async function savePost(id, input) {
   const at = now();
   const due = !current.checkpointAt || Date.now() - Date.parse(current.checkpointAt) > CHECKPOINT_EVERY;
   const fields = validated(input);
-  const version = await writeFields(id, fields, current.version, { updated: at, ...(due ? { checkpointAt: at } : {}) });
+  const version = await writeFields(id, fields, current.version, { updated: at, gaps: gapCount(fields.body), ...(due ? { checkpointAt: at } : {}) });
   if (due) await snapshot({ ...current, ...fields, version }, 'autosave', 'Your edits', false);
   return { version, updated: at };
 }
@@ -219,7 +229,7 @@ export async function restoreVersion(id, versionId) {
   await snapshot(current, 'autosave', 'Before restoring', false);
   const at = now();
   const fields = editable(version.post);
-  const next = await writeFields(id, fields, current.version, { updated: at, checkpointAt: at });
+  const next = await writeFields(id, fields, current.version, { updated: at, checkpointAt: at, gaps: gapCount(fields.body) });
   const when = new Date(version.at).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' });
   await snapshot({ ...current, ...fields, version: next }, 'restored', `Restored ${version.label.toLowerCase()} from ${when}`, true);
   return getPost(id);

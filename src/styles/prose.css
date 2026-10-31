@@ -175,6 +175,13 @@
   --callout: var(--c-red);
 }
 
+/* A gap the AI left for Keith. Only the admin's preview shows one: publishing refuses them */
+.prose .callout-keith {
+  --callout: var(--c-yellow);
+  border-style: dashed;
+  border-width: 1.5px;
+}
+
 .prose .callout-title {
   display: flex;
   align-items: center;
