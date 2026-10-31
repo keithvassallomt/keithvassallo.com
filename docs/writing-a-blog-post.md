@@ -127,7 +127,7 @@ build fails with an exact character count if a blurb is too long.
 
 | Key | Limit for the blurb | Style |
 | --- | --- | --- |
-| `linkedin` | About 2,800 characters | Professional. The first line is the hook, since LinkedIn hides the rest behind "see more" after roughly 200 characters. Two to four short paragraphs, then three to five hashtags on the last line. |
+| `linkedin` | About 2,800 characters | In the post's voice, opinion and humour included, never corporate: LinkedIn is where business speak creeps in. The first line is the hook, since LinkedIn hides the rest behind "see more" after roughly 200 characters. Two to four short paragraphs, then three to five hashtags on the last line. |
 | `x` | 250 characters | One or two punchy sentences. Zero to two hashtags. |
 | `bluesky` | About 200 characters (300 including the full link) | Like the X blurb. Hashtags optional. |
 | `threads` | About 400 characters (500 including the full link) | Conversational, one to three sentences. Threads allows one topic tag per post, so use at most one hashtag. |
@@ -145,11 +145,18 @@ Any network without a blurb falls back to the `description`.
 - Talk to the reader the way Keith teaches: "we" and "our code" when working through an example
   together, "you" for the reader's own choices, "I" for his opinions and experience. Anticipate
   their questions and objections.
-- Every post needs some humour, serious ones included: three or four light moments, aimed at Keith,
-  the reader or the situation (self-deprecation, a strikethrough correction, mild
-  mock-indignation). Never an extra joke sentence tacked onto a technical point, and never code or
-  tools acting like people. It must never rest on invented events, but a clearly hypothetical
-  example can be played for laughs.
+- Every post is funny, serious ones included, with something in every section, aimed at Keith,
+  the reader or the situation (self-deprecation, deadpan fragments, a strikethrough correction,
+  mock-indignation, a pointed aside). Never an extra joke sentence tacked onto a technical point,
+  and never code or tools acting like people. It must never rest on invented events, but a clearly
+  hypothetical example can be played for laughs.
+- Every post has a clear opinion: Keith's, stated early, argued throughout and restated in the
+  verdict, tutorials included. Grant the other side a point in a clause where it's due, then get
+  back to his. Never give it a section of its own, and no disclaimers about what he isn't
+  claiming ("This isn't evidence that...", "To be fair...").
+- No business speak. If a sentence could appear in an earnings call, a consultant's slides or a
+  press release, rewrite it in words Keith would say out loud: "they changed the price", not "the
+  charging terms changed".
 - Keith's habits are his voice, not mistakes to tidy: "Of course", "Now" and "So" to open a
   sentence, "whilst", "i.e.", ordinal dates (9th October).
 - **Never use an em dash** (the long dash, Unicode U+2014). Use a comma, a colon, parentheses or a
@@ -194,7 +201,7 @@ abstract. What the example is depends on the kind of post, which the brief names
 | `tutorial` | Code, complete at every stage | Context, the starting code and what it costs, the change, a realistic mistake, the fix, an edge case, the recommended pattern, the verdict |
 | `project` | Keith's project as it actually behaves | Why he built it, what it does in ordinary words, how it works (real code or screenshots), what works and what doesn't, where to get it |
 | `review` | Keith's actual setup and what happened | The verdict early, the setup, problem by problem with what he tried, what's genuinely good, the final judgement |
-| `opinion` | One real case that shows the issue | The position early, the case, the strongest objection answered on that case, the verdict |
+| `opinion` | One real case that shows why Keith is right | The position early, the case, the strongest objection answered in a few sentences on that case, the verdict |
 | `teaching` | A situation from Keith's notes (anonymised) or a cited study | What happened or what the research found, why it matters, what he does about it, how he'd know it works |
 | `policy` | The actual wording of the rule or announcement | What changed, quoted, who it affects with a concrete example, Keith's angle, what to do now |
 

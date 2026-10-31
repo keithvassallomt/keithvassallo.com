@@ -186,11 +186,11 @@ const postPublicText = (post) =>
  * it into a story without changing the facts. Each pass must pass every check and the build;
  * if the edit can't, the facts-first draft stands.
  */
-async function draft(brief, roughDraft) {
+async function draft(brief, roughDraft, notes) {
   // The shortlist and the reasons for choosing stay out of the writing stages: they only need
-  // the topic and the evidence
+  // the topic, the evidence and Keith's own words, which the brief alone would paraphrase
   const { chosen, evidence, questions_for_keith } = brief;
-  const context = { today, catalogue, categories, brief: { chosen, evidence, questions_for_keith }, projects, samples, roughDraft };
+  const context = { today, catalogue, categories, brief: { chosen, evidence, questions_for_keith }, projects, samples, roughDraft, notes };
   const pass = (content, { story = false } = {}) =>
     writeUntilClean({
       request: {
@@ -204,8 +204,8 @@ async function draft(brief, roughDraft) {
       check: (post) => checkPost(post, site, { story }),
       publicText: postPublicText,
       privateShingles,
-      // Keith's own rough draft can be repeated, of course
-      publicShingles: shingles([...publicTexts, roughDraft]),
+      // Keith's own rough draft and notes can be repeated, of course
+      publicShingles: shingles([...publicTexts, roughDraft, notes]),
       save: (post) => writePost(post),
       discard: removePost,
       siteDir,
@@ -485,7 +485,7 @@ async function generate() {
   }
 
   console.log(`Chosen: ${brief.chosen.working_title} (${brief.evidence.length} pieces of evidence)`);
-  const written = await draft(brief, roughDraft);
+  const written = await draft(brief, roughDraft, topic);
   if (written.leaks.length || !writtenDir) {
     const reason = written.leaks.length
       ? `${written.leaks.length} passages still repeated the private material after ${written.attempts} attempts, so the draft was discarded.`
@@ -562,7 +562,7 @@ async function revise() {
       input: [
         {
           role: 'user',
-          content: prompts.revisionInput({ today, catalogue, categories, projects, samples, brief: forPost, current: original, feedback, openQuestions: stillOpen.map((question) => question.text) }),
+          content: prompts.revisionInput({ today, catalogue, categories, projects, samples, notes: snap.notes, brief: forPost, current: original, feedback, openQuestions: stillOpen.map((question) => question.text) }),
         },
       ],
       text: { format: prompts.postFormat(categoryIds, { revision: true }) },
@@ -572,7 +572,7 @@ async function revise() {
     publicText: (post) => [post.title, post.description, ...Object.values(post.share), post.body, ...post.changes, ...post.notes_for_keith, ...post.questions_for_keith].join('\n'),
     privateShingles: shingles([...instructions, ...samples].map((doc) => doc.text).concat(reasons)),
     // Keith's own post and notes can be repeated
-    publicShingles: shingles([siteGuide, projects, original, forPost, JSON.stringify(feedback)]),
+    publicShingles: shingles([siteGuide, projects, original, snap.notes, forPost, JSON.stringify(feedback)]),
     save: (post) => writePost(merged(post), { files, frontmatter: current.frontmatter ?? {} }),
     discard: () => writePost(base, { files, frontmatter: current.frontmatter ?? {} }),
     siteDir,
