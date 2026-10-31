@@ -52,6 +52,14 @@ onMounted(async () => {
 });
 const verified = computed(() => evidence.value?.filter((item) => item.status === 'verified').length ?? 0);
 const isUrl = (source) => /^https?:\/\//.test(source);
+// Worked out here because templates can't see the browser's URL: using it there blanked the panel
+const host = (source) => {
+  try {
+    return new URL(source).hostname;
+  } catch {
+    return source;
+  }
+};
 
 function pick(option, question) {
   replies[question.id] = replies[question.id] === option ? '' : option;
@@ -86,7 +94,7 @@ const choose = () => emit('answer', { answers: { choose: true, replies: { ...rep
         <li v-for="(item, index) in evidence ?? []" :key="index">
           <span class="chip" :class="item.status === 'verified' ? 'ok' : 'maybe'">{{ item.status }}</span>
           {{ item.claim }}
-          <a v-if="isUrl(item.source)" :href="item.source" target="_blank" rel="noopener">{{ new URL(item.source).hostname }}</a>
+          <a v-if="isUrl(item.source)" :href="item.source" target="_blank" rel="noopener">{{ host(item.source) }}</a>
           <span v-else class="muted">({{ item.source }})</span>
         </li>
       </ul>

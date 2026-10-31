@@ -44,7 +44,11 @@ const steps = computed(() => {
 const finished = computed(() => ['done', 'failed', 'cancelled'].includes(current.value.status));
 const doneTitle = computed(() => {
   const { kind, outcome } = current.value;
-  if (kind === 'generate') return outcome === 'skip' ? 'No post this time: nothing met the editorial bar' : 'The draft is ready';
+  if (kind === 'generate') {
+    if (outcome === 'skip') return 'No post this time: nothing met the editorial bar';
+    if (outcome === 'ask') return 'It needs your angle before it writes. Answer below.';
+    return 'The draft is ready';
+  }
   if (kind === 'revise') return 'The revision is ready';
   if (kind === 'cover') return 'The new cover is ready';
   return kind === 'publish' ? 'Live' : 'Done';

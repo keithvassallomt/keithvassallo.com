@@ -31,6 +31,14 @@ const runs = computed(() => [notes.value?.briefRun, notes.value?.latest].filter(
 const money = (cost) => (cost?.total === null || cost?.total === undefined ? 'unknown' : `$${cost.total.toFixed(2)}${cost.complete ? '' : ' in tokens'}`);
 const when = (iso) => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const isUrl = (source) => /^https?:\/\//.test(source);
+// Worked out here because templates can't see the browser's URL: using it there blanked the panel
+const host = (source) => {
+  try {
+    return new URL(source).hostname;
+  } catch {
+    return source;
+  }
+};
 </script>
 
 <template>
@@ -67,7 +75,7 @@ const isUrl = (source) => /^https?:\/\//.test(source);
           <li v-for="(item, index) in brief.evidence" :key="index">
             <span class="chip" :class="item.status === 'verified' ? 'ok' : 'maybe'">{{ item.status }}</span>
             {{ item.claim }}
-            <a v-if="isUrl(item.source)" :href="item.source" target="_blank" rel="noopener">{{ new URL(item.source).hostname }}</a>
+            <a v-if="isUrl(item.source)" :href="item.source" target="_blank" rel="noopener">{{ host(item.source) }}</a>
             <span v-else class="muted">({{ item.source }})</span>
           </li>
         </ul>
