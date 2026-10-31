@@ -193,15 +193,15 @@ export class BlogAdminStack extends Stack {
       removalPolicy: RemovalPolicy.RETAIN,
     });
 
-    // ---- scheduled posts ----------------------------------------------------------------
+    // ---- scheduled posts and the weekly run ---------------------------------------------
     // Each scheduled post is a one-off schedule in this group, which calls the API's Lambda
-    // at its minute and then deletes itself
-    new scheduler.CfnScheduleGroup(this, 'Schedules', { name: SCHEDULE_GROUP });
+    // at its minute and then deletes itself. The weekly run is a lasting one, added below.
+    const schedules = new scheduler.CfnScheduleGroup(this, 'Schedules', { name: SCHEDULE_GROUP });
     const schedulerRole = new iam.Role(this, 'SchedulerRole', {
       assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com', {
         conditions: { StringEquals: { 'aws:SourceAccount': this.account } },
       }),
-      description: 'Lets the blog admin\'s scheduled posts call its API Lambda',
+      description: 'Lets the blog admin\'s scheduled posts and weekly run call its API Lambda',
     });
 
     // ---- notifications ------------------------------------------------------------------
@@ -310,6 +310,24 @@ export class BlogAdminStack extends Stack {
     files.grantReadWrite(api);
     api.grantInvoke(schedulerRole);
     notifier.grantInvoke(api);
+
+    // The weekly run: every Saturday at 09:00 UK time the API's Lambda makes the week's draft
+    // (lambda/api/weekly.mjs). Here rather than on GitHub's own schedule, which never fired it.
+    const weeklyRun = new scheduler.CfnSchedule(this, 'WeeklyRun', {
+      name: 'weekly',
+      groupName: SCHEDULE_GROUP,
+      description: "Makes the blog's weekly draft",
+      scheduleExpression: 'cron(0 9 ? * SAT *)',
+      scheduleExpressionTimezone: 'Europe/London',
+      flexibleTimeWindow: { mode: 'OFF' },
+      target: {
+        arn: api.functionArn,
+        roleArn: schedulerRole.roleArn,
+        input: JSON.stringify({ timer: 'weekly' }),
+        retryPolicy: { maximumRetryAttempts: 2 },
+      },
+    });
+    weeklyRun.addResourceDependency(schedules);
 
     // The GitHub token Keith saves in Settings: a SecureString, so CloudFormation can't create
     // it, and the API writes it on first save. Encrypted with the account's aws/ssm key.

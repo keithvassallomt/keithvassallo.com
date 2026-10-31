@@ -1,6 +1,7 @@
 // The blog admin's API. API Gateway has already checked the Cognito access token (issuer,
 // client, expiry) before this runs; this checks the caller is in the admins group, then
-// routes on the request. EventBridge Scheduler also calls it directly, for scheduled posts.
+// routes on the request. EventBridge Scheduler also calls it directly, for scheduled posts and
+// the weekly run.
 import * as ai from './ai.mjs';
 import * as posts from './posts.mjs';
 import * as publishing from './publishing.mjs';
@@ -93,6 +94,7 @@ export const routes = {
 export async function handler(event, context) {
   // Scheduled posts name this function as their target
   process.env.SELF_ARN = context?.invokedFunctionArn ?? process.env.SELF_ARN;
+  if (event.timer === 'weekly') return weekly.timer();
   if (event.timer) return publishing.timer(event);
 
   const claims = event.requestContext?.authorizer?.jwt?.claims ?? {};

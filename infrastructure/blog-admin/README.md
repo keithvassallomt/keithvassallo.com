@@ -14,7 +14,7 @@ site, and reads the stack's outputs from `src/admin/config.js`.
 | DynamoDB table | Posts, versions, jobs and settings (`pk`, `sk`), with point-in-time recovery and a change stream |
 | S3 bucket | Post files, images and the AI's notes. Versioned; replaced copies expire after 30 days |
 | Lambda `Notifier` | Reads the table's change stream, filtered to jobs, and emails Keith (SES in `sesRegion`) and pushes to his devices when a job ends |
-| Scheduler group `blog-admin` | One-off timers for scheduled posts, which call the `Api` Lambda |
+| Scheduler group `blog-admin` | One-off timers for scheduled posts, and the weekly run's Saturday 09:00 UK timer, which call the `Api` Lambda |
 | Roles `keithvassallo-com-blog-admin-site` and `-ai` | Taken through GitHub's OIDC by `blog-admin-site.yml` here and `blog-ai.yml` in blog-private, each on `main` only |
 | SSM `/blog-admin/github-token` | The GitHub token pasted into Settings, which starts the workflows. Written by the API |
 | SSM `/blog-admin/vapid-private-key` | The private half of the Web Push key pair (the public half is `vapidPublicKey` in `cdk.json`). Made by hand, below |

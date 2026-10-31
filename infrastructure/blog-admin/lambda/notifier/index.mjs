@@ -32,6 +32,7 @@ function message(job, post) {
   const link = post ? `${ADMIN}#/posts/${post.id}` : ADMIN;
   const live = post?.liveSlug ? `https://keithvassallo.com/blog/${post.liveSlug}` : null;
   if (job.status === 'failed') {
+    if (job.kind === 'weekly') return { event: 'failed', subject: 'The weekly run failed', text: job.error ?? '', link: `${ADMIN}#/weekly` };
     const what = { generate: 'Generating', revise: 'The revision', cover: 'The new cover', publish: 'Publishing', unpublish: 'Unpublishing', delete: 'Deleting' }[job.kind] ?? 'A job';
     return { event: 'failed', subject: `${what} failed: ${title}`, text: `${what} for "${title}" stopped.\n\n${job.error ?? ''}`, link: job.runUrl ?? link };
   }
@@ -115,7 +116,7 @@ async function checkToken(prefs) {
   await send(
     {
       subject: `The blog admin's GitHub token ${when}`,
-      text: `The token ${github.login ? `(${github.login}'s) ` : ''}${when}. Without it, the admin can't publish, start AI jobs or save ideas and style lessons; the weekly run carries on. Make a new fine-grained token on GitHub and paste it in Settings.`,
+      text: `The token ${github.login ? `(${github.login}'s) ` : ''}${when}. Without it, the admin can't publish, start AI jobs (the weekly run included) or save ideas and style lessons. Make a new fine-grained token on GitHub and paste it in Settings.`,
       link: `${ADMIN}#/settings`,
     },
     { email: prefs.email, push: prefs.push },

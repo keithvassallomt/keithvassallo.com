@@ -318,7 +318,8 @@ Then the test post is deleted.
 ### Stage 6: the weekly run and notifications
 
 - **The weekly run.**
-  - `blog-ai.yml` also runs on the Saturday 09:00 Europe/London schedule.
+  - An EventBridge Scheduler timer, Saturday 09:00 Europe/London, calls the API's Lambda. (It was
+    `blog-ai.yml`'s GitHub schedule at first, which never fired on 31 October 2026.)
   - It reads the Weekly settings. If the run is off or skipped, it stops and records why. A queued
     topic is used as your notes.
   - The draft arrives in the list marked Weekly.
