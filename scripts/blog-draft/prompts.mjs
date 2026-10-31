@@ -134,6 +134,7 @@ Change what the comments ask for, plus whatever those changes need elsewhere (an
 - body is the Markdown that follows the frontmatter. Don't include frontmatter: it is assembled from your other fields and the current frontmatter.
 - Don't add new images: only the images already in the post exist.
 - Keith's answers to the draft's questions (keith_feedback.answers) are his own statements, like his comments: work each in where it belongs. Questions he left out (keith_feedback.left_out) are settled: drop whatever depended on them, or write around them.
+- Lines Keith added or changed in his notes for this post since the AI last read them (keith_feedback.new_notes) count as his comments: apply each. One about how the post reads (its tone, angle or structure) applies to the whole post, so change as much as it takes. One that states a fact is his own statement and replaces any claim it contradicts.
 - Leave every [!KEITH] gap as it is, unless his comments or answers give its words, and never add a new one.
 - changes: a short list of what you changed, shown to Keith with the revision.
 - questions_for_keith: the questions still open after this revision. Keep those in open_questions that his comments and answers haven't settled, word for word, and add a new one only if a change needs it. Never repeat one he answered or left out.

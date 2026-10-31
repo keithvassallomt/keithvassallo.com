@@ -1,12 +1,13 @@
 <script setup>
 // Revising with the AI: notes on passages chosen in the preview, an overall request, and the
-// model. The AI rewrites from the current text, so hand edits stay. The editor holds the
+// model. What Keith changed in the notes for the AI since a run last read them goes too. The AI rewrites from the current text, so hand edits stay. The editor holds the
 // request and choices, since this panel closes whenever another one opens.
 import Icon from '../Icon.vue';
 import ModelPicker from './ModelPicker.vue';
 
 defineProps({
   highlights: { type: Array, required: true },
+  notesChanged: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
   error: { type: String, default: '' },
 });
@@ -42,6 +43,7 @@ const choice = defineModel('choice', { type: Object, default: () => ({}) });
       <span class="label">Overall request (optional)</span>
       <textarea v-model="request" class="inp" rows="3" placeholder="For example: tighten the opening, and end on a verdict"></textarea>
     </label>
+    <p v-if="notesChanged" class="muted empty">Your changes to the notes for the AI since its last run go too.</p>
 
     <ModelPicker v-model="choice" kind="revise" :images="false" />
 
@@ -54,7 +56,7 @@ const choice = defineModel('choice', { type: Object, default: () => ({}) });
     <button
       type="button"
       class="btn btn-ai go"
-      :disabled="busy || (!highlights.length && !request.trim()) || !choice.model"
+      :disabled="busy || (!highlights.length && !request.trim() && !notesChanged) || !choice.model"
       @click="emit('revise', { request, learn, choice })"
     >
       <Icon name="sparkles" />Revise{{ highlights.length ? ` with ${highlights.length} ${highlights.length === 1 ? 'note' : 'notes'}` : '' }}

@@ -88,6 +88,11 @@ it alone, without the usual shortlist across categories, and never skips it.
 - **Questions.** The draft's `questions` are a field of the post (`{ id, text, answer, left }`), so
   answers save with the post as he types. A revision sends answered ones as his own statements
   and left-out ones as settled, and returns the questions still open.
+- **Notes for the AI.** Generate reads all of them. A revision sends only the lines added or
+  edited since a run last read them: Generate and Revise record the notes they read as
+  `notesSeen` on the post. Deleted lines don't go, since a note he's done with may simply have
+  been handled. A post drafted before `notesSeen` existed compares against the snapshot of the
+  job that generated it.
 
 ## Notifications
 

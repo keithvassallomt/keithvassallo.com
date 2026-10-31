@@ -7,6 +7,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { api } from '../api.js';
 import { siteData, slugify, ukEndOfDay } from '../site.js';
 import { fillGap, findGaps, postProblems, slugFormatProblem } from '../../lib/post-checks.mjs';
+import { changedNotes } from '../../lib/notes-changes.mjs';
 import { imageName, prepareImage, uploadImage } from '../editor/images.js';
 import { scrollSync } from '../editor/scroll-sync.js';
 import MarkdownEditor from '../editor/MarkdownEditor.vue';
@@ -34,7 +35,7 @@ const FIELDS = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags
 const BACKUP = `kv-admin-draft-${props.id}`;
 
 const post = reactive({ title: '', slug: '', slugTouched: false, description: '', category: '', tags: [], cover: null, coverAlt: '', share: {}, notes: '', body: '', questions: [] });
-const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, repoSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false, ask: null });
+const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, repoSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false, ask: null, notesSeen: null });
 const loaded = ref(false);
 const loadError = ref('');
 const site = ref(null);
@@ -114,6 +115,9 @@ watch(reviseRequest, (text) => {
 });
 const reviseLearn = ref(true);
 const reviseChoice = ref({});
+// A revision also sends what Keith changed in the notes for the AI since a run last read them.
+// The API works out exactly what; a post drafted before that was kept counts all its notes here.
+const notesChanged = computed(() => changedNotes(meta.notesSeen ?? '', post.notes).length > 0);
 
 const fields = () => JSON.stringify(Object.fromEntries(FIELDS.map((key) => [key, post[key]])));
 
@@ -138,6 +142,7 @@ function applyStatus(data) {
     job: data.job ?? null,
     repoChanged: !!data.repoChanged,
     ask: data.ask ?? null,
+    notesSeen: data.notesSeen ?? null,
   });
 }
 
@@ -802,6 +807,7 @@ function goToProblem(line) {
           v-model:learn="reviseLearn"
           v-model:choice="reviseChoice"
           :highlights="highlights"
+          :notes-changed="notesChanged"
           :busy="acting || jobActive"
           :error="dialog ? '' : actionError"
           @remove="highlights.splice($event, 1)"
@@ -820,6 +826,7 @@ function goToProblem(line) {
           :busy="acting || jobActive"
           :error="dialog ? '' : actionError"
           :notes="highlights.length"
+          :notes-changed="notesChanged"
           @fill="fillIn"
           @go="goToProblem"
           @revise="answersRevision"

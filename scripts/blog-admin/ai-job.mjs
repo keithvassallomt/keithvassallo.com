@@ -10,7 +10,9 @@
 //              what he thinks, the research can stop and ask him for his angle instead of
 //              writing; his answers then start a second run that reuses its research. The draft
 //              can leave gaps for his own words, and questions for him beside it.
-//   revise     rewrites the post from Keith's notes on passages and an overall request
+//   revise     rewrites the post from Keith's notes on passages, an overall request, his answers
+//              to the draft's questions and whatever he changed in its notes for the AI since
+//              the last run read them
 //   cover      draws a new cover, optionally from an instruction
 //
 // The admin's API records the job and starts blog-ai.yml in the private repository, which
@@ -266,7 +268,9 @@ async function save(fields, { before, after, kind }) {
   const at = now();
   // The brief stays with the run that generated the post; the latest notes are this run's
   const ai = { brief: job.kind === 'generate' ? job.id : (current.ai?.brief ?? null), latest: { job: job.id, kind: job.kind, at } };
-  await update({ pk: 'POST', sk: job.postId }, { ...fields, version, updated: at, checkpointAt: at, ai }, { expected: current.version });
+  // The notes for the AI as this run read them, so the next revision sends only what changed
+  const seen = job.kind === 'cover' ? {} : { notesSeen: job.snapshot.notes };
+  await update({ pk: 'POST', sk: job.postId }, { ...fields, ...seen, version, updated: at, checkpointAt: at, ai }, { expected: current.version });
   await snapshot({ ...current, ...fields, version }, kind, after);
   return { version, beforeId };
 }
@@ -546,6 +550,7 @@ async function revise() {
     line_comments: (choice.highlights ?? []).map((item) => ({ on: item.quote, comment: item.note })),
     answers: answeredQuestions.map((question) => ({ question: question.text, answer: question.answer.trim() })),
     left_out: leftOut.map((question) => question.text),
+    new_notes: choice.notes ?? [],
   };
   const { forPost, reasons } = await earlierBrief();
   const merged = (post) => ({ ...base, title: post.title, description: post.description, category: post.category, tags: post.tags, share: post.share, body: post.body });

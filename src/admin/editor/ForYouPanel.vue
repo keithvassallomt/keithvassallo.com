@@ -2,7 +2,7 @@
 // What the draft is waiting on from Keith (docs/blog-admin-plan.md, stage 9): the gaps the AI
 // left for his own words, and its questions. A gap's text goes into the post word for word.
 // Answers are part of the post, so they save as he types, and Revise with my answers sends
-// them to the AI with any notes on passages.
+// them to the AI with any notes on passages and his changes to the notes for the AI.
 import { computed, reactive } from 'vue';
 import { findGaps } from '../../lib/post-checks.mjs';
 import Icon from '../Icon.vue';
@@ -15,6 +15,8 @@ const props = defineProps({
   error: { type: String, default: '' },
   // Notes on passages waiting for the next revision, which go along too
   notes: { type: Number, default: 0 },
+  // Whether the notes for the AI changed since a run last read them, which go along too
+  notesChanged: { type: Boolean, default: false },
 });
 const emit = defineEmits(['fill', 'go', 'revise']);
 
@@ -40,6 +42,13 @@ const asked = computed(() => questions.value.filter((question) => !question.left
 const leftOut = computed(() => questions.value.filter((question) => question.left));
 const ready = computed(() => questions.value.some((question) => question.answer.trim() || question.left));
 const answered = computed(() => questions.value.filter((question) => question.answer.trim() && !question.left).length);
+const sending = computed(() => {
+  const parts = [`${answered.value} ${answered.value === 1 ? 'answer' : 'answers'}`];
+  if (leftOut.value.length) parts.push(`${leftOut.value.length} left out`);
+  if (props.notes) parts.push(`your ${props.notes} ${props.notes === 1 ? 'note' : 'notes'} on passages`);
+  if (props.notesChanged) parts.push('your changes to the notes for the AI');
+  return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : parts[0];
+});
 </script>
 
 <template>
@@ -81,7 +90,7 @@ const answered = computed(() => questions.value.filter((question) => question.an
         <Icon name="sparkles" />Revise with my answers
       </button>
       <p class="muted small">
-        Sends {{ answered }} {{ answered === 1 ? 'answer' : 'answers' }}{{ leftOut.length ? `, ${leftOut.length} left out` : '' }}{{ notes ? ` and your ${notes} ${notes === 1 ? 'note' : 'notes'} on passages` : '' }}. You see every change before it's kept.
+        Sends {{ sending }}. You see every change before it's kept.
       </p>
     </section>
 

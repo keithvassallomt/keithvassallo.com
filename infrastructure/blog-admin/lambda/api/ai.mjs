@@ -7,6 +7,7 @@
 import { randomUUID } from 'node:crypto';
 import { GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { changedNotes } from '../../../../src/lib/notes-changes.mjs';
 import { ideaNotes } from '../../../../src/lib/private-notes.mjs';
 import { GitHubError, cancelRun, dispatch } from './github.mjs';
 import { takeIdea } from './notes.mjs';
@@ -325,11 +326,23 @@ export async function revisePost(id, input = {}) {
   const request = typeof input.request === 'string' ? input.request.slice(0, 4000) : '';
   // Answers to the draft's questions, or ones Keith left out, are on the post itself
   const answered = (post.questions ?? []).some((question) => question.answer.trim() || question.left);
-  if (!clean.length && !request.trim() && !answered) {
-    throw new HttpError(400, 'Add a note on a passage, an overall request or an answer to a question, so the AI knows what to change.');
+  const notes = changedNotes(await notesSeen(post), post.notes).slice(0, 50).map((line) => line.slice(0, 2000));
+  if (!clean.length && !request.trim() && !answered && !notes.length) {
+    throw new HttpError(400, 'Add a note on a passage, an overall request, an answer to a question or a change to your notes for the AI, so the AI knows what to change.');
   }
   const settings = await aiSettings();
-  return startAiJob('revise', post, { ...(await choices(input, settings)), highlights: clean, request, learn: input.learn !== false });
+  return startAiJob('revise', post, { ...(await choices(input, settings)), highlights: clean, request, notes, learn: input.learn !== false });
+}
+
+/**
+ * The post's notes for the AI as the last Generate or Revise read them. A post drafted before
+ * those were kept falls back to the run that generated it, since revisions didn't read them then.
+ */
+async function notesSeen(post) {
+  if (typeof post.notesSeen === 'string') return post.notesSeen;
+  if (!post.ai?.brief) return '';
+  const { Item } = await db.send(new GetCommand({ TableName: TABLE, Key: { pk: 'JOB', sk: post.ai.brief } }));
+  return Item?.snapshot?.notes ?? '';
 }
 
 export async function coverPost(id, input = {}) {
