@@ -114,7 +114,8 @@ async function draft(idea) {
   busy.value = true;
   try {
     const { id } = await api(`/ideas/${idea.id}/draft`, { method: 'POST' });
-    router.push(`/posts/${id}`);
+    // The editor opens with Generate ready, so the draft starts with one more tap
+    router.push(`/posts/${id}?generate=1`);
   } catch (error) {
     failed.value = true;
     message.value = error.message;
@@ -201,7 +202,7 @@ function added(day) {
     </section>
 
     <p class="muted foot">
-      Saved privately in blog-private, never on the site. Once an idea becomes a post, it leaves this list and its words go with the post. Draft now does that straight away, without waiting for Saturday.
+      Saved privately in blog-private, never on the site. Once an idea becomes a post, it leaves this list and its words go with the post. Draft now does that straight away and starts the AI on it, without waiting for Saturday.
       <a v-if="file" :href="file" target="_blank" rel="noopener">The file on GitHub</a>
     </p>
 

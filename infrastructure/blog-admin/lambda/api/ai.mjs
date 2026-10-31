@@ -271,9 +271,10 @@ export async function generatePost(id, input = {}) {
     await preflight(post);
     const idea = await takeIdea();
     if (idea) {
-      const notes = ideaNotes(idea);
-      const version = await writeFields(id, { notes }, post.version, { updated: now() });
-      post = { ...post, notes, version };
+      // Named after the idea until the AI writes a title, so the posts list shows what it is
+      const fields = { notes: ideaNotes(idea), title: post.title.trim() || idea.title };
+      const version = await writeFields(id, fields, post.version, { updated: now() });
+      post = { ...post, ...fields, version };
     }
   }
   return startAiJob('generate', post, params);

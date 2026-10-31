@@ -128,11 +128,14 @@ export async function takeIdea(id = null) {
   return taken;
 }
 
-/** A new post with the idea as its notes for the AI. The idea leaves the queue. */
+/**
+ * A new post with the idea as its notes for the AI, named after it until the AI writes a title.
+ * The idea leaves the queue.
+ */
 export async function draftIdea(id) {
   const idea = await takeIdea(id);
   if (!idea) throw new HttpError(409, IDEA_GONE);
-  const post = await createPost({ notes: ideaNotes(idea) });
+  const post = await createPost({ title: idea.title, notes: ideaNotes(idea) });
   return { id: post.id };
 }
 

@@ -3,7 +3,7 @@
 // kept on this device first, so a dropped connection or a closed tab loses nothing. A save
 // that another device beat to it shows both sides instead of overwriting either.
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { api } from '../api.js';
 import { siteData, slugify, ukEndOfDay } from '../site.js';
 import { fillGap, findGaps, postProblems, slugFormatProblem } from '../../lib/post-checks.mjs';
@@ -28,6 +28,7 @@ import Icon from '../Icon.vue';
 
 const props = defineProps({ id: { type: String, required: true } });
 const router = useRouter();
+const route = useRoute();
 
 const FIELDS = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags', 'cover', 'coverAlt', 'share', 'notes', 'body', 'questions'];
 const BACKUP = `kv-admin-draft-${props.id}`;
@@ -645,6 +646,11 @@ onMounted(async () => {
     }
     loaded.value = true;
     if (forYouCount.value && !phone.value) panel.value = 'foryou';
+    // Draft now on an idea opens the post ready to generate
+    if (route.query.generate) {
+      router.replace(`/posts/${props.id}`);
+      if (!hasText.value && !meta.ask && !jobActive.value) dialog.value = 'generate';
+    }
     runChecks();
     renderPreview();
     if (lastSaved !== fields()) save();
