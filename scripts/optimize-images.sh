@@ -11,7 +11,7 @@
 # is done on filename-without-extension, so the YAML can already point at the
 # .avif name even when the source on disk is still .png.
 #
-# Workflow: drop new .png / .jpg / .jpeg files in, run this script. Output is
+# Workflow: drop new .png / .jpg / .jpeg / .webp files in, run this script. Output is
 # foo.avif next to foo.png, source is deleted. Idempotent.
 #
 # Usage:
@@ -124,10 +124,10 @@ encode_one() {
   remove_source "$in"
 }
 
-mapfile -d '' files < <(find "$SRC_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) -print0)
+mapfile -d '' files < <(find "$SRC_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print0)
 
 if (( ${#files[@]} == 0 )); then
-  echo "no source images (.png / .jpg / .jpeg) found under $SRC_DIR — nothing to do"
+  echo "no source images (.png / .jpg / .jpeg / .webp) found under $SRC_DIR — nothing to do"
   exit 0
 fi
 

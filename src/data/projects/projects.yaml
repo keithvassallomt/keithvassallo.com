@@ -1,11 +1,40 @@
 # Projects data
 projects:
+  - id: ari
+    title: Ari
+    shortDescription: The assistant that never phones home.
+    description: Ari hears you, understands you, and answers — right on your device. Open-source, extensible, and it speaks more than one language. No account. No data broker. No catch.
+    logo: /assets/projects/ari/ari_logo.avif
+    bgImage: /assets/projects/ari/bg_image.avif
+    media:
+      - type: video
+        src: /assets/projects/ari/ari-demo.webm
+        label: Ari demo
+      - type: image
+        src: /assets/projects/ari/ari_ha.avif
+        label: Ari home automation with Home Assistant.
+      - type: image
+        src: /assets/projects/ari/ari_message.avif
+        label: Messaging is supported via various platforms and SMS.
+      - type: image
+        src: /assets/projects/ari/ari_music.avif
+        label: Control music playback on Spotify, Apple Music, Tidal and Deezer.
+      - type: image
+        src: /assets/projects/ari/ari_reminder.avif
+        label: Set reminders and track tasks in Tasks.org or an OpenTasks or CalDAV app.
+    technologies:
+      - Kotlin
+      - C++
+      - WASM
+      - ML & AI Training
+    link: https://heyari.dev
+    repo: https://github.com/ari-digital-assistant/ari-android
   - id: nc-media-provider
     title: NC Media Provider
     shortDescription: Your Nextcloud photo library in Android's system photo picker
     description: Allows you to stream your Nextcloud photos/videos to the Android system photo picker, or as a keyboard for apps that don't use it.
     logo: /assets/projects/nc_media_provider/nc_media_provider_logo.avif
-    bgimage: /assets/projects/nc_media_provider/bg_image.avif
+    bgImage: /assets/projects/nc_media_provider/bg_image.avif
     media:
       - type: image
         src: /assets/projects/nc_media_provider/1-picker.avif
