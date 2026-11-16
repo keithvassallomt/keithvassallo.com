@@ -154,7 +154,7 @@ function added(day) {
       <p v-if="shared" class="shared"><Icon name="external" />Shared from another app. Add a line of your own if you like.</p>
       <label>
         <span class="label">New idea</span>
-        <input ref="titleInput" v-model="title" class="inp" placeholder="One line is enough" maxlength="200" />
+        <input ref="titleInput" v-model="title" class="inp" placeholder="One line is enough" />
       </label>
       <label>
         <span class="label">Notes and links (optional)</span>
@@ -176,7 +176,7 @@ function added(day) {
       <div v-for="(idea, index) in ideas" :key="idea.id" class="card idea" :class="{ first: index === 0 }">
         <template v-if="editing?.id === idea.id">
           <form class="edit" @submit.prevent="saveEdit">
-            <input v-model="editing.title" class="inp" maxlength="200" aria-label="The idea" />
+            <input v-model="editing.title" class="inp" aria-label="The idea" />
             <textarea v-model="editing.details" class="inp" rows="3" aria-label="Notes and links" placeholder="Notes and links (optional)"></textarea>
             <div class="end">
               <button type="button" class="btn" :disabled="busy" @click="editing = null">Cancel</button>

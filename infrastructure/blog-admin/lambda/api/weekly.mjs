@@ -4,6 +4,7 @@
 // side: the settings, the past runs, and running one straight away.
 import { randomUUID } from 'node:crypto';
 import { PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { notesTooLong } from '../../../../src/lib/private-notes.mjs';
 import { aiSettings, generatePost, spend } from './ai.mjs';
 import { EDITABLE, allPosts } from './posts.mjs';
 import { HttpError, TABLE, db, now, setting } from './store.mjs';
@@ -70,7 +71,9 @@ export async function saveWeekly(input = {}) {
   if (input.enabled !== undefined) next.enabled = !!input.enabled;
   if (input.topic !== undefined) {
     if (typeof input.topic !== 'string') throw new HttpError(400, 'The topic is text');
-    next.topic = input.topic.slice(0, 4000);
+    const tooLong = notesTooLong(input.topic, 'The topic and its notes');
+    if (tooLong) throw new HttpError(400, tooLong);
+    next.topic = input.topic;
   }
   if (input.model !== undefined) {
     if (input.model !== null && !/^gpt-[\w.-]+$/.test(input.model)) throw new HttpError(400, 'That isn’t a model name');

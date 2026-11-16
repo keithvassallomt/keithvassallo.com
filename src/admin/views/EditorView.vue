@@ -8,6 +8,7 @@ import { api } from '../api.js';
 import { siteData, slugify, ukEndOfDay } from '../site.js';
 import { fillGap, findGaps, postProblems, slugFormatProblem } from '../../lib/post-checks.mjs';
 import { changedNotes } from '../../lib/notes-changes.mjs';
+import { TITLE_LIMIT } from '../../lib/private-notes.mjs';
 import { imageName, prepareImage, uploadImage } from '../editor/images.js';
 import { scrollSync } from '../editor/scroll-sync.js';
 import MarkdownEditor from '../editor/MarkdownEditor.vue';
@@ -515,10 +516,15 @@ async function answerAsk({ answers, choice }) {
 /** Puts the idea back at the top of the queue, and the post in the bin. */
 async function putBack() {
   menuOpen.value = false;
-  const [title, ...rest] = post.notes.trim().split('\n');
+  const notes = post.notes.trim();
+  const [first, ...rest] = notes.split('\n');
+  // A first line too long for an idea's line stays whole in its notes, under the post's title
+  const fits = first.trim().length <= TITLE_LIMIT;
+  const title = fits ? first : post.title.trim() || 'An idea put back from a draft';
+  const details = fits ? rest.join('\n').trim() : notes;
   if (!confirm('Put the idea back at the top of your ideas, and move this post to the bin?')) return;
   await act(async () => {
-    await api('/ideas', { method: 'POST', body: { title, details: rest.join('\n').trim(), next: true } });
+    await api('/ideas', { method: 'POST', body: { title, details, next: true } });
     await api(`/posts/${props.id}`, { method: 'DELETE' });
   });
   if (actionError.value) return;

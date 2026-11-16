@@ -36,6 +36,7 @@ function githubFailure(error, file) {
   if (!(error instanceof RepoFileError)) return error;
   if (error.status === 401) return new HttpError(503, 'GitHub turned the token down. It may have expired: add a new one in Settings.');
   if (error.status === 403) return new HttpError(503, `The GitHub token can't save ${file} in blog-private. Check it has Contents read and write there.`);
+  if (error.status === 413) return new HttpError(413, `${file} in blog-private has grown past 1 MB, too big for the admin to edit. Trim it on GitHub, then try again.`);
   console.error(error);
   return new HttpError(503, `GitHub didn't answer for ${file}. Try again in a moment.`);
 }

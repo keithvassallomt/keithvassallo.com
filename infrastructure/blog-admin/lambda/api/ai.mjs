@@ -16,6 +16,8 @@ import { AI_KINDS, BUCKET, HttpError, TABLE, busy, db, loadPost, now, s3, settin
 
 const { PRIVATE_REPO } = process.env;
 const AI_WORKFLOW = 'blog-ai.yml';
+// Under DynamoDB's 400 KB an item, with room for the key and attribute names
+const JOB_LIMIT = 380_000;
 const TIERS = ['luna', 'terra', 'sol', 'astra'];
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 export const IMAGE_MODELS = ['gpt-image-2.5-flare', 'gpt-image-2'];
@@ -242,6 +244,13 @@ export async function startAiJob(kind, post, params) {
     },
     snapshot: { ...editable(post), version: post.version },
   };
+  // Keith's words go to the run whole, so the one limit is DynamoDB's 400 KB an item, which
+  // has to hold the whole post as well as what he wrote for this run
+  const size = Buffer.byteLength(JSON.stringify(job));
+  if (size > JOB_LIMIT) {
+    const count = (value) => value.toLocaleString('en-GB');
+    throw new HttpError(413, `This run is too big to send: the post and what you wrote for the AI come to about ${count(size)} characters, and a run holds ${count(JOB_LIMIT)}. Nothing was sent, so shorten your notes or comments and try again.`);
+  }
   await db.send(new PutCommand({ TableName: TABLE, Item: { pk: 'JOB', sk: job.id, ...job } }));
   const state = { id: job.id, kind, status: 'queued', stage: 'queued', at: job.created };
   await update({ pk: 'POST', sk: post.id }, { job: state });
@@ -281,7 +290,7 @@ export async function generatePost(id, input = {}) {
   return startAiJob('generate', post, params);
 }
 
-const answer = (value) => (typeof value === 'string' ? value.trim().slice(0, 2000) : '');
+const answer = (value) => (typeof value === 'string' ? value.trim() : '');
 
 /**
  * Keith's answers to a run that stopped to ask him, added to the post's notes in his words, then
@@ -322,11 +331,11 @@ export async function revisePost(id, input = {}) {
   const highlights = Array.isArray(input.highlights) ? input.highlights : [];
   const clean = highlights
     .filter((item) => typeof item?.quote === 'string' && typeof item?.note === 'string' && item.note.trim())
-    .map((item) => ({ quote: item.quote.slice(0, 2000), note: item.note.slice(0, 2000) }));
-  const request = typeof input.request === 'string' ? input.request.slice(0, 4000) : '';
+    .map((item) => ({ quote: item.quote, note: item.note }));
+  const request = typeof input.request === 'string' ? input.request : '';
   // Answers to the draft's questions, or ones Keith left out, are on the post itself
   const answered = (post.questions ?? []).some((question) => question.answer.trim() || question.left);
-  const notes = changedNotes(await notesSeen(post), post.notes).slice(0, 50).map((line) => line.slice(0, 2000));
+  const notes = changedNotes(await notesSeen(post), post.notes);
   if (!clean.length && !request.trim() && !answered && !notes.length) {
     throw new HttpError(400, 'Add a note on a passage, an overall request, an answer to a question or a change to your notes for the AI, so the AI knows what to change.');
   }
@@ -349,7 +358,7 @@ export async function coverPost(id, input = {}) {
   const post = await loadPost(id);
   if (!post.title.trim()) throw new HttpError(409, 'Give the post a title first, so the cover has something to go on.');
   const settings = await aiSettings();
-  const instruction = typeof input.instruction === 'string' ? input.instruction.slice(0, 1000) : '';
+  const instruction = typeof input.instruction === 'string' ? input.instruction : '';
   // Only a direction can stand in for the house style
   const overrideStyle = input.overrideStyle === true && !!instruction.trim();
   return startAiJob('cover', post, { ...(await choices(input, settings)), instruction, overrideStyle });

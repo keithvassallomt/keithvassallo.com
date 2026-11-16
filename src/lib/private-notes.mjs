@@ -86,12 +86,31 @@ export function serialiseIdeas({ preamble, ideas }) {
   return `${preamble || IDEAS_PREAMBLE}\n${parts.join('')}`;
 }
 
-/** An idea's title and details as they may go in the file. Throws a message for Keith if the title is missing. */
+/**
+ * The most an idea's details, or a topic queued on the Weekly page, may hold. Either becomes a
+ * post's notes. Longer text is turned down with a message, never cut short.
+ */
+export const NOTES_LIMIT = 50_000;
+
+/** The most an idea's line may hold: it's a `## ` heading in the file and a title in the admin. */
+export const TITLE_LIMIT = 200;
+
+/** The message for notes over NOTES_LIMIT, or null when they fit. */
+export function notesTooLong(text, what = 'The notes') {
+  if (text.length <= NOTES_LIMIT) return null;
+  const count = (value) => value.toLocaleString('en-GB');
+  return `${what} come to ${count(text.length)} characters, and the most that fits is ${count(NOTES_LIMIT)}. Nothing was saved, so trim them and save again.`;
+}
+
+/** An idea's title and details as they may go in the file. Throws a message for Keith if the title is missing or the details are too long. */
 export function cleanIdea({ title, details }) {
-  const cleanTitle = oneLine(title).replace(/^#+\s*/, '').slice(0, 200);
+  const cleanTitle = oneLine(title).replace(/^#+\s*/, '');
   if (!cleanTitle) throw new Error('Give the idea a line of text.');
+  if (cleanTitle.length > TITLE_LIMIT) throw new Error(`The idea's line is ${cleanTitle.length} characters, and the most it takes is ${TITLE_LIMIT}. Nothing was saved: put the rest in its notes and save again.`);
   // A `## ` line in the details would start a new idea
-  const cleanDetails = String(details ?? '').replace(/\r\n/g, '\n').replace(/^## /gm, '### ').trim().slice(0, 4000);
+  const cleanDetails = String(details ?? '').replace(/\r\n/g, '\n').replace(/^## /gm, '### ').trim();
+  const tooLong = notesTooLong(cleanDetails);
+  if (tooLong) throw new Error(tooLong);
   return { title: cleanTitle, details: cleanDetails };
 }
 
@@ -255,6 +274,8 @@ export async function readRepoFile({ repo, path, token }) {
   if (response.status === 404) return { text: '', sha: null };
   if (!response.ok) throw new RepoFileError(response.status, `GitHub didn't send ${path} (${response.status})`);
   const file = await response.json();
+  // Over 1 MB, GitHub leaves the content out, and editing that empty text would wipe the file
+  if (file.encoding === 'none') throw new RepoFileError(413, `${path} is over 1 MB, too big to edit through the contents API`);
   return { text: Buffer.from(file.content ?? '', 'base64').toString('utf8'), sha: file.sha };
 }
 
