@@ -106,14 +106,14 @@ const skipping = computed(() => !!data.value?.settings.skip);
             <button v-else type="button" class="btn" :disabled="busy" @click="change({ skip: null }, 'The skip is cancelled.')">Don't skip it</button>
             <button type="button" class="btn btn-ai" :disabled="busy" @click="runNow">Run it now</button>
           </div>
-          <p class="muted small">Run it now starts a weekly-style draft straight away, with the queued topic if there is one. It doesn't change the schedule.</p>
+          <p class="muted small">Run it now starts a weekly-style draft straight away, with the queued topic, or else your next idea. It doesn't change the schedule.</p>
         </section>
 
         <section class="card box">
           <h2 class="hd">For the next run</h2>
           <label>
             <span class="label">Topic (optional)</span>
-            <textarea v-model="topic" class="inp" rows="4" placeholder="Leave it empty and the AI picks one from your projects, the news, teaching and your ideas. Anything you write counts as your notes."></textarea>
+            <textarea v-model="topic" class="inp" rows="4" placeholder="Leave it empty and the run writes the idea at the top of your Ideas, or picks a topic itself when there are none. Anything you write here counts as your notes."></textarea>
           </label>
           <label>
             <span class="label">Model</span>
@@ -125,7 +125,7 @@ const skipping = computed(() => !!data.value?.settings.skip);
           <div class="buttons">
             <button type="button" class="btn btn-go" :disabled="busy || (topic === (data.settings.topic ?? '') && model === (data.settings.model ?? ''))" @click="change({ topic, model: model || null })">Save</button>
           </div>
-          <p class="muted small">A queued topic is used once, then cleared. The research reads your ideas and avoids repeating the last run's category.</p>
+          <p class="muted small">A queued topic is used once, then cleared, and goes ahead of your ideas. The research avoids repeating the last run's category.</p>
         </section>
       </div>
 

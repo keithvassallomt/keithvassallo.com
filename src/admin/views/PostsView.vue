@@ -31,11 +31,16 @@ const filter = ref('all');
 const category = ref('');
 const search = ref('');
 const weekly = ref(null);
+// The idea the weekly run writes when no topic is queued: null when there are none, undefined
+// until GitHub answers (or if it doesn't)
+const nextIdea = ref(undefined);
 
 const day = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 const bin = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
 
 onMounted(async () => {
+  // Read from GitHub, so it doesn't hold up the list
+  api('/ideas').then((result) => (nextIdea.value = result.ideas[0] ?? null)).catch(() => {});
   try {
     const [site, drafts, settings, week] = await Promise.all([siteData(), api('/posts'), api('/settings').catch(() => ({})), api('/weekly').catch(() => null)]);
     weekly.value = week;
@@ -150,8 +155,11 @@ const linkFor = (post) => {
     <div v-if="weekly" class="card banner">
       <span style="color: var(--pink)"><Icon name="calendar" /></span>
       <span v-if="weekly.settings.enabled">
-        Next weekly draft <strong>{{ new Date(`${weekly.next}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }}, 09:00</strong>
-        <span class="muted">· {{ weekly.settings.model ?? weekly.defaultModel }} · {{ weekly.settings.topic ? 'a topic is queued' : 'no topic queued, the AI picks one' }}</span>
+        Next weekly draft <strong>{{ new Date(`${weekly.next}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }}, 09:00</strong><span class="muted"> · {{ weekly.settings.model ?? weekly.defaultModel }} · </span>
+        <span v-if="weekly.settings.topic?.trim()" class="muted">the topic set on the Weekly page</span>
+        <span v-else-if="nextIdea">your idea <strong>{{ nextIdea.title }}</strong></span>
+        <span v-else-if="nextIdea === null" class="muted">no ideas queued, the AI picks a topic</span>
+        <span v-else class="muted">your next idea, or the AI's pick if there are none</span>
       </span>
       <span v-else>The weekly run is off.</span>
       <RouterLink to="/weekly">Weekly settings</RouterLink>
