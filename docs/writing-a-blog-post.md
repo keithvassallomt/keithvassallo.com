@@ -171,7 +171,8 @@ Any network without a blurb falls back to the `description`.
 - Don't leave notes for Keith inside the post, including HTML comments: comments are invisible on the
   page but published in its source.
 - Skip filler: no "In today's fast-paced world", "Let's dive in", "In conclusion" or "Happy coding!".
-- Typical length is 800 to 1,800 words. Reading time is calculated automatically.
+- Typical length is 800 to 1,800 words. A post that works through Keith's own list of points runs
+  as long as they need. Reading time is calculated automatically.
 
 ### Structure
 

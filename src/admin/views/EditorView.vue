@@ -36,7 +36,7 @@ const FIELDS = ['title', 'slug', 'slugTouched', 'description', 'category', 'tags
 const BACKUP = `kv-admin-draft-${props.id}`;
 
 const post = reactive({ title: '', slug: '', slugTouched: false, description: '', category: '', tags: [], cover: null, coverAlt: '', share: {}, notes: '', body: '', questions: [] });
-const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, repoSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false, ask: null, notesSeen: null });
+const meta = reactive({ status: 'draft', source: 'by-hand', version: 0, updated: null, liveSlug: null, repoSlug: null, publishedVersion: null, scheduledFor: null, job: null, repoChanged: false, ask: null, notesSeen: null, maxWords: null });
 const loaded = ref(false);
 const loadError = ref('');
 const site = ref(null);
@@ -144,6 +144,8 @@ function applyStatus(data) {
     repoChanged: !!data.repoChanged,
     ask: data.ask ?? null,
     notesSeen: data.notesSeen ?? null,
+    // Set by the AI on a post that follows Keith's own list of points, and kept if a reply lacks it
+    maxWords: data.maxWords ?? meta.maxWords,
   });
 }
 
@@ -291,7 +293,7 @@ function runChecks() {
       projectIds: new Set(site.value.projectIds),
       imageExists: (path) => imageNames.has(path.replace(/^\.\//, '')),
     },
-    { requireShare: false },
+    { requireShare: false, maxWords: meta.maxWords },
   );
   // The repo folder this post went live in, or was brought in from, is its own
   const ownFolder = [meta.liveSlug, meta.repoSlug].includes(post.slug);

@@ -93,6 +93,13 @@ it alone, without the usual shortlist across categories, and never skips it.
   `notesSeen` on the post. Deleted lines don't go, since a note he's done with may simply have
   been handled. A post drafted before `notesSeen` existed compares against the snapshot of the
   job that generated it.
+- **Keith's structure.** When the notes set out how the post is built or the points it must make,
+  the research sets `keiths_structure` in the brief. Every writing pass then keeps all of his
+  points in his order, and the running example threads through them instead of replacing them:
+  the Story edit used to cut a post down to its example, which turned 18 arguments into one
+  anecdote (21 November 2026). The brief's `max_words` lets such a post run past the usual
+  2,500-word check, up to 6,000. The job stores it on the post as `maxWords`, which the editor's
+  checks and later revisions use.
 
 ## Notifications
 

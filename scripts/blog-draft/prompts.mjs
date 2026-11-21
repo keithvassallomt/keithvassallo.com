@@ -3,6 +3,8 @@
 // private and are slotted in at run time; these prompts only adapt them to an unattended run
 // and to this site.
 
+import { MAX_WORDS, MAX_WORDS_KEITHS_STRUCTURE } from '../../src/lib/post-checks.mjs';
+
 const documents = (docs, tag = 'document') =>
   docs.map(({ name, text }) => `<${tag} name="${name}">\n${text.trim()}\n</${tag}>`).join('\n\n');
 
@@ -26,6 +28,7 @@ export function researchDecisions({ requested, canAsk }) {
 function requestedRules({ canAsk, resumed, aiChooses }) {
   const rules = [
     "Keith chose this topic (requested_topic, or the rough_draft he started), so it is the post: his ideas come before yours. The shortlist holds just this one candidate, scored honestly, and the usual mix of editorial categories doesn't apply. Never skip it: if the evidence is thin, write what it supports and ask about the rest in questions_for_keith.",
+    `Keith's structure. If his notes set out how the post is built or the points it must make (an order, sections, a list of arguments, a format for each point), set keiths_structure: his structure is the plan, every one of his points stays, in his order and format, and the running example threads through it (the opening, the points it fits, the verdict) instead of replacing it. A point he added late in the notes is one point among the rest, never the whole post. Set max_words to what his points need, which may be well past the usual ${MAX_WORDS.toLocaleString('en-GB')}.`,
   ];
   if (canAsk) {
     rules.push(`Keith's angle. A post from one of his ideas needs his view of the subject, not yours. If requested_topic doesn't say what he thinks about it, or what he wants the post to argue, and the post would be worth less without that, research the story first, then set decision to "ask" and fill ask instead of guessing:
@@ -118,6 +121,7 @@ ${NEW_POST}`,
 
   edit: `You are Keith's editor. The facts_draft above is accurate and passes every check, but it reads like a reference rather than something written for a person. Rewrite it into the post Keith would actually publish: the same facts, shown through the brief's running example in his voice, with a clear and pleasant flow, talking to the reader, with his humour and his opinion at full strength.
 
+- If the brief's keiths_structure is true, Keith set out this post's structure in keith_notes, and it overrides the next two rules: keep every one of his points from the draft, in his order and in the format he asked for, and improve how each reads rather than cutting any. The running example opens the post, comes back where a point fits it and returns in the verdict, but it never replaces his structure. Check before you finish that none of his points has gone.
 - Keep the facts the post needs, and add none that aren't in the draft or the brief's evidence. Drop detail it doesn't need, and any point that can't be shown on the example.
 - Rebuild the structure if that helps: an introduction that says what the post is about and why it matters, a middle whose sections are stages of the example, with headings that say plainly what the section is or what happens in it, and a conclusion with Keith's verdict.
 - Where the draft describes something it could show (code, a flow, a setup, a quotation), show it. Where it raises a problem and leaves it, resolve it.
@@ -157,7 +161,7 @@ How the post should read. These rules come from comparing a draft with Keith's o
 
 - Show, then explain. Build the post on one concrete example and keep returning to it as it develops: the code in a tutorial, Keith's actual setup in a review, a real situation from his notes in a teaching post, the actual wording in a policy post. Explain each point with the example in front of the reader, never instead of it. Anything the reader would otherwise have to build in their head (a program, a flow, a setup, the wording of a rule) is shown: code, a diagram, a table, a list or a quotation. Arguing about a subject in the abstract reads as dense, however short the sentences.
 - Concrete before abstract. Say what happens, in the reader's terms, before explaining why, and tie each general claim to the line, step or case that shows it. Prefer plain words to abstract nouns: "it loads every time", not "loading returns to the critical path".
-- Cover fewer points, properly. Each point gets its example, and a point that can't have one probably isn't needed. Don't switch to a second hypothetical to make a point, and don't detour into other projects unless they're the subject.
+- Cover fewer points, properly. Each point gets its example, and a point that can't have one probably isn't needed. Don't switch to a second hypothetical to make a point, and don't detour into other projects unless they're the subject. Keith's own points are the exception: when the brief's keiths_structure is true, every point in keith_notes stays, in his order and in the format he asked for, each with the example or analogy he gave it, and the post runs as long as they need, up to the brief's max_words, whatever the writing guide's typical length.
 - Resolve what you raise. A problem the post points out is fixed before the section ends, or the post says plainly that it can't be. An objection is answered on the same example, ideally by improving it.
 - Give it a real introduction. Within the first two or three paragraphs, before the first heading, tell the reader what the post is about, the question it answers and why it matters to them. A relatable observation or the example can come first, but never assume the reader already knows the subject. Then get to the example quickly.
 - Give it a real conclusion: Keith's verdict, in the first person, on whether it's worth it and for whom, plus anything practical the body hasn't already shown. A short, self-deprecating last line suits him. No moral, slogan or engagement question, and no abrupt stop.
@@ -297,7 +301,18 @@ export function briefTool(categoryIds, decisions = ['write', 'skip']) {
             running_example: text(
               "The one concrete example the post follows throughout and how it develops: code that changes stage by stage, Keith's actual setup, a real situation from his notes, the actual wording of a rule",
             ),
-            structure: strings('The sections in order, each a stage of the running example'),
+            keiths_structure: {
+              type: 'boolean',
+              description:
+                "True when Keith's notes set out the post's structure or the points it must make: an order, sections, a list of arguments, or a format for each point. The writing then keeps every one of his points, in his order",
+            },
+            max_words: {
+              type: 'integer',
+              description: `The most words the body may run to. ${MAX_WORDS} unless keiths_structure is true and his points need more; then the length they need, up to ${MAX_WORDS_KEITHS_STRUCTURE}`,
+            },
+            structure: strings(
+              "The sections in order. When keiths_structure is true, Keith's structure with every one of his points in his order, and the running example threaded through it; otherwise each section a stage of the running example",
+            ),
             limitations: text('What is not proven or was not tried'),
             editorial_risks: strings("Facts needing confirmation, confidential details, possible misrepresentations, jokes that would punch down. Never a reason to soften Keith's opinion"),
           }),

@@ -7,7 +7,16 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { postProblems, slugFormatProblem } from '../../src/lib/post-checks.mjs';
+import { MAX_WORDS, MAX_WORDS_KEITHS_STRUCTURE, postProblems, slugFormatProblem } from '../../src/lib/post-checks.mjs';
+
+/**
+ * The longest the body of a post written from this brief may be. Only a post that follows
+ * Keith's own structure may run past the usual limit, to the length the brief says his points need.
+ */
+export function wordLimit(chosen) {
+  if (!chosen?.keiths_structure) return MAX_WORDS;
+  return Math.min(Math.max(chosen.max_words || MAX_WORDS, MAX_WORDS), MAX_WORDS_KEITHS_STRUCTURE);
+}
 
 /** A problem with the slug, or null when it is valid and free. */
 export function checkSlug(slug, site) {
@@ -23,14 +32,15 @@ export function checkSlug(slug, site) {
 /**
  * @param {object} post the model's structured output
  * @param {{ siteDir: string, publishedSlugs: Set<string>, projectIds: Set<string>, categoryIds: Set<string>, slugTaken: (slug: string) => boolean, ownSlug: string | null }} site
- * @param {{ story?: boolean }} options `story` adds the checks for the finished voice, which a
- *   facts-first draft doesn't have to meet yet
+ * @param {{ story?: boolean, maxWords?: number }} options `story` adds the checks for the
+ *   finished voice, which a facts-first draft doesn't have to meet yet. `maxWords` is the
+ *   post's word limit (wordLimit), when it has its own.
  * @returns {string[]} problems, empty when the post passes
  */
-export function checkPost(post, site, { story = false } = {}) {
+export function checkPost(post, site, { story = false, maxWords = MAX_WORDS } = {}) {
   const { slug } = post;
   const imageExists = (image) => existsSync(path.join(site.siteDir, 'src/content/blog', slug, image));
-  const problems = postProblems(post, { ...site, imageExists }, { story, notesField: 'notes_for_keith', maxGaps: 3 });
+  const problems = postProblems(post, { ...site, imageExists }, { story, notesField: 'notes_for_keith', maxGaps: 3, maxWords });
   return [...new Set([checkSlug(slug, site), ...problems.map((problem) => problem.message)].filter(Boolean))];
 }
 

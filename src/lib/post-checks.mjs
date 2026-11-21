@@ -11,6 +11,10 @@ export const SHARE_KEYS = ['linkedin', 'x', 'bluesky', 'threads', 'mastodon', 'f
 export const STATIC_PAGES = ['/', '/about', '/cv', '/contact', '/projects', '/blog'];
 const STATIC = new Set(STATIC_PAGES);
 const ALLOWED_TAGS = new Set(['kbd', 'mark']);
+// The longest body a post may have, and the longest one that follows Keith's own list of points
+// may have (18 arguments with an analogy each needed about 3,000 words, 21 November 2026)
+export const MAX_WORDS = 2500;
+export const MAX_WORDS_KEITHS_STRUCTURE = 6000;
 
 const DASHES = /[\u2013\u2014]/;
 const SPACED_HYPHEN = /\S - (?=\S)/g;
@@ -127,15 +131,17 @@ export function slugFormatProblem(slug) {
 /**
  * @param {{ slug: string, title: string, description: string, category: string, tags: string[], share: object, body: string }} post
  * @param {{ categoryIds: Set<string>, publishedSlugs: Set<string>, projectIds: Set<string>, imageExists: (path: string) => boolean }} site
- * @param {{ story?: boolean, requireShare?: boolean, notesField?: string | null, maxGaps?: number | null }} options
+ * @param {{ story?: boolean, requireShare?: boolean, notesField?: string | null, maxGaps?: number | null, maxWords?: number }} options
  *   `story` adds the checks for the finished voice, which a facts-first draft doesn't have to
  *   meet yet. `requireShare` asks for a blurb for every network, which the AI must write but a
  *   hand-written post can leave to the description. `notesField` names where a model should
  *   put notes and image ideas instead. `maxGaps` limits the gaps a model may leave for Keith;
- *   the editor lists gaps on their own (findGaps) rather than as problems.
+ *   the editor lists gaps on their own (findGaps) rather than as problems. `maxWords` is the
+ *   longest the body may be: MAX_WORDS, or more for a post that follows Keith's own list of
+ *   points (the post's `maxWords`, set by the AI job from its brief).
  * @returns {{ message: string, lines?: number[] }[]} problems in the body carry its line numbers
  */
-export function postProblems(post, site, { story = false, requireShare = true, notesField = null, maxGaps = null } = {}) {
+export function postProblems(post, site, { story = false, requireShare = true, notesField = null, maxGaps = null, maxWords = MAX_WORDS } = {}) {
   const { slug, title, description, tags, share = {}, body } = post;
   const problems = [];
   const add = (message, lines) => problems.push(lines?.length ? { message, lines } : { message });
@@ -222,7 +228,11 @@ export function postProblems(post, site, { story = false, requireShare = true, n
   if (relative.length) add('The body has a relative link. Use root-relative paths such as /projects.', relative);
 
   const words = body.split(/\s+/).filter(Boolean).length;
-  if (words < 500 || words > 2500) add(`The body is ${words} words. Aim for 800 to 1,800.`);
+  const limit = maxWords || MAX_WORDS;
+  if (words < 500 || words > limit) {
+    const aim = words > limit && limit > MAX_WORDS ? `Keep it to ${limit.toLocaleString('en-GB')} at most.` : 'Aim for 800 to 1,800.';
+    add(`The body is ${words} words. ${aim}`);
+  }
 
   // Keith wants every post to talk to its reader; "you" is the measurable part of that
   const address = (text.match(/\byou(?:rs?|rself|rselves)?\b/gi) ?? []).length;
