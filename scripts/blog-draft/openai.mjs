@@ -2,9 +2,16 @@
 // (`store: false`): the caller replays the whole conversation each turn, so the private
 // writing samples and instructions are never kept on OpenAI's side between requests.
 
+import { Agent, fetch } from 'undici';
+
 const BASE = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 const ATTEMPTS = 3;
 const TIMEOUT_MS = 15 * 60_000;
+
+// A response sends no headers until the model has finished, and Node's own fetch gives up on
+// headers after five minutes. Long reasoning takes longer than that (21 November 2026), so this
+// agent waits without limit and TIMEOUT_MS is the only one.
+const dispatcher = new Agent({ headersTimeout: 0, bodyTimeout: 0 });
 
 /** Running totals for the run summary, and each request's tokens for pricing it. */
 export const usage = { requests: 0, inputTokens: 0, cachedTokens: 0, outputTokens: 0, webSearches: 0, images: 0, calls: [] };
@@ -27,6 +34,7 @@ async function post(path, body) {
         },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(TIMEOUT_MS),
+        dispatcher,
       });
       if (res.ok) return res.json();
       const detail = (await res.text()).slice(0, 500);
@@ -34,7 +42,11 @@ async function post(path, body) {
       failure = `OpenAI API ${res.status}: ${detail}`;
     } catch (error) {
       if (error.message.startsWith('OpenAI API')) throw error;
-      failure = `OpenAI request failed: ${error.message}`;
+      // The model was still working, so asking again would only wait as long again
+      if (error.name === 'TimeoutError') throw new Error(`OpenAI request timed out after ${TIMEOUT_MS / 60_000} minutes`);
+      // "fetch failed" alone hides why, so add the cause's code
+      const cause = error.cause?.code ?? error.cause?.message;
+      failure = `OpenAI request failed: ${error.message}${cause ? ` (${cause})` : ''}`;
     }
     if (attempt >= ATTEMPTS) throw new Error(failure);
     // Back off from rate limits and server errors; a dropped connection only needs a retry
